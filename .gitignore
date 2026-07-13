@@ -1,0 +1,25 @@
+# environment & secrets
+.venv/
+.env
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# pipeline outputs (folders stay via .gitkeep)
+records/*
+!records/.gitkeep
+drafts/*
+!drafts/.gitkeep
+out/*
+!out/.gitkeep
+
+# test data ships separately as caseforge-testdata.zip
+caseforge-testdata/
+
+# vault runtime database
+vault/engagements.db
+
+# OS noise
+.DS_Store
