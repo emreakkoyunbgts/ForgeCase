@@ -1,0 +1,31 @@
+# core
+anthropic>=0.40.0
+python-dotenv>=1.0.0
+
+# reader (Çağrı)
+pdfplumber>=0.11.0
+pytesseract>=0.3.10
+pdf2image>=1.17.0
+Pillow>=10.0.0
+
+# vault (Kaan)
+fastapi>=0.115.0
+uvicorn>=0.32.0
+requests>=2.32.0
+
+# publisher (Ahmet)
+python-docx>=1.1.0
+
+# librarian (Arda)
+faiss-cpu>=1.8.0
+numpy>=1.26.0
+
+# analyst (Elif)
+pandas>=2.2.0
+matplotlib>=3.9.0
+
+# console (Serhat)
+streamlit>=1.39.0
+
+# everyone
+pytest>=8.0.0
