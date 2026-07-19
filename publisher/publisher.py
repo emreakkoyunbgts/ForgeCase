@@ -17,6 +17,11 @@ from common.errors import die
 TEMPLATE = "caseforge-testdata/templates/case_study_template.docx"
 
 
+def print_case_study(case_study):
+    """Print a case study as readable JSON."""
+    print(json.dumps(case_study, indent=2, ensure_ascii=False))
+
+
 def render_docx(case_study, template_path, out_path):
     """
     Fill the template's {{PLACEHOLDERS}} from the case study.
@@ -68,6 +73,7 @@ def main():
     parser.add_argument("case_study")
     parser.add_argument("--out", default="out/case_study.docx")
     parser.add_argument("--template", default=TEMPLATE)
+    parser.add_argument("--print-json", action="store_true")
     args = parser.parse_args()
 
     try:
@@ -77,6 +83,10 @@ def main():
         die(f"no such file: {args.case_study}")
     except json.JSONDecodeError as e:
         die(f"{args.case_study} is not valid JSON: {e}")
+
+    if args.print_json:
+        print_case_study(case_study)
+        return
 
     written = render_docx(case_study, args.template, args.out)
     print(f"[publisher] wrote {written}", file=sys.stderr)
