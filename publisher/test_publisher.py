@@ -2,7 +2,17 @@
 import json
 
 from common.contract import load_seed
-from publisher.publisher import render_docx
+from publisher.publisher import print_case_study, render_docx
+
+
+def test_print_case_study_outputs_valid_json(capsys):
+    case_study = {"title": "A grounded case study"}
+
+    print_case_study(case_study)
+
+    captured = capsys.readouterr()
+    printed = json.loads(captured.out)
+    assert printed["title"] == case_study["title"]
 
 
 def test_renders_without_crashing(tmp_path):
