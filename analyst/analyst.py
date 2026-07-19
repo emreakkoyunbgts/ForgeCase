@@ -15,17 +15,19 @@ from common.contract import load_corpus
 
 
 def profile(corpus):
-    """
-    TODO(Elif) L1:Data profiling implemented with Pandas.
-    """
 
-    #Converted the incoming corpus data into a Pandas DataFrame.
     df = pd.DataFrame(corpus)
 
-    """
-    Performed calculations with Pandas, 
-    then converted back to a standard dictionary via .to_dict() to ensure compatibility with json.dump.
-    """
+    print(f"Shape:{df.shape}\n")
+  
+
+    print(df["domain"].value_counts().to_string())
+    print("------------------------------------\n")
+    print(df["region"].value_counts().to_string())
+    print("------------------------------------\n")
+    print(df["client_type"].value_counts().to_string())
+    print("-------------------------------------\n")
+    
 
     return {
         "total_engagements": len(df),
