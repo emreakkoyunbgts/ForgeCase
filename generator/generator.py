@@ -65,6 +65,22 @@ def generate(record):
     }
     # ----------------------------------------------------------------------
 
+def get_five_sections_with_llm(record):
+    """
+    Use the LLM to generate the five sections of a case study.
+
+    This is the core of the generator. It is a single LLM call, with a
+    system prompt that enforces grounding and a user prompt that contains
+    the record.
+
+    The LLM must return JSON with five sections: context, challenge, approach,
+    technology, outcomes. Each section must be grounded in the record.
+    """
+    user_prompt = f"Record:\n{json.dumps(record, indent=2 , ensure_ascii=False)}\n\n"
+    user_prompt += "Analyze the given record."
+
+    response = ask_for_json(SYSTEM, user_prompt)
+    return response
 
 def main():
     parser = argparse.ArgumentParser(description="Record -> case study")
