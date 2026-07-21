@@ -11,6 +11,13 @@ import argparse
 import json
 import sys
 
+import textwrap
+import os
+import matplotlib
+matplotlib.use('Agg')  # Arayüz/Pencere açılmasını engeller, tamamen sessiz çalışır
+
+import matplotlib.pyplot as plt
+
 from common.contract import load_record, client_label, has_outcomes
 from common.llm import ask_for_json, GROUNDING_RULES
 
@@ -22,6 +29,75 @@ serves banks.
 Write five sections: context, challenge, approach, technology, outcomes.
 Keep it factual and professional. No marketing language.
 """
+
+
+
+
+def save_case_study_to_pdf(case_study: dict, case_study_id: str, output_dir: str = "generator_case_study") -> str:
+    """
+    Case study sözlüğünü hiç gereksiz boşluk bırakmadan tam bir düz yazı / rapor formatında PDF olarak kaydeder.
+    """
+    # 1. Klasör Yolunu Hazırlama
+    clean_dir = output_dir.strip("/")
+    abs_output_dir = os.path.abspath(clean_dir)
+    os.makedirs(abs_output_dir, exist_ok=True)
+
+    file_name = f"case_study-{case_study_id}.pdf"
+    file_path = os.path.join(abs_output_dir, file_name)
+
+    # 2. Sözlükteki Tüm Veriyi Düz Metin (Plain Text) Haline Getirme
+    title = str(case_study.get("title", "Case Study")).upper()
+    eng_id = case_study.get("engagement_id", case_study_id)
+    client_named = case_study.get("client_named", False)
+
+    # Düz metin bloğunu inşa ediyoruz
+    lines = []
+    lines.append(f"{title}")
+    lines.append(f"Engagement ID: {eng_id} | Client Named: {client_named}")
+    lines.append("=" * 70)
+    lines.append("")
+
+    # Sections (Bölümler)
+    sections = case_study.get("sections", {})
+    for sec_name, sec_content in sections.items():
+        if sec_content:
+            lines.append(f"{sec_name.upper()}:")
+            lines.append(f"{sec_content}")
+            lines.append("")  # Bölümler arası sadece 1 satır boşluk
+
+    # Citations (Kaynaklar)
+    citations = case_study.get("citations", [])
+    if citations:
+        lines.append("CITATIONS:")
+        for cite in citations:
+            claim = cite.get('claim', '')
+            source = cite.get('source_ref', 'N/A')
+            lines.append(f"• {claim} [Source: {source}]")
+
+    # Tüm satırları birleştirip tek bir düz yazı bloğu yapıyoruz
+    full_text = "\n".join(lines)
+
+    # 3. Matplotlib ile Tek Bir Metin Bloğu Olarak Basma
+    # figsize yüksekliğini metin miktarına göre dinamik ayarlıyoruz
+    fig, ax = plt.subplots(figsize=(8.5, 7))
+    ax.axis('off')
+
+    # va='top' sayesinde metin en tepeden başlar, aşağıya doğru akar
+    ax.text(
+        0.05, 0.95, full_text,
+        transform=ax.transAxes,
+        fontsize=9.5,
+        fontfamily='monospace', # Monospace font sayesinde düzgün hiza
+        verticalalignment='top',
+        wrap=True
+    )
+
+    # 4. Kaydet ve Kapat
+    plt.savefig(file_path, format="pdf", bbox_inches="tight", pad_inches=0.4)
+    plt.close(fig)
+
+    return file_path
+
 
 def render_outcomes(record):
     outcomes = record.get("outcomes")
@@ -146,6 +222,8 @@ def generate(record):
         "citations": render_citations(record),
         "client_named": record.get("may_be_named", False),
     }
+    save_path=save_case_study_to_pdf(cs, cs["engagement_id"])
+    print(f"[generator] Case study saved to: {save_path}", file=sys.stderr)
     return cs
     # ----------------------------------------------------------------------
 
