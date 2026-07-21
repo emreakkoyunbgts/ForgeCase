@@ -23,6 +23,92 @@ Write five sections: context, challenge, approach, technology, outcomes.
 Keep it factual and professional. No marketing language.
 """
 
+def render_outcomes(record):
+    outcomes = record.get("outcomes")
+
+    if not outcomes:
+        return "[MISSING: no measurable outcome was recorded for this engagement]"
+
+    parts = []
+
+    for outcome in outcomes:
+        metric = outcome.get("metric")
+
+        if not metric:
+            parts.append("[MISSING: outcome metric]")
+        else:
+            parts.append(metric)
+
+    return "; ".join(parts)
+
+
+def render_citations(record):
+    citations = []
+
+    for outcome in record.get("outcomes", []):
+
+        metric = outcome.get("metric")
+        source_ref = outcome.get("source_ref")
+
+        if not metric:
+            citations.append({
+                "claim": "[MISSING: outcome metric]",
+                "source_ref": "[MISSING: source reference required]"
+            })
+
+        if not source_ref:
+            citations.append({
+                "claim": metric,
+                "source_ref": "[MISSING: source reference required]"
+            })
+        else:
+            citations.append({
+                "claim": metric,
+                "source_ref": source_ref
+            })
+
+    return citations
+
+def render_challenge(record):
+    return (
+        record.get("challenge")
+        or "[MISSING: challenge description]"
+    )
+
+def render_solution(record):
+    return (
+        record.get("solution")
+        or "[MISSING: solution description]"
+    )
+
+def render_technology(record):
+    technologies = record.get("technologies")
+
+    if not technologies:
+        return "[MISSING: technologies used]"
+
+    return ", ".join(technologies)
+
+def render_team_size(record):
+    return (
+        str(record["team_size"])
+        if record.get("team_size") is not None
+        else "[MISSING: team size]"
+    )
+
+def render_title(record):
+    domain = record.get("domain")
+
+    if not domain:
+        domain = "[MISSING: domain]"
+
+    return f"{domain} for {client_label(record)}"
+
+def render_context(record):
+    region = record.get("region") or "[MISSING: region]"
+
+    return f"{client_label(record)} in {region}."
+
 
 def generate(record):
     """
@@ -40,29 +126,27 @@ def generate(record):
     # --- STUB: replace me -------------------------------------------------
     print(f"[generator] STUB: fabricating nothing, echoing the record",
           file=sys.stderr)
-
+    """
     outcomes_text = (
         "; ".join(o["metric"] for o in record["outcomes"])
         if has_outcomes(record)
         else "[MISSING: no measurable outcome was recorded for this engagement]"
     )
-
-    return {
-        "engagement_id": record["id"],
-        "title": f"{record['domain']} for {client_label(record)}",
+    """
+    cs={
+        "engagement_id":  record.get("id", "[MISSING: engagement id]"),
+        "title": render_title(record),
         "sections": {
-            "context": f"{client_label(record)} in {record['region']}.",
-            "challenge": record["challenge"],
-            "approach": record["solution"],
-            "technology": ", ".join(record["technologies"]),
-            "outcomes": outcomes_text,
+            "context": render_context(record),
+            "challenge": render_challenge(record),
+            "approach": render_solution(record),
+            "technology": render_technology(record),
+            "outcomes": render_outcomes(record),
         },
-        "citations": [
-            {"claim": o["metric"], "source_ref": o["source_ref"]}
-            for o in record["outcomes"]
-        ],
-        "client_named": record["may_be_named"],
+        "citations": render_citations(record),
+        "client_named": record.get("may_be_named", False),
     }
+    return cs
     # ----------------------------------------------------------------------
 
 def get_five_sections_with_llm(record):
