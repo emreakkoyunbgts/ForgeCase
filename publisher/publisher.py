@@ -14,9 +14,17 @@ from pathlib import Path
 
 from docx import Document
 
+from common.contract import load_seed
 from common.errors import die
 
 TEMPLATE = "caseforge-testdata/templates/case_study_template.docx"
+
+
+def anonymise_text(value, real_client, client_type):
+    """Replace a real client name in text with the safe client type."""
+    if not isinstance(value, str):
+        return value
+    return value.replace(real_client, client_type)
 
 
 def render_docx(case_study, template_path, out_path):
@@ -25,15 +33,21 @@ def render_docx(case_study, template_path, out_path):
 
     TODO(Ahmet) L2:
         - a missing field writes "[MISSING]" — it does NOT crash
-        - NEVER print the real client name unless the record allows it.
-          The case study already did the anonymising for you: use
-          case_study["title"] and the sections as they are.
     """
     sections = case_study.get("sections", {})
+    record = load_seed(case_study.get("engagement_id"))
+    client_type = record["client_type"]
+    real_client = record["client"]
+    sections = {
+        key: anonymise_text(value, real_client, client_type)
+        for key, value in sections.items()
+    }
 
     values = {
-        "{{TITLE}}":      case_study.get("title", "[MISSING]"),
-        "{{CLIENT}}":     sections.get("context", "[MISSING]"),
+        "{{TITLE}}":      anonymise_text(
+            case_study.get("title", "[MISSING]"), real_client, client_type
+        ),
+        "{{CLIENT}}":     client_type,
         "{{DOMAIN}}":     "",
         "{{REGION}}":     "",
         "{{CHALLENGE}}":  sections.get("challenge", "[MISSING]"),
