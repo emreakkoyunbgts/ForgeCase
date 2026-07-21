@@ -1,4 +1,5 @@
 """Tests for the Publisher."""
+from copy import deepcopy
 import json
 
 from docx import Document
@@ -95,5 +96,37 @@ def test_poisoned_client_name_is_anonymised(tmp_path):
     assert record["client_type"] in content
 
 
-# TODO(Ahmet): test that a record with a missing field renders "[MISSING]"
-#              rather than crashing
+def test_missing_fields_render_as_missing(tmp_path):
+    with open("caseforge-testdata/case_studies/eng-01_clean.json") as f:
+        original = json.load(f)
+
+    case_study = deepcopy(original)
+    case_study["title"] = None
+    case_study["sections"]["challenge"] = None
+    case_study["sections"]["approach"] = ""
+    case_study["sections"]["technology"] = "   "
+    del case_study["sections"]["outcomes"]
+
+    out = tmp_path / "eng-01-missing.docx"
+    written = render_docx(
+        case_study,
+        "caseforge-testdata/templates/case_study_template.docx",
+        out,
+    )
+
+    assert written.exists()
+    assert written.suffix == ".docx"
+
+    content = read_docx_text(written)
+    assert "[MISSING]" in content
+    assert content.count("[MISSING]") >= 5
+    assert "None" not in content
+
+    for placeholder in [
+        "{{TITLE}}",
+        "{{CHALLENGE}}",
+        "{{APPROACH}}",
+        "{{TECHNOLOGY}}",
+        "{{OUTCOMES}}",
+    ]:
+        assert placeholder not in content

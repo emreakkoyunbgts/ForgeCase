@@ -20,6 +20,15 @@ from common.errors import die
 TEMPLATE = "caseforge-testdata/templates/case_study_template.docx"
 
 
+def safe_text(value):
+    """Return display-ready text, using [MISSING] for blank values."""
+    if value is None:
+        return "[MISSING]"
+    if isinstance(value, str):
+        return value if value.strip() else "[MISSING]"
+    return str(value)
+
+
 def anonymise_text(value, real_client, client_type):
     """Replace a real client name in text with the safe client type."""
     if not isinstance(value, str):
@@ -28,32 +37,38 @@ def anonymise_text(value, real_client, client_type):
 
 
 def render_docx(case_study, template_path, out_path):
-    """
-    Fill the template's {{PLACEHOLDERS}} from the case study.
+    """Fill the template's {{PLACEHOLDERS}} from the case study."""
+    sections = case_study.get("sections")
+    if not isinstance(sections, dict):
+        sections = {}
 
-    TODO(Ahmet) L2:
-        - a missing field writes "[MISSING]" — it does NOT crash
-    """
-    sections = case_study.get("sections", {})
     record = load_seed(case_study.get("engagement_id"))
     client_type = record["client_type"]
     real_client = record["client"]
     sections = {
-        key: anonymise_text(value, real_client, client_type)
-        for key, value in sections.items()
+        key: anonymise_text(
+            safe_text(sections.get(key)), real_client, client_type
+        )
+        for key in [
+            "context",
+            "challenge",
+            "approach",
+            "technology",
+            "outcomes",
+        ]
     }
 
     values = {
         "{{TITLE}}":      anonymise_text(
-            case_study.get("title", "[MISSING]"), real_client, client_type
+            safe_text(case_study.get("title")), real_client, client_type
         ),
         "{{CLIENT}}":     client_type,
         "{{DOMAIN}}":     "",
         "{{REGION}}":     "",
-        "{{CHALLENGE}}":  sections.get("challenge", "[MISSING]"),
-        "{{APPROACH}}":   sections.get("approach", "[MISSING]"),
-        "{{TECHNOLOGY}}": sections.get("technology", "[MISSING]"),
-        "{{OUTCOMES}}":   sections.get("outcomes", "[MISSING]"),
+        "{{CHALLENGE}}":  sections["challenge"],
+        "{{APPROACH}}":   sections["approach"],
+        "{{TECHNOLOGY}}": sections["technology"],
+        "{{OUTCOMES}}":   sections["outcomes"],
     }
 
     doc = Document(template_path)
