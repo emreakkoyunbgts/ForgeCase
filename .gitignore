@@ -1,13 +1,25 @@
-# Python
+# environment & secrets
+.venv/
+.env
+
+# python
 __pycache__/
 *.pyc
 .pytest_cache/
 
-# local databases — everyone builds their own from the corpus
-*.db
+# pipeline outputs (folders stay via .gitkeep)
+records/*
+!records/.gitkeep
+drafts/*
+!drafts/.gitkeep
+out/*
+!out/.gitkeep
 
-# test data ships as a zip, everyone unzips it locally
+# test data ships separately as caseforge-testdata.zip
 caseforge-testdata/
 
-# local environment
-.env
+# vault runtime database
+vault/engagements.db
+
+# OS noise
+.DS_Store

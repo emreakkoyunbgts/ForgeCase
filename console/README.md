@@ -31,3 +31,4 @@ streamlit run console/console.py
 ## Success
 Hand your laptop to someone non-technical. They browse to an engagement,
 generate a case study, and download it — **with no instructions from you**.
+Local ortam kuruldu ve doğrulandı - Serhat
