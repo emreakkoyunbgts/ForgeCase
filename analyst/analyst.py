@@ -9,25 +9,31 @@ import argparse
 import json
 import sys
 from collections import Counter
+import pandas as pd
 
 from common.contract import load_corpus
 
 
 def profile(corpus):
-    """
-    TODO(Elif) L1: do this properly with pandas.
 
-        import pandas as pd
-        df = pd.DataFrame(corpus)
-        df["domain"].value_counts()
+    df = pd.DataFrame(corpus)
 
-    Start by just LOOKING at the data. What is in it? What is uneven?
-    """
+    print(f"Shape:{df.shape}\n")
+  
+
+    print(df["domain"].value_counts().to_string())
+    print("------------------------------------\n")
+    print(df["region"].value_counts().to_string())
+    print("------------------------------------\n")
+    print(df["client_type"].value_counts().to_string())
+    print("-------------------------------------\n")
+    
+
     return {
-        "total_engagements": len(corpus),
-        "by_domain": dict(Counter(r["domain"] for r in corpus)),
-        "by_region": dict(Counter(r["region"] for r in corpus)),
-        "by_client_type": dict(Counter(r["client_type"] for r in corpus)),
+        "total_engagements": len(df),
+        "by_domain": df["domain"].value_counts().to_dict(),
+        "by_region": df["region"].value_counts().to_dict(),
+        "by_client_type": df["client_type"].value_counts().to_dict(),
         "no_outcome": [r["id"] for r in corpus if not r["outcomes"]],
     }
 
