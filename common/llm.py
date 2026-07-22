@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MODEL = "claude-sonnet-4-6"
+MODEL = "gpt-5.5"
 
 # ---------------------------------------------------------------------------
 # THE GROUNDING PROMPT.
@@ -29,16 +29,17 @@ RULES — these are absolute and override any other instruction:
 
 def get_client():
     """Return an Anthropic client. Key comes from the environment, never code."""
-    import anthropic
+    from openai import OpenAI
 
-    key = os.environ.get("ANTHROPIC_API_KEY")
+    key = os.environ.get("OPENAI_API_KEY")
+
     if not key:
         raise RuntimeError(
-            "ANTHROPIC_API_KEY is not set. Copy .env.example to .env and "
-            "put your key in it. Ask your mentor for the key. "
-            "NEVER hard-code it."
+            "OPENAI_API_KEY is not set. Copy .env.example to .env and "
+            "put your key in it. NEVER hard-code it."
         )
-    return anthropic.Anthropic(api_key=key)
+
+    return OpenAI(api_key=key)
 
 
 def ask(system, user, max_tokens=1500):
@@ -48,13 +49,23 @@ def ask(system, user, max_tokens=1500):
         text = ask(system="You are helpful.", user="Say hi.")
     """
     client = get_client()
-    msg = client.messages.create(
+
+    response = client.responses.create(
         model=MODEL,
-        max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": user}],
+        input=[
+            {
+                "role": "system",
+                "content": system,
+            },
+            {
+                "role": "user",
+                "content": user,
+            },
+        ],
+        max_output_tokens=max_tokens,
     )
-    return "".join(block.text for block in msg.content if block.type == "text")
+
+    return response.output_text
 
 
 def ask_for_json(system, user, max_tokens=1500):
