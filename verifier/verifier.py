@@ -85,6 +85,37 @@ def verify(case_study, record):
         "problems": problems,
     }
 
+def normalize_text(text: str) -> str:
+    """
+    Converts the text into lower case and dynamically matches different unit/percentage texts
+    and converts them into a standart form 
+    """
+    if not text:
+        return ""
+
+    text = text.lower()
+
+    # Converts the 'percentage' or 'yüzde' to '%' symbol[cite: 1, 3]
+    text = re.sub(r'\b(percent|per cent)\b', '%', text)
+
+    # Removes the gaps between number and the % ('45 %' -> '45%')
+    text = re.sub(r'(\d+)\s*%', r'\1%', text)
+
+    # Standardizing the time units
+    text = re.sub(r'\b(hours | hour | hrs | hr | h)\b', 'hours', text)
+    text = re.sub(r'\b(minutes | minute | mins | min | m)\b', 'minutes', text)
+
+    return text
+
+def extract_grounded_tokens(text: str) -> set:
+    """
+    Extracts every number, percentage and date pattern as a normalized form set[cite: 1, 3]   
+    """
+    normalized = normalize_text(text)
+
+    # Numbers, percentages and numeric patterns[cite: 1, 3]
+    tokens = set(re.findall(r'\d+(?:\.\d+)?%?', normalized))
+    return tokens
 
 def main():
     parser = argparse.ArgumentParser(description="Catch invented facts")
