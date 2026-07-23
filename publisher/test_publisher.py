@@ -5,7 +5,7 @@ import json
 from docx import Document
 
 from common.contract import load_seed
-from publisher.publisher import anonymise_text, render_docx
+from publisher.publisher import anonymise_text, render_docx, render_pdf
 
 
 def read_docx_text(path):
@@ -130,3 +130,28 @@ def test_missing_fields_render_as_missing(tmp_path):
         "{{OUTCOMES}}",
     ]:
         assert placeholder not in content
+
+
+def test_export_to_pdf(tmp_path):
+    import pdfplumber
+
+    with open("caseforge-testdata/case_studies/eng-01_clean.json") as f:
+        case_study = json.load(f)
+
+    record = load_seed("eng-01")
+    out = tmp_path / "eng-01.pdf"
+    written = render_pdf(case_study, out)
+
+    assert written.exists()
+    assert written.suffix == ".pdf"
+    assert written.stat().st_size > 0
+    assert written.read_bytes()[:4] == b"%PDF"
+
+    with pdfplumber.open(written) as pdf:
+        content = "\n".join((page.extract_text() or "") for page in pdf.pages)
+
+    assert case_study["title"] in content
+    assert record["client_type"] in content
+    assert record["client"] not in content
+    for heading in ["The Challenge", "Our Approach", "Technology", "Outcomes"]:
+        assert heading in content
