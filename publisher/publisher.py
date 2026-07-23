@@ -12,6 +12,8 @@ import json
 import sys
 from pathlib import Path
 
+from docx import Document
+
 from common.errors import die
 
 TEMPLATE = "caseforge-testdata/templates/case_study_template.docx"
@@ -20,15 +22,6 @@ TEMPLATE = "caseforge-testdata/templates/case_study_template.docx"
 def render_docx(case_study, template_path, out_path):
     """
     Fill the template's {{PLACEHOLDERS}} from the case study.
-
-    TODO(Ahmet) L1:
-        from docx import Document
-        doc = Document(template_path)
-        for para in doc.paragraphs:
-            for key, value in values.items():
-                if key in para.text:
-                    para.text = para.text.replace(key, value)
-        doc.save(out_path)
 
     TODO(Ahmet) L2:
         - a missing field writes "[MISSING]" — it does NOT crash
@@ -49,18 +42,25 @@ def render_docx(case_study, template_path, out_path):
         "{{OUTCOMES}}":   sections.get("outcomes", "[MISSING]"),
     }
 
-    # --- STUB: writes a plain text file so the pipeline runs. -------------
-    # Replace this with real python-docx code. That is your L1 ticket.
-    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-    stub = Path(out_path).with_suffix(".txt")
-    with open(stub, "w", encoding="utf-8") as f:
-        for key, value in values.items():
-            if value:
-                f.write(f"{key.strip('{}')}\n{value}\n\n")
-    print(f"[publisher] STUB: wrote {stub} (should be a branded .docx!)",
-          file=sys.stderr)
-    return stub
-    # ----------------------------------------------------------------------
+    doc = Document(template_path)
+    metadata_keys = ("{{CLIENT}}", "{{DOMAIN}}", "{{REGION}}")
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            if all(key in run.text for key in metadata_keys):
+                metadata_values = [
+                    values[key] for key in metadata_keys if values[key]
+                ]
+                run.text = " · ".join(metadata_values)
+                continue
+
+            for key, value in values.items():
+                if key in run.text:
+                    run.text = run.text.replace(key, value)
+
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(out_path)
+    return out_path
 
 
 def main():
