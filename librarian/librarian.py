@@ -12,6 +12,9 @@ import sys
 from common.contract import load_corpus
 from common.errors import die
 
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
 
 def searchable_text(record):
     """The text we embed for one engagement."""
@@ -20,6 +23,47 @@ def searchable_text(record):
         record["challenge"], record["solution"],
         " ".join(record["technologies"]),
     ])
+
+MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+
+def load_embedding_model():
+    """
+    Load the sentence embedding model.
+    """
+    return SentenceTransformer(MODEL_NAME)
+
+def embed_texts(model, texts):
+    """
+    Convert text strings into normalized FAISS-ready vectors.
+
+    normalize_embeddings=True means FAISS inner-product search behaves like
+    cosine similarity.
+    """
+    embeddings = model.encode(
+        texts,
+        convert_to_numpy=True,
+        normalize_embeddings=True,
+    )
+    return embeddings.astype("float32")
+
+def embed_engagement_records(corpus, model):
+    """
+    Embed every engagement record using searchable_text(record).
+    """
+    texts = [searchable_text(record) for record in corpus]
+    return embed_texts(model, texts)
+
+
+def build_engagement_index(embeddings):
+    """
+    Build a FAISS index containing one vector per engagement record.
+    """
+    if embeddings.ndim != 2:
+        die("engagement embeddings must be a 2D matrix")
+
+    index = faiss.IndexFlatIP(embeddings.shape[1])
+    index.add(embeddings)
+    return index
 
 
 def search(query, corpus, top_k=3):
@@ -34,25 +78,38 @@ def search(query, corpus, top_k=3):
     TODO(Arda) L3: synthesise a grounded capability statement — and hold
         yourself to the same no-invention rule as Taha's Generator.
     """
-    # --- STUB: naive keyword overlap. It works. It is not good. -----------
-    print("[librarian] STUB: keyword overlap, not embeddings", file=sys.stderr)
-    words = {w.lower().strip(".,") for w in query.split() if len(w) > 4}
+    if not query.strip():
+        die("RFP text is empty")
 
-    scored = []
-    for record in corpus:
-        text = searchable_text(record).lower()
-        score = sum(1 for w in words if w in text)
-        scored.append((score, record))
+    if top_k <= 0:
+        die("--top must be greater than 0")
 
-    scored.sort(key=lambda pair: pair[0], reverse=True)
-    return [
-        {
-            "engagement_id": r["id"],
-            "score": s,
+    if not corpus:
+        return []
+
+    print("[librarian] embedding engagement records", file=sys.stderr)
+
+    model = load_embedding_model()
+
+    record_embeddings = embed_engagement_records(corpus, model)
+    index = build_engagement_index(record_embeddings)
+
+    query_embedding = embed_texts(model, [query])
+
+    k = min(top_k, len(corpus))
+    scores, indices = index.search(query_embedding, k)
+
+    matches = []
+    for score, idx in zip(scores[0], indices[0]):
+        record = corpus[int(idx)]
+        matches.append({
+            "engagement_id": record["id"],
+            "score": round(float(score), 4),
             "why": "TODO(Arda): explain what actually matched",
-        }
-        for s, r in scored[:top_k]
-    ]
+        })
+
+    return matches
+    
     # ----------------------------------------------------------------------
 
 
