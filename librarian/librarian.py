@@ -62,10 +62,14 @@ def main():
     parser.add_argument("--top", type=int, default=3)
     args = parser.parse_args()
 
+    if args.top <= 0:
+        die("--top must be greater than 0")
     try:
         query = open(args.rfp, encoding="utf-8").read()
     except FileNotFoundError:
         die(f"no such file: {args.rfp}")
+    if not query.strip():
+        die(f"empty RFP file: {args.rfp}")
 
     matches = search(query, load_corpus(), args.top)
     json.dump({"matches": matches}, sys.stdout, indent=2, ensure_ascii=False)
