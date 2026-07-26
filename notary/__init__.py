@@ -1,0 +1,1 @@
+from .notary import append_to_log, print_chain, get_last_hash

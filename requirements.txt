@@ -1,5 +1,5 @@
 # core
-anthropic>=0.40.0
+openai>=1.99.0
 python-dotenv>=1.0.0
 
 # reader (Çağrı)
@@ -15,10 +15,12 @@ requests>=2.32.0
 
 # publisher (Ahmet)
 python-docx>=1.1.0
+reportlab>=4.0.0
 
 # librarian (Arda)
 faiss-cpu>=1.8.0
 numpy>=1.26.0
+sentence-transformers>=5.6.0
 
 # analyst (Elif)
 pandas>=2.2.0
