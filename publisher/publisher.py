@@ -45,6 +45,11 @@ def anonymise_text(value, real_client, client_type):
     return value.replace(real_client, client_type)
 
 
+def print_case_study(case_study):
+    """Print a case study as readable JSON."""
+    print(json.dumps(case_study, indent=2, ensure_ascii=False))
+
+
 def prepare_display_values(case_study):
     """
     Build the safe display values used by both DOCX and PDF output.
@@ -205,6 +210,7 @@ def main():
     parser.add_argument("case_study")
     parser.add_argument("--out", default="out/case_study.docx")
     parser.add_argument("--template", default=TEMPLATE)
+    parser.add_argument("--print-json", action="store_true")
     args = parser.parse_args()
 
     try:
@@ -214,6 +220,10 @@ def main():
         die(f"no such file: {args.case_study}")
     except json.JSONDecodeError as e:
         die(f"{args.case_study} is not valid JSON: {e}")
+
+    if args.print_json:
+        print_case_study(case_study)
+        return
 
     out_path = Path(args.out)
     suffix = out_path.suffix.lower()

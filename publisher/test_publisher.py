@@ -1,11 +1,12 @@
 """Tests for the Publisher."""
 from copy import deepcopy
 import json
+import sys
 
 from docx import Document
 
 from common.contract import load_seed
-from publisher.publisher import anonymise_text, render_docx, render_pdf
+from publisher.publisher import anonymise_text, main, render_docx, render_pdf
 
 
 def read_docx_text(path):
@@ -155,3 +156,31 @@ def test_export_to_pdf(tmp_path):
     assert record["client"] not in content
     for heading in ["The Challenge", "Our Approach", "Technology", "Outcomes"]:
         assert heading in content
+
+
+def test_print_json_skips_document_output(tmp_path, monkeypatch, capsys):
+    with open("caseforge-testdata/case_studies/eng-01_clean.json", encoding="utf-8") as f:
+        case_study = json.load(f)
+
+    docx_out = tmp_path / "should-not-exist.docx"
+    pdf_out = tmp_path / "should-not-exist.pdf"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "publisher",
+            "caseforge-testdata/case_studies/eng-01_clean.json",
+            "--print-json",
+            "--out",
+            str(docx_out),
+        ],
+    )
+
+    main()
+
+    captured = capsys.readouterr()
+    printed = json.loads(captured.out)
+    assert printed["engagement_id"] == case_study["engagement_id"]
+    assert printed["title"] == case_study["title"]
+    assert not docx_out.exists()
+    assert not pdf_out.exists()
