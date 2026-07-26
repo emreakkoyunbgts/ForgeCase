@@ -1,6 +1,8 @@
 """Tests for the Vault."""
+from fastapi.testclient import TestClient
+
 from common.contract import load_corpus, load_seed
-from vault.vault import store, get
+from vault.vault import create_app, store, get
 
 
 def test_round_trip_is_identical():
@@ -31,4 +33,28 @@ def test_eng02_keeps_may_be_named_flag():
     assert get("eng-02")["may_be_named"] is True
 
 
-# TODO(Kaan): once serve() exists, test GET /engagements/nope returns 404
+def test_api_post_then_get_round_trip():
+    """Happy path: POST a record, GET it back identically over HTTP."""
+    client = TestClient(create_app())
+    original = load_seed("eng-01")
+    response = client.post("/engagements", json=original)
+    assert response.status_code == 201
+    response = client.get("/engagements/eng-01")
+    assert response.status_code == 200
+    assert response.json() == original
+
+
+def test_api_missing_record_returns_404():
+    """The one that matters: an unknown id must 404, not 500 or 200."""
+    client = TestClient(create_app())
+    response = client.get("/engagements/eng-does-not-exist")
+    assert response.status_code == 404
+
+
+def test_api_list_contains_stored_records():
+    """GET /engagements returns everything we stored."""
+    client = TestClient(create_app())
+    client.post("/engagements", json=load_seed("eng-01"))
+    client.post("/engagements", json=load_seed("eng-02"))
+    ids = [r["id"] for r in client.get("/engagements").json()]
+    assert "eng-01" in ids and "eng-02" in ids
