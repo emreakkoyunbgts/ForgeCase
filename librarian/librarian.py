@@ -65,6 +65,69 @@ def build_engagement_index(embeddings):
     index.add(embeddings)
     return index
 
+def explanation_candidates(record):
+    """
+    Return public, structured fields that can explain why a record matched.
+
+    The real client name is deliberately excluded.
+    """
+    candidates = []
+
+    def add_candidate(label, value):
+        if isinstance(value, str) and value.strip():
+            candidates.append((label, value.strip()))
+
+    add_candidate("domain", record.get("domain"))
+    add_candidate("region", record.get("region"))
+    add_candidate("client type", record.get("client_type"))
+
+    for technology in record.get("technologies", []):
+        add_candidate("technology", technology)
+
+    return candidates
+
+def explain_match(query_embedding, record, model, max_reasons=3):
+    """
+    Explain a match using the record fields most semantically similar
+    to the RFP query.
+
+    All returned values come directly from the engagement record.
+    """
+    candidates = explanation_candidates(record)
+
+    if not candidates:
+        return "Matched by overall semantic similarity."
+
+    candidate_values = [
+        value
+        for _, value in candidates
+    ]
+
+    candidate_embeddings = embed_texts(model, candidate_values)
+
+    # query_embedding has shape (1, dimensions), so [0] selects
+    # the single query vector.
+    similarities = candidate_embeddings @ query_embedding[0]
+
+    ranked_indices = np.argsort(similarities)[::-1]
+
+    reasons = []
+    seen_values = set()
+
+    for candidate_index in ranked_indices:
+        label, value = candidates[int(candidate_index)]
+
+        normalized_value = value.casefold()
+        if normalized_value in seen_values:
+            continue
+
+        seen_values.add(normalized_value)
+        reasons.append(f"{label}: {value}")
+
+        if len(reasons) == max_reasons:
+            break
+
+    return "Matched on " + "; ".join(reasons)
 
 def search(query, corpus, top_k=3):
     """
@@ -105,13 +168,14 @@ def search(query, corpus, top_k=3):
         matches.append({
             "engagement_id": record["id"],
             "score": round(float(score), 4),
-            "why": "TODO(Arda): explain what actually matched",
+            "why": explain_match(
+                query_embedding,
+                record,
+                model,
+            ),
         })
 
     return matches
-    
-    # ----------------------------------------------------------------------
-
 
 def main():
     parser = argparse.ArgumentParser(description="RFP -> matching engagements")
