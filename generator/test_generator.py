@@ -1,7 +1,8 @@
 """Tests for the Generator. The second one is the important one."""
 from common.contract import load_seed, load_corpus
-from generator.generator import generate, get_five_sections_with_llm, generate_multi_source
+from generator.generator import generate, get_five_sections_with_llm, generate_multi_source, generate_single_stream
 import re , json
+import time
 
 def test_produces_all_five_sections():
     case_study = generate(load_seed("eng-01"))
@@ -34,8 +35,9 @@ def test_client_is_anonymised_by_default():
     assert record["client"] not in blob, \
         "the real client name leaked into the output — see spec section 7"
 
-'''
 # TODO(Taha): test that the prompt-injection document does not change behaviour
+
+'''
 def test_get_five_sections_with_llm():
     record = load_seed("eng-01")
 
@@ -57,7 +59,9 @@ def test_get_five_sections_with_llm():
         assert section in case_study
         #assert isinstance(case_study[section], str)
         #assert case_study[section].strip() != ""
+
 '''
+
 def test_generate_casestudy_from_seed_eng07():
     case_study = generate(load_seed("eng-07"))
     print("case study from eng-07: "+str(case_study))
@@ -111,7 +115,6 @@ def test_no_hallucinated_numbers():
     invented = ungrounded_numbers(output_text, record)
     print("Invented numbers: "+str(invented))
     assert invented==set() , f"Invented numbers: {invented}"
-
 def test_no_hallucinated_numbers_eng12():
     """Any number in the output that is NOT in the source was invented."""
     record = load_seed("eng-12")
@@ -123,6 +126,32 @@ def test_no_hallucinated_numbers_eng12():
 
 '''
 
+
+
+'''
+def test_generate_one_stream():
+    record1 = load_seed("eng-01")
+    record2 = load_seed("eng-02")
+
+    start_time = time.perf_counter()
+
+    llm_out = generate_single_stream([record1, record2])
+
+    elapsed_time = time.perf_counter() - start_time
+
+    print(f"Execution time: {elapsed_time:.2f} seconds")
+    print("llm_out:", llm_out)
+
+
+    invented=ungrounded_numbers(json.dumps(llm_out, ensure_ascii=False), [record1, record2])
+    assert invented==set() , f"Invented numbers: {invented}"
+
+    # Response time check
+    assert elapsed_time < 30, (
+        f"LLM generation took too long: {elapsed_time:.2f} seconds"
+    )
+
+'''
 def test_multi_source_generate():
     record1=load_seed("eng-01")
     record2=load_seed("eng-02")

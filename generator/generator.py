@@ -40,6 +40,24 @@ Write five sections: context, challenge, approach, technology, outcomes.
 Keep it factual and professional. No marketing language.
 """
 
+SYSTEM_TAHA="""You are a analytical AI assistant that generates case studies for BGTS, 
+a software consultancy that serves banks.
+
+
+""" + GROUNDING_RULES + """
+Write five sections: context, challenge, approach, technology, outcomes.
+Write with highlighting the developed features .
+Keep it factual and professional. No marketing language.
+
+"""
+
+
+
+
+
+
+
+
 
 
 
@@ -106,6 +124,103 @@ def save_case_study_to_pdf(case_study: dict, case_study_id: str, output_dir: str
     plt.savefig(file_path, format="pdf", bbox_inches="tight", pad_inches=0.4)
     plt.close(fig)
 
+    return file_path
+
+
+def save_llm_output_to_pdf(
+    llm_output: dict,
+    output_id: str,
+    output_dir: str = "generator_llm_output"
+) -> str:
+    """
+    LLM çıktısını düz yazı / rapor formatında PDF olarak kaydeder.
+    """
+
+    import os
+    import matplotlib.pyplot as plt
+
+    # 1. Klasör Yolunu Hazırlama
+    clean_dir = output_dir.strip("/")
+    abs_output_dir = os.path.abspath(clean_dir)
+    os.makedirs(abs_output_dir, exist_ok=True)
+
+    file_name = f"llm_output-{output_id}.pdf"
+    file_path = os.path.join(abs_output_dir, file_name)
+
+    # 2. Metin Bloğunu Oluşturma
+    lines = []
+
+    lines.append("LLM OUTPUT")
+    lines.append("=" * 70)
+    lines.append("")
+
+    for key, value in llm_output.items():
+
+        lines.append(f"{key.upper()}:")
+
+        # String alanlar
+        if isinstance(value, str):
+            lines.append(value)
+
+        # Liste alanlar
+        elif isinstance(value, list):
+
+            if not value:
+                lines.append("-")
+
+            # List[str]
+            elif all(isinstance(item, str) for item in value):
+                for item in value:
+                    lines.append(f"• {item}")
+
+            # List[dict]
+            elif all(isinstance(item, dict) for item in value):
+                for item in value:
+                    for field, field_value in item.items():
+                        lines.append(f"{field}: {field_value}")
+                    lines.append("")
+
+            else:
+                lines.append(str(value))
+
+        # Dict alanlar
+        elif isinstance(value, dict):
+            for field, field_value in value.items():
+                lines.append(f"{field}: {field_value}")
+
+        # Diğer tipler
+        else:
+            lines.append(str(value))
+
+        lines.append("")
+
+    full_text = "\n".join(lines)
+
+    # 3. PDF'e Yazdırma
+    fig, ax = plt.subplots(figsize=(8.5, 7))
+    ax.axis("off")
+
+    ax.text(
+        0.05,
+        0.95,
+        full_text,
+        transform=ax.transAxes,
+        fontsize=9.5,
+        fontfamily="monospace",
+        verticalalignment="top",
+        wrap=True,
+    )
+
+    # 4. Kaydet
+    plt.savefig(
+        file_path,
+        format="pdf",
+        bbox_inches="tight",
+        pad_inches=0.4,
+    )
+
+    plt.close(fig)
+    logger.info(f"LLM output saved to: {file_path}")
     return file_path
 
 
@@ -365,7 +480,7 @@ def render_multi_source_context(record,name,id):
 def client_may_be_named(record):
     return record.get("may_be_named", False)
 
-def generate_multi_source(record1 , record2):
+def generate_two_source(record1 , record2):
     r1_id = record1.get("id", "[MISSING: engagement id]")
     r2_id = record2.get("id", "[MISSING: engagement id]")
     may_be=client_may_be_named(record1) and client_may_be_named(record2)
@@ -561,7 +676,17 @@ def get_five_sections_with_llm(record):
     user_prompt += "Analyze the given record."
 
     response = ask_for_json(SYSTEM, user_prompt)
+    logger.info(f"LLM response: {response}")
     return response
+
+def generate_single_stream(records):
+
+    mcs=generate_multi_source(records)
+    llm_out=get_five_sections_with_llm(mcs)
+    path=save_llm_output_to_pdf(llm_out, ",".join(mcs["engagement_ids"]))
+    logger.info(f"LLM output saved to: {path}")
+    return llm_out
+
 
 def main():
     parser = argparse.ArgumentParser(description="Record -> case study")
