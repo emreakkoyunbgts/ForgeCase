@@ -21,6 +21,16 @@ import matplotlib.pyplot as plt
 from common.contract import load_record, client_label, has_outcomes
 from common.llm import ask_for_json, GROUNDING_RULES
 
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler("generator.log",encoding="utf-8"),
+                              logging.StreamHandler(sys.stdout)])
+
+logger=logging.getLogger(__name__)
+
+
 SYSTEM = """You write case studies for BGTS, a software consultancy that
 serves banks.
 
@@ -275,7 +285,7 @@ def save_case_study_to_pdf_multi_source(
     )
 
     plt.close(fig)
-
+    logger.info(f"Multi-source case study saved to: {file_path}")
     return file_path
 
 
@@ -394,6 +404,7 @@ def generate_multi_source(record1 , record2):
 
 def generate_multi_source(records):
     if not records:
+        logger.error("records list cannot be empty")
         raise ValueError("records list cannot be empty")
 
     engagement_ids = [
@@ -402,7 +413,7 @@ def generate_multi_source(records):
     ]
 
     may_be = all(client_may_be_named(record) for record in records)
-
+    logger.info(f"Client may be named: {may_be}")
     client_names = []
 
     for record in records:
@@ -416,6 +427,7 @@ def generate_multi_source(records):
             )
 
     if len(set(client_names)) > 1:
+        logger.warning(f"Different client names/types found: {client_names}")
         print(
             f"[generator] WARNING: Different client names/types found: {client_names}",
             file=sys.stderr,
