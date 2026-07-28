@@ -15,7 +15,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from common.contract import load_record, load_corpus
+from common.contract import REQUIRED_FIELDS, load_record, load_corpus
 from common.errors import die
 
 DB_PATH = "vault/engagements.db"
@@ -163,18 +163,52 @@ def list_all():
     return [_row_to_record(conn, row) for row in rows]
 
 
-def serve():
+def create_app():
     """
-    TODO(Kaan) L2: the REST API.
+    The REST API (L2). Built as a factory so tests can create the app
+    without starting a real server.
 
         POST /engagements        -> save a record
-        GET  /engagements/{id}   -> fetch one (404 if missing!)
+        GET  /engagements/{id}   -> fetch one (404 if missing)
         GET  /engagements        -> list them all
-
-    Use FastAPI. Then write TWO tests: one that works, one that 404s.
-    The 404 test is the one that matters.
     """
-    die("not implemented yet — this is your L2 ticket, Kaan")
+    from fastapi import FastAPI, HTTPException
+
+    app = FastAPI(title="Vault — Engagement Record store")
+
+    @app.post("/engagements", status_code=201)
+    def create_engagement(record: dict):
+        missing = [f for f in REQUIRED_FIELDS if f not in record]
+        if missing:
+            raise HTTPException(
+                status_code=422,
+                detail=f"missing required field(s): {', '.join(missing)}",
+            )
+        store(record)
+        return {"stored": record["id"]}
+
+    @app.get("/engagements")
+    def list_engagements():
+        return list_all()
+
+    @app.get("/engagements/{engagement_id}")
+    def get_engagement(engagement_id: str):
+        record = get(engagement_id)
+        if record is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"no engagement with id '{engagement_id}'",
+            )
+        return record
+
+    return app
+
+
+def serve():
+    """Run the API on http://127.0.0.1:8000 (interactive docs at /docs)."""
+    import uvicorn
+
+    uvicorn.run(create_app(), host="127.0.0.1", port=8000)
 
 
 def main():

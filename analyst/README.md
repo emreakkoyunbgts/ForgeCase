@@ -27,3 +27,6 @@ all, and that `eng-12` is the only engagement with no measurable outcome.
 
 **Success:** show your gap map to someone in sales. If they learn something
 they didn't know, you've succeeded.
+
+# Local environment setup completed and first PR created.
+

@@ -1,13 +1,4 @@
-# Python
+
 __pycache__/
 *.pyc
 .pytest_cache/
-
-# local databases — everyone builds their own from the corpus
-*.db
-
-# test data ships as a zip, everyone unzips it locally
-caseforge-testdata/
-
-# local environment
-.env

@@ -32,3 +32,5 @@ python -m generator.generator records/eng-01.json > drafts/eng-01.json
 python -m verifier.verifier drafts/eng-01.json records/eng-01.json
 ```
 If Ömer's Verifier flags your output, one of you has a bug. Go and find out which.
+
+For first push and pull request!
