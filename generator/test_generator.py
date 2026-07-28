@@ -1,6 +1,6 @@
 """Tests for the Generator. The second one is the important one."""
 from common.contract import load_seed, load_corpus
-from generator.generator import generate, get_five_sections_with_llm
+from generator.generator import generate, get_five_sections_with_llm, generate_multi_source
 import re , json
 
 def test_produces_all_five_sections():
@@ -122,3 +122,30 @@ def test_no_hallucinated_numbers_eng12():
     assert invented==set() , f"Invented numbers: {invented}"
 
 '''
+
+def test_multi_source_generate():
+    record1=load_seed("eng-01")
+    record2=load_seed("eng-02")
+    tcs=generate_multi_source(record1, record2)
+    for section in ["context", "challenge", "approach", "technology", "outcomes"]:
+        assert section in tcs["sections"]
+
+
+def test_multi_source_generate_list():
+    records=[load_seed("eng-01"), load_seed("eng-02"), load_seed("eng-03")]
+    tcs=generate_multi_source(records)
+    for section in ["context", "challenge", "approach", "technology", "outcomes"]:
+        assert section in tcs["sections"]
+
+def test_multi_source_generate_list_with_eng12():
+    records=[load_seed("eng-01"), load_seed("eng-02"), load_seed("eng-12")]
+    tcs=generate_multi_source(records)
+    for section in ["context", "challenge", "approach", "technology", "outcomes"]:
+        assert section in tcs["sections"]
+
+
+def test_multi_source_generate_list_with_eng13():
+    records=[load_seed("eng-01"), load_seed("eng-02"), load_seed("eng-13")]
+    tcs=generate_multi_source(records)
+    for section in ["context", "challenge", "approach", "technology", "outcomes"]:
+        assert section in tcs["sections"]

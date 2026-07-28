@@ -185,6 +185,313 @@ def render_context(record):
 
     return f"{client_label(record)} in {region}."
 
+###
+######THIS AREA IS FOR MULTI-SOURCE CASE STUDY GENERATION######
+###
+
+def save_case_study_to_pdf_multi_source(
+        case_study: dict,
+        case_study_id: str,
+        output_dir: str = "generator_multi_source_case_study"
+) -> str:
+    """
+    Multi-source case study sözlüğünü PDF olarak kaydeder.
+    Dict yapısını aynen korur, hiçbir alanı ayrıştırmaz.
+    """
+
+    # 1. Klasör hazırlama
+    clean_dir = output_dir.strip("/")
+    abs_output_dir = os.path.abspath(clean_dir)
+    os.makedirs(abs_output_dir, exist_ok=True)
+
+    file_name = f"case_study-{case_study_id}.pdf"
+    file_path = os.path.join(abs_output_dir, file_name)
+
+    # 2. Verileri al
+    engagement_ids = case_study.get("engagement_ids", [])
+    titles = case_study.get("titles", [])
+    sections = case_study.get("sections", {})
+    citations = case_study.get("citations", [])
+    client_named = case_study.get("client_named", False)
+
+    # 3. Metni oluştur
+    lines = []
+
+    lines.append("MULTI SOURCE CASE STUDY")
+    lines.append(f"Engagement IDs: {', '.join(engagement_ids)}")
+    lines.append(f"Client Named: {client_named}")
+    lines.append("=" * 70)
+    lines.append("")
+
+    # Titles
+    if titles:
+        lines.append("TITLES:")
+        for title in titles:
+            lines.append(str(title))
+        lines.append("")
+
+    # Sections
+    for section_name, values in sections.items():
+
+        lines.append(f"{section_name.upper()}:")
+
+        for value in values:
+            lines.append(str(value))
+
+        lines.append("")
+
+    # Citations
+    if citations:
+
+        lines.append("CITATIONS:")
+
+        for cite in citations:
+            lines.append(str(cite))
+
+    full_text = "\n".join(lines)
+
+    # 4. PDF oluştur (eski görünüm)
+    fig, ax = plt.subplots(figsize=(8.5, 7))
+
+    ax.axis("off")
+
+    ax.text(
+        0.05,
+        0.95,
+        full_text,
+        transform=ax.transAxes,
+        fontsize=9.5,
+        fontfamily="monospace",
+        verticalalignment="top",
+        wrap=True,
+    )
+
+    # 5. Kaydet
+    plt.savefig(
+        file_path,
+        format="pdf",
+        bbox_inches="tight",
+        pad_inches=0.4,
+    )
+
+    plt.close(fig)
+
+    return file_path
+
+
+
+
+def render_multi_source_citations(record,id):
+    citations = []
+
+    for outcome in record.get("outcomes", []):
+
+        metric = outcome.get("metric")
+        source_ref = outcome.get("source_ref")
+
+        if not metric:
+            citations.append({
+                "claim": "[MISSING: outcome metric]",
+                "source_ref": "[MISSING: source reference required]",
+                "page_ref": id
+            })
+
+        if not source_ref:
+            citations.append({
+                "claim": metric,
+                "source_ref": "[MISSING: source reference required]",
+                "page_ref": id
+            })
+        else:
+            citations.append({
+                "claim": metric,
+                "source_ref": source_ref,
+                "page_ref": id
+            })
+
+    return citations
+
+def render_multi_source_outcomes(record,id):
+    return {
+        "outcomes":render_outcomes(record),
+        "page" : id
+    }
+def render_multi_source_technology(record,id):
+    return {
+        "technologies":render_technology(record),
+        "page" : id
+    }
+def render_multi_source_solution(record,id):
+    return {
+        "approach": record.get("solution") or "[MISSING: solution description]",
+        "page" : id
+    }
+def render_multi_source_challenge(record,id):
+    return {
+        "challenge": record.get("challenge") or "[MISSING: challenge description]",
+        "page" : id
+    }
+
+def render_multi_source_tite(record,name,id):
+    domain = record.get("domain")
+
+    if not domain:
+        domain = "[MISSING: domain]"
+
+    return {
+        "title": f"{domain} for {name}",
+        "page" : id
+    }
+def render_multi_source_context(record,name,id):
+    region = record.get("region") or "[MISSING: region]"
+
+    return {
+        "region": f"{name} in {region}.",
+        "page" : id
+    }
+
+
+
+def client_may_be_named(record):
+    return record.get("may_be_named", False)
+
+def generate_multi_source(record1 , record2):
+    r1_id = record1.get("id", "[MISSING: engagement id]")
+    r2_id = record2.get("id", "[MISSING: engagement id]")
+    may_be=client_may_be_named(record1) and client_may_be_named(record2)
+    r1_name=""
+    r2_name=""
+    if(may_be):
+        r1_name=record1.get("client", "[MISSING: client name]")
+        r2_name=record2.get("client", "[MISSING: client name]")
+    else:
+        r1_name=record1.get("client_type", "[MISSING: client type]")
+        r2_name=record2.get("client_type", "[MISSING: client type]")
+
+    if r1_name != r2_name:
+        print(f"[generator] WARNING: The two records have different client names/types: {r1_name} vs {r2_name}", file=sys.stderr)
+    tcs = {
+        "engagement_ids": [r1_id, r2_id],
+        "titlies" : [render_multi_source_tite(record1,r1_name,r1_id), render_multi_source_tite(record2,r2_name,r2_id)],
+        "sections": {
+            "context": [render_multi_source_context(record1,r1_name,r1_id), render_multi_source_context(record2,r2_name,r2_id)],
+            "challenge": [render_multi_source_challenge(record1,r1_id), render_multi_source_challenge(record2,r2_id)],
+            "approach": [render_multi_source_solution(record1,r1_id), render_multi_source_solution(record2,r2_id)],
+            "technology": [render_multi_source_technology(record1,r1_id), render_multi_source_technology(record2,r2_id)],
+            "outcomes": [render_multi_source_outcomes(record1,r1_id), render_multi_source_outcomes(record2,r2_id)],
+        },
+        "citations": render_multi_source_citations(record1,r1_id) + render_multi_source_citations(record2,r2_id),
+        "client_named": may_be,
+    }
+
+    print(f"[generator] Multi-source case study generated for records {r1_id} and {r2_id}", file=sys.stderr)
+    print(f"[generator] Case study details: {tcs}", file=sys.stderr)
+
+    return tcs
+
+
+
+
+def generate_multi_source(records):
+    if not records:
+        raise ValueError("records list cannot be empty")
+
+    engagement_ids = [
+        record.get("id", "[MISSING: engagement id]")
+        for record in records
+    ]
+
+    may_be = all(client_may_be_named(record) for record in records)
+
+    client_names = []
+
+    for record in records:
+        if may_be:
+            client_names.append(
+                record.get("client", "[MISSING: client name]")
+            )
+        else:
+            client_names.append(
+                record.get("client_type", "[MISSING: client type]")
+            )
+
+    if len(set(client_names)) > 1:
+        print(
+            f"[generator] WARNING: Different client names/types found: {client_names}",
+            file=sys.stderr,
+        )
+
+    tcs = {
+        "engagement_ids": engagement_ids,
+
+        "titles": [
+            render_multi_source_tite(record, client_name, engagement_id)
+            for record, client_name, engagement_id in zip(
+                records,
+                client_names,
+                engagement_ids,
+            )
+        ],
+
+        "sections": {
+            "context": [
+                render_multi_source_context(record, client_name, engagement_id)
+                for record, client_name, engagement_id in zip(
+                    records,
+                    client_names,
+                    engagement_ids,
+                )
+            ],
+
+            "challenge": [
+                render_multi_source_challenge(record, engagement_id)
+                for record, engagement_id in zip(records, engagement_ids)
+            ],
+
+            "approach": [
+                render_multi_source_solution(record, engagement_id)
+                for record, engagement_id in zip(records, engagement_ids)
+            ],
+
+            "technology": [
+                render_multi_source_technology(record, engagement_id)
+                for record, engagement_id in zip(records, engagement_ids)
+            ],
+
+            "outcomes": [
+                render_multi_source_outcomes(record, engagement_id)
+                for record, engagement_id in zip(records, engagement_ids)
+            ],
+        },
+
+        "citations": [
+            citation
+            for record, engagement_id in zip(records, engagement_ids)
+            for citation in render_multi_source_citations(record, engagement_id)
+        ],
+
+        "client_named": may_be,
+    }
+
+    print(
+        f"[generator] Multi-source case study generated for records {engagement_ids}",
+        file=sys.stderr,
+    )
+
+    print(f"[generator] Case study details: {tcs}", file=sys.stderr)
+
+    save_path = save_case_study_to_pdf_multi_source(tcs, ",".join(tcs["engagement_ids"]))
+    print(f"[generator] Case study saved to: {save_path}", file=sys.stderr)
+
+    return tcs
+
+
+
+
+
+
+
+
 
 def generate(record):
     """
