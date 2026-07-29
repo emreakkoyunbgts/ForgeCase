@@ -72,6 +72,227 @@ def build_engagement_index(embeddings):
     index.add(embeddings)
     return index
 
+def tokenize(text):
+    """
+    Convert text into normalized terms for BM25 keyword retrieval.
+    """
+    return [
+        token.casefold()
+        for token in TOKEN_PATTERN.findall(text)
+    ]
+
+
+def bm25_scores(query, corpus, k1=1.5, b=0.75):
+    """
+    Calculate one BM25 keyword-relevance score per engagement.
+
+    BM25 rewards records containing important query terms while accounting
+    for document length and how rare each term is across the corpus.
+    """
+    documents = [
+        tokenize(searchable_text(record))
+        for record in corpus
+    ]
+
+    document_count = len(documents)
+
+    if document_count == 0:
+        return np.array([], dtype="float32")
+
+    average_document_length = (
+        sum(len(document) for document in documents)
+        / document_count
+    )
+
+    if average_document_length == 0:
+        average_document_length = 1.0
+
+    document_frequencies = Counter()
+
+    for document in documents:
+        document_frequencies.update(set(document))
+
+    query_terms = set(tokenize(query))
+
+    scores = np.zeros(
+        document_count,
+        dtype="float32",
+    )
+
+    for document_index, document in enumerate(documents):
+        term_frequencies = Counter(document)
+        document_length = len(document)
+
+        for term in query_terms:
+            frequency = term_frequencies.get(term, 0)
+
+            if frequency == 0:
+                continue
+
+            documents_with_term = document_frequencies[term]
+
+            inverse_document_frequency = math.log(
+                1
+                + (
+                    document_count
+                    - documents_with_term
+                    + 0.5
+                )
+                / (
+                    documents_with_term
+                    + 0.5
+                )
+            )
+
+            length_normalization = (
+                1
+                - b
+                + b
+                * document_length
+                / average_document_length
+            )
+
+            denominator = (
+                frequency
+                + k1 * length_normalization
+            )
+
+            scores[document_index] += (
+                inverse_document_frequency
+                * frequency
+                * (k1 + 1)
+                / denominator
+            )
+
+    return scores
+
+
+def normalize_scores(scores):
+    """
+    Scale an array of scores to the range 0–1.
+
+    Dense cosine similarity and BM25 use different numerical scales, so
+    normalization is required before combining them.
+    """
+    scores = np.asarray(
+        scores,
+        dtype="float32",
+    )
+
+    if scores.size == 0:
+        return scores
+
+    minimum = float(scores.min())
+    maximum = float(scores.max())
+
+    if maximum - minimum < 1e-8:
+        return np.zeros_like(scores)
+
+    return (
+        scores - minimum
+    ) / (
+        maximum - minimum
+    )
+
+
+def all_dense_scores(
+    index,
+    query_embedding,
+    corpus_size,
+):
+    """
+    Return the FAISS dense score for every record in corpus order.
+    """
+    scores, indices = index.search(
+        query_embedding,
+        corpus_size,
+    )
+
+    ordered_scores = np.zeros(
+        corpus_size,
+        dtype="float32",
+    )
+
+    for score, index_position in zip(
+        scores[0],
+        indices[0],
+    ):
+        ordered_scores[int(index_position)] = float(score)
+
+    return ordered_scores
+
+
+def rerank_candidates(
+    dense_scores,
+    keyword_scores,
+    top_k,
+    dense_weight=0.65,
+):
+    """
+    Combine dense and BM25 candidates and rerank them.
+
+    The initial weight gives semantic retrieval 65% of the final score and
+    keyword retrieval 35%. These values are starting parameters and should
+    later be evaluated against labelled queries.
+    """
+    if not 0.0 <= dense_weight <= 1.0:
+        die("dense_weight must be between 0 and 1")
+
+    corpus_size = len(dense_scores)
+
+    if corpus_size == 0:
+        return [], np.array([], dtype="float32")
+
+    candidate_count = min(
+        corpus_size,
+        max(top_k * 3, 6),
+    )
+
+    dense_candidates = np.argsort(
+        dense_scores
+    )[::-1][:candidate_count]
+
+    keyword_candidates = np.argsort(
+        keyword_scores
+    )[::-1][:candidate_count]
+
+    # dict.fromkeys removes duplicates while preserving order.
+    candidate_indices = list(
+        dict.fromkeys([
+            *map(int, dense_candidates),
+            *map(int, keyword_candidates),
+        ])
+    )
+
+    normalized_dense = normalize_scores(
+        dense_scores
+    )
+
+    normalized_keyword = normalize_scores(
+        keyword_scores
+    )
+
+    keyword_weight = 1.0 - dense_weight
+
+    combined_scores = (
+        dense_weight * normalized_dense
+        + keyword_weight * normalized_keyword
+    )
+
+    ranked_indices = sorted(
+        candidate_indices,
+        key=lambda index: (
+            float(combined_scores[index]),
+            float(dense_scores[index]),
+        ),
+        reverse=True,
+    )
+
+    return (
+        ranked_indices[:top_k],
+        combined_scores,
+    )
+
 def explanation_candidates(record):
     """
     Return public, structured fields that can explain why a record matched.
@@ -315,14 +536,20 @@ def build_capability_statement(
         "evidence": evidence,
     }
 
-def search(query, corpus, top_k=3):
+def search(
+    query,
+    corpus,
+    top_k=3,
+    strategy="hybrid",
+    dense_weight=0.65,
+):
     """
     Return the top_k engagements most relevant to the query.
 
     L1:
         - embed each engagement record
         - embed the RFP query
-        - use FAISS to find nearest neighbours
+        - use FAISS for dense semantic retrieval
 
     L2:
         - explain each result using structured fields from the record
@@ -330,6 +557,14 @@ def search(query, corpus, top_k=3):
     L3:
         - build a grounded capability statement from the retrieved records
         - use only facts contained in those records
+
+    CF-71:
+        - calculate BM25 keyword-relevance scores
+        - combine dense and keyword candidates
+        - rerank candidates using both retrieval signals
+
+    strategy="dense" preserves the original dense-only baseline.
+    strategy="hybrid" uses dense retrieval plus BM25 reranking.
     """
     if not query.strip():
         die("RFP text is empty")
@@ -337,27 +572,81 @@ def search(query, corpus, top_k=3):
     if top_k <= 0:
         die("--top must be greater than 0")
 
+    if strategy not in {"dense", "hybrid"}:
+        die("strategy must be 'dense' or 'hybrid'")
+
+    if not 0.0 <= dense_weight <= 1.0:
+        die("dense_weight must be between 0 and 1")
+
     if not corpus:
         return []
 
-    print("[librarian] embedding engagement records", file=sys.stderr)
+    print(
+        "[librarian] embedding engagement records",
+        file=sys.stderr,
+    )
 
     model = load_embedding_model()
 
-    record_embeddings = embed_engagement_records(corpus, model)
-    index = build_engagement_index(record_embeddings)
+    record_embeddings = embed_engagement_records(
+        corpus,
+        model,
+    )
 
-    query_embedding = embed_texts(model, [query])
+    index = build_engagement_index(
+        record_embeddings
+    )
 
-    k = min(top_k, len(corpus))
-    scores, indices = index.search(query_embedding, k)
+    query_embedding = embed_texts(
+        model,
+        [query],
+    )
+
+    k = min(
+        top_k,
+        len(corpus),
+    )
+
+    dense_scores = all_dense_scores(
+        index,
+        query_embedding,
+        len(corpus),
+    )
+
+    if strategy == "dense":
+        ranked_indices = list(
+            map(
+                int,
+                np.argsort(dense_scores)[::-1][:k],
+            )
+        )
+
+        final_scores = dense_scores
+
+    else:
+        keyword_scores = bm25_scores(
+            query,
+            corpus,
+        )
+
+        ranked_indices, final_scores = rerank_candidates(
+            dense_scores,
+            keyword_scores,
+            top_k=k,
+            dense_weight=dense_weight,
+        )
 
     matches = []
-    for score, idx in zip(scores[0], indices[0]):
-        record = corpus[int(idx)]
+
+    for index_position in ranked_indices:
+        record = corpus[int(index_position)]
+
         matches.append({
             "engagement_id": record["id"],
-            "score": round(float(score), 4),
+            "score": round(
+                float(final_scores[index_position]),
+                4,
+            ),
             "why": explain_match(
                 query_embedding,
                 record,
@@ -371,6 +660,11 @@ def main():
     parser = argparse.ArgumentParser(description="RFP -> matching engagements")
     parser.add_argument("rfp", help="path to an RFP text file")
     parser.add_argument("--top", type=int, default=3)
+    parser.add_argument("--strategy", choices=["dense", "hybrid"], default="hybrid",help=(
+        "retrieval strategy: dense baseline "
+        "or dense + BM25 hybrid"
+        ),
+    )
     args = parser.parse_args()
 
     if args.top <= 0:
@@ -384,7 +678,7 @@ def main():
 
     corpus = load_corpus()
 
-    matches = search(query, corpus, args.top)
+    matches = search(query, corpus, top_k=args.top, strategy=args.strategy)
     capability_statement = build_capability_statement(matches, corpus)
 
     output = {
