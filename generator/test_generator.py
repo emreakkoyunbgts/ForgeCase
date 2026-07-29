@@ -1,6 +1,11 @@
 """Tests for the Generator. The second one is the important one."""
+import asyncio
+
+import pytest
+
 from common.contract import load_seed, load_corpus
-from generator.generator import generate, get_five_sections_with_llm, generate_multi_source, generate_single_stream
+from generator.generator import generate, get_five_sections_with_llm, generate_multi_source, generate_single_stream, \
+    get_llm_punchy, get_llm_concise
 import re , json
 import time
 
@@ -178,3 +183,43 @@ def test_multi_source_generate_list_with_eng13():
     tcs=generate_multi_source(records)
     for section in ["context", "challenge", "approach", "technology", "outcomes"]:
         assert section in tcs["sections"]
+
+
+def test_punchy_llm_output():
+
+    start_time = time.perf_counter()
+    mcs=generate_multi_source([load_seed("eng-03"), load_seed("eng-12")])
+    llm_punchy=get_llm_punchy(mcs)
+
+    invented=ungrounded_numbers(json.dumps(llm_punchy, ensure_ascii=False),
+                                [load_seed("eng-03"), load_seed("eng-12")])
+
+
+
+    end_time= time.perf_counter()
+    elapsed_time = end_time - start_time
+    print(f"Execution time: {elapsed_time:.2f} seconds")
+    print("llm_punchy:", llm_punchy)
+    assert elapsed_time < 30, (
+        f"LLM generation took too long: {elapsed_time:.2f} seconds"
+    )
+    assert invented==set() , f"Invented numbers: {invented}"
+
+def test_concise_llm_output():
+    start_time = time.perf_counter()
+    mcs = generate_multi_source([load_seed("eng-03"), load_seed("eng-12")])
+    llm_concise = get_llm_concise(mcs)
+
+    invented = ungrounded_numbers(json.dumps(llm_concise, ensure_ascii=False),
+                                  [load_seed("eng-03"), load_seed("eng-12")])
+
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    print(f"Execution time: {elapsed_time:.2f} seconds")
+    print("llm_punchy:", llm_concise)
+    assert elapsed_time < 30, (
+        f"LLM generation took too long: {elapsed_time:.2f} seconds"
+    )
+    assert invented == set(), f"Invented numbers: {invented}"
+
+

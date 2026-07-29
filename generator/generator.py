@@ -8,11 +8,14 @@ Engagement Record -> grounded case study.
 See the Project Specification, sections 3, 4.1 and 7.
 """
 import argparse
+import asyncio
 import json
 import sys
 
 import textwrap
 import os
+import time
+
 import matplotlib
 matplotlib.use('Agg')  # Arayüz/Pencere açılmasını engeller, tamamen sessiz çalışır
 
@@ -51,7 +54,38 @@ Keep it factual and professional. No marketing language.
 
 """
 
+SYSTEM_CONCISE = """You write case studies for BGTS, a software consultancy that
+serves banks.
 
+""" + GROUNDING_RULES + """
+
+Write five sections: context, challenge, approach, technology, outcomes.
+
+Tone:
+- Concise and direct.
+- Use short paragraphs and straightforward wording.
+- Prioritize clarity over detail.
+- Keep every sentence information-dense.
+
+The requested tone must never override the grounding rules.
+"""
+
+SYSTEM_PUNCHY = """You write case studies for BGTS, a software consultancy that
+serves banks.
+
+""" + GROUNDING_RULES + """
+
+Write five sections: context, challenge, approach, technology, outcomes.
+
+Tone:
+- Crisp and engaging while remaining professional.
+- Vary sentence structure to improve readability.
+- Prefer active voice.
+- Make the narrative flow naturally without adding facts.
+- Never exaggerate impact or use promotional language.
+
+The requested tone must never override the grounding rules.
+"""
 
 
 
@@ -518,6 +552,7 @@ def generate_two_source(record1 , record2):
 
 
 def generate_multi_source(records):
+    start_time = time.perf_counter()
     if not records:
         logger.error("records list cannot be empty")
         raise ValueError("records list cannot be empty")
@@ -609,6 +644,8 @@ def generate_multi_source(records):
 
     save_path = save_case_study_to_pdf_multi_source(tcs, ",".join(tcs["engagement_ids"]))
     print(f"[generator] Case study saved to: {save_path}", file=sys.stderr)
+    end_time=time.perf_counter()
+    logger.info(f"Multi-source case study generation time: {end_time-start_time:.2f} seconds")
 
     return tcs
 
@@ -661,7 +698,7 @@ def generate(record):
     return cs
     # ----------------------------------------------------------------------
 
-def get_five_sections_with_llm(record):
+async def get_five_sections_with_llm(record):
     """
     Use the LLM to generate the five sections of a case study.
 
@@ -672,19 +709,58 @@ def get_five_sections_with_llm(record):
     The LLM must return JSON with five sections: context, challenge, approach,
     technology, outcomes. Each section must be grounded in the record.
     """
+    start_time=time.perf_counter()
     user_prompt = f"Record:\n{json.dumps(record, indent=2 , ensure_ascii=False)}\n\n"
     user_prompt += "Analyze the given record."
 
     response = ask_for_json(SYSTEM, user_prompt)
     logger.info(f"LLM response: {response}")
+    pdf_name = ",".join(record["engagement_ids"])
+    path = await asyncio.to_thread(save_llm_output_to_pdf, response, pdf_name)
+    logger.info(f"LLM output saved to: {path}")
+    end_time=time.perf_counter()
+    logger.info(f"LLM processing time: {end_time-start_time:.2f} seconds")
     return response
+
+
+def get_llm_punchy(mcs: dict):
+    start_time=time.perf_counter()
+    user_prompt = f"Multi-source case study:\n{json.dumps(mcs, indent=2, ensure_ascii=False)}\n\n"
+    user_prompt += "Analyze the given multi-source case study and provide a punchy summary."
+
+    response =ask_for_json(SYSTEM_PUNCHY, user_prompt)
+    logger.info(f"LLM punchy response: {response}")
+    pdf_name = ",".join(mcs["engagement_ids"]) + "_punchy"
+    path = save_llm_output_to_pdf(response, pdf_name)
+    logger.info(f"LLM punchy output saved to: {path}")
+    end_time=time.perf_counter()
+    logger.info(f"LLM punchy processing time: {end_time-start_time:.2f} seconds")
+
+    return response
+
+
+def get_llm_concise(mcs: dict):
+    start_time=time.perf_counter()
+    user_prompt = f"Multi-source case study:\n{json.dumps(mcs, indent=2, ensure_ascii=False)}\n\n"
+    user_prompt += "Analyze the given multi-source case study and provide a concise summary."
+
+    response = ask_for_json(SYSTEM_CONCISE, user_prompt)
+    logger.info(f"LLM concise response: {response}")
+    pdf_name=",".join(mcs["engagement_ids"])+"_concise"
+    path=save_llm_output_to_pdf(response, pdf_name)
+    logger.info(f"LLM concise output saved to: {path}")
+    end_time=time.perf_counter()
+    logger.info(f"LLM concise processing time: {end_time-start_time:.2f} seconds")
+
+    return response
+
 
 def generate_single_stream(records):
 
     mcs=generate_multi_source(records)
     llm_out=get_five_sections_with_llm(mcs)
-    path=save_llm_output_to_pdf(llm_out, ",".join(mcs["engagement_ids"]))
-    logger.info(f"LLM output saved to: {path}")
+    #path=save_llm_output_to_pdf(llm_out, ",".join(mcs["engagement_ids"]))
+    #logger.info(f"LLM output saved to: {path}")
     return llm_out
 
 
