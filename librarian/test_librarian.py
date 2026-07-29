@@ -1,6 +1,8 @@
 """Tests for the Librarian."""
 from common.contract import load_corpus
-from librarian.librarian import build_capability_statement, search
+from librarian.librarian import build_capability_statement, search, bm25_scores
+import numpy as np
+
 
 
 def load_rfp(filename):
@@ -150,3 +152,45 @@ def test_capability_statement_handles_no_matches():
         "text": "No relevant engagement evidence was found.",
         "evidence": [],
     }
+
+def test_dense_and_hybrid_strategies_return_matches():
+    query = load_rfp(
+        "rfp_01_realtime_payments.txt"
+    )
+    corpus = load_corpus()
+
+    dense_matches = search(
+        query,
+        corpus,
+        top_k=3,
+        strategy="dense",
+    )
+
+    hybrid_matches = search(
+        query,
+        corpus,
+        top_k=3,
+        strategy="hybrid",
+    )
+
+    assert len(dense_matches) == 3
+    assert len(hybrid_matches) == 3
+
+    assert dense_matches[0]["engagement_id"]
+    assert hybrid_matches[0]["engagement_id"]
+
+def test_bm25_rewards_payments_keywords():
+    corpus = load_corpus()
+
+    scores = bm25_scores(
+        "GCC Kafka core banking payments",
+        corpus,
+    )
+
+    ranked_indices = np.argsort(scores)[::-1]
+    ranked_ids = [
+        corpus[int(index)]["id"]
+        for index in ranked_indices[:3]
+    ]
+
+    assert "eng-01" in ranked_ids
