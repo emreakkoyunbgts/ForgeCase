@@ -7,7 +7,10 @@ RFP -> the engagements that best prove we can do the job.
 """
 import argparse
 import json
+import math
+import re
 import sys
+from collections import Counter
 
 from common.contract import load_corpus
 from common.errors import die
@@ -25,6 +28,10 @@ def searchable_text(record):
     ])
 
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+TOKEN_PATTERN = re.compile(
+    r"[a-z0-9][a-z0-9+.#/-]*",
+    re.IGNORECASE,
+)
 
 def load_embedding_model():
     """
