@@ -34,14 +34,16 @@ class ExtractionError(Exception):
 
 
 def _read_text_layer(pdf_path):
-    """Pull whatever text lives in the PDF's text layer. Returns a string."""
-    import pdfplumber
+    """
+    Pull the text out of the PDF's text layer, in reading order.
 
-    parts = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            parts.append(page.extract_text() or "")
-    return "\n".join(parts)
+    This goes through the layout module rather than straight to
+    page.extract_text(), because a plain top-to-bottom read of a two-column
+    page interleaves the columns into nonsense. See reader/layout.py.
+    """
+    from reader import layout
+
+    return layout.analyse(pdf_path)["text"]
 
 
 def _locate_tesseract():
@@ -162,7 +164,26 @@ def main():
     parser.add_argument("--text-only", action="store_true",
                         help="print the extracted text and stop (Reader L1); "
                              "do not build a record")
+    parser.add_argument("--layout", action="store_true",
+                        help="print the layout analysis as JSON — columns, "
+                             "tables, labelled fields and sections, each with "
+                             "the region of the page it came from")
     args = parser.parse_args()
+
+    if args.layout:
+        try:
+            from reader import layout
+            analysis = layout.analyse(args.document)
+        except ExtractionError as e:
+            die(str(e), BAD_INPUT)
+        except Exception as e:
+            die(f"could not read {args.document}: {e}", BAD_INPUT)
+        if not analysis["text"].strip():
+            die(f"{args.document}: no text found — is it a scan? "
+                f"layout analysis needs a text layer", BAD_INPUT)
+        json.dump(analysis, sys.stdout, indent=2, ensure_ascii=False)
+        print()
+        return
 
     try:
         text = extract_text(args.document)
