@@ -253,6 +253,37 @@ def test_prose_is_not_mistaken_for_a_table():
     assert doc["tables"] == [], f"found phantom tables: {doc['tables']}"
 
 
+def test_reordering_never_loses_a_word():
+    """
+    Reading order rearranges words; it must never drop one.
+
+    Silently losing a line is worse than mis-ordering it — the output still
+    looks plausible, so nobody notices a fact went missing. Every word the PDF
+    contains has to survive into the text, across the real documents and all
+    three layout fixtures.
+    """
+    import collections
+
+    import pdfplumber
+
+    paths = [os.path.join(DOCS, f"eng-{n:02d}_closeout.pdf") for n in range(1, 13)]
+    paths += [os.path.join(FIXTURES, name) for name in
+              ("two_column_closeout.pdf", "ruled_table_closeout.pdf",
+               "unruled_table_closeout.pdf")]
+
+    for path in paths:
+        with pdfplumber.open(path) as pdf:
+            in_pdf = collections.Counter(
+                word["text"] for page in pdf.pages
+                for word in page.extract_words())
+        in_output = collections.Counter(layout.analyse(path)["text"].split())
+
+        missing = in_pdf - in_output
+        assert not missing, \
+            f"{os.path.basename(path)} lost {sum(missing.values())} word(s): " \
+            f"{dict(list(missing.items())[:5])}"
+
+
 # --- layout L4 (CF-49): regions and sections ---------------------------------
 
 def test_every_field_carries_the_region_it_came_from():
