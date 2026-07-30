@@ -37,6 +37,12 @@ back to the default install location (`C:\Program Files\Tesseract-OCR`)
 automatically — or set `TESSERACT_CMD` / `POPPLER_PATH` to point at them
 explicitly. On Linux: `apt-get install tesseract-ocr poppler-utils`.
 
+The OCR test has failed about three times in fifty local runs and has never
+been reproduced deliberately (28 targeted attempts), so the cause is still
+unknown — most likely the OCR temp files being held briefly by something else
+on Windows. If you hit it, re-run; if it persists, the error message names the
+underlying failure, and that message is worth reporting.
+
 ## Your levels
 - **L1** — Get text out of a normal PDF (`pdfplumber`). Detect a scan (almost no
   text comes out) and OCR it instead (`pytesseract`).
