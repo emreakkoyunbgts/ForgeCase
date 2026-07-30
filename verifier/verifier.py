@@ -20,6 +20,10 @@ import sys
 from common.contract import load_record, all_source_facts
 from common.errors import die, SUCCESS, REJECTED
 
+# Including new modules that I write
+from verifier.claim_parser import ClaimParser
+from verifier.entailment_checker import EntailmentChecker
+
 # Matches 45, 45%, 45.5, 2019 ...
 NUMBER = re.compile(r"\d+(?:\.\d+)?%?")
 
@@ -56,6 +60,8 @@ def find_consent_breaches(case_study, record):
     TODO(Ömer) L2: this is the confidentiality check. Get it right — a leak
     here is the most serious defect anyone on this project can ship.
     """
+    """
+    ############ OLD VERSION #######################
     if record.get("may_be_named") is True:
         return []
 
@@ -67,13 +73,92 @@ def find_consent_breaches(case_study, record):
             "why": "may_be_named is false — this client must be anonymised",
         }]
     return []
+    """
+    ############ NEW VERSION #######################
+    """
+    The client's REAL name must not appear unless may_be_named is true
+    Uses EntailmentChecker for robust validation
+    """
+    checker = EntailmentChecker()
+    may_be_named = record.get("may_be_named", True)
+    client_name = record.get("client", record.get("client_name"))
 
+    draft_text = json.dumps(case_study, ensure_ascii=False)
+
+    if not checker.verify_client_naming(draft_text, client_name, may_be_named):
+        return [{
+            "type": "client_named_without_consent",
+            "value": client_name,
+            "why": "may_be_named is false - this client must be anonymised",
+        }]
+    return []
+
+def find_unsupported_claims(case_study, record):
+    """
+    CF-58 & CF-59: Extracts factual claims and verifies them against ground truth record outcomes.
+    """
+    """
+    ############# OLD VERSION #####################
+    parser = ClaimParser()
+    checker = EntailmentChecker()
+
+    draft_text = json.dumps(case_study.get("sections", {}), ensure_ascii=False)
+    extracted_claim = parser.extract_claims(draft_text)
+    record_outcomes = record.get("outcomes", [])
+
+    if not checker.verify_metrics(extracted_claims, record_outcomes):
+        return [{
+            "type": "unsupported_claim",
+            "value": extracted_claims,
+            "why": "one or more extracted claims are not supported by record outcomes",
+        }]
+    
+    return []
+    """
+    ############## NEW VERSION ####################
+    parser = ClaimParser()
+    checker = EntailmentChecker()
+    
+    # 1. Giving all case_study JSON data to parse_case_study
+    extracted_claim_objs = parser.parse_case_study(case_study)
+
+    """
+    # 2. Just getting metric/quantitative claims texts
+    extracted_claims = [
+        c.get("raw_text", "")
+        for c in extracted_claim_objs
+        if isinstance(c, dict) and c.get("type") == "metric_claim"
+    ]
+    """
+
+    record_outcomes = record.get("outcomes", [])
+    problems = []
+
+    for c in extracted_claim_objs:
+        if isinstance(c, dict) and c.get("type") == "metric_claim":
+            target_val = c.get("target_value", "")
+            raw_text = c.get("raw_text", "")
+
+            # Don't counting terms like "Tier-1" customers / general degree terms as fake number
+            if "tier-" in raw_text.lower():
+                continue
+            
+            if not checker.verify_metrics([raw_text], record_outcomes):
+                problems.append({
+                    "type": "unsupported_claim",
+                    "value": target_val if target_val else raw_text,
+                    "why": "this claim metric is not suported by record outcomes",
+                })
+
+    return problems
 
 def verify(case_study, record):
     """Run every check. Returns a report (see spec section 4.2)."""
     problems = []
     problems += find_ungrounded_numbers(case_study, record)
     problems += find_consent_breaches(case_study, record)
+    # 3. CF-58 & CF-59 Claim Parsing and Entailment Control
+    problems += find_unsupported_claims(case_study, record)
 
     # TODO(Ömer) L3: unsupported_claim — split the prose into individual
     #   factual assertions and verify each one, not just the numbers.

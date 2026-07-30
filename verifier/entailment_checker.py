@@ -1,8 +1,86 @@
+############## NEW VERSION ##################
+
 """
 CF-59: Entailment Checker Module
-Validates claims extracted from drafts against ground-truth records
+Validates claims extracted from drafts against ground-truth records.
 """
+import re
 
+class EntailmentChecker:
+    def __init__(self):
+        pass
+
+    def extract_numbers(self, text):
+        # Extracts numbers and percentages (ex: '45%', '45', '90')
+        if not text or not isinstance(text, str):
+            return set()
+        return set(re.findall(r'\b\d+(?:%\b|\b)', text.lower()))
+
+    def verify_metrics(self, extracted_claims, record_outcomes):
+        """
+        Compares the metric claims with the outcomes in the source record
+        Looks for the numerical values and words matchings and makes a verification
+        """
+        if not extracted_claims:
+            return True
+
+        if not record_outcomes or not isinstance(record_outcomes, list):
+            record_outcomes = []
+
+        outcome_texts = [o.get("metric", "").lower() for o in record_outcomes if isinstance(o, dict) and o.get("metric")]
+        all_outcome_numbers = set()
+        for ot in outcome_texts:
+            all_outcome_numbers.update(self.extract_numbers(ot))
+
+        for claim in extracted_claims:
+            if not claim or not isinstance(claim, str):
+                continue
+                
+            claim_lower = claim.lower()
+
+            # 1. Is there a one-to-one or sub text matching?
+            if any(claim_lower in outcome for outcome in outcome_texts):
+                continue
+
+            # 2. Flexible Matching (Number Control)
+            claim_numbers = self.extract_numbers(claim_lower)
+            if claim_numbers:
+                # Are all the numbers in metric is inside the numbers in the source data?
+                if claim_numbers.issubset(all_outcome_numbers):
+                    continue # Numbers are matching, accepted!
+                else:
+                    return False # There is fake a number/percentage that is not in the record!
+
+            # If there no numbers are included or no one-to-one matching suspicious metric
+            return False
+
+        return True
+    
+    def verify_client_naming(self, draft_text, record_client, may_be_named):
+        """
+        Checks the customer privacy rule
+        If 'may_be_named' is False and the customer name is inside the draft returns False (breach)
+        """
+        if not record_client or not draft_text:
+            return True
+
+        if may_be_named:
+            return True
+
+        client_clean = str(record_client).strip().lower()
+        draft_clean = str(draft_text).lower()
+
+        if client_clean in draft_clean:
+            return False
+        
+        return True
+
+if __name__ == "__main__":
+    checker = EntailmentChecker()
+    print("✅ EntailmentChecker class is updated!")
+
+"""
+############### OLD VERSION ###################
 class EntailmentChecker:
     def __init__(self):
         pass
@@ -39,3 +117,5 @@ class EntailmentChecker:
 if __name__ == "__main__":
     checker = EntailmentChecker()
     print("✅ Entailment Checker class loaded successfuly and object created!")
+
+"""
