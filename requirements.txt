@@ -25,6 +25,12 @@ sentence-transformers>=5.6.0
 # analyst (Elif)
 pandas>=2.2.0
 matplotlib>=3.9.0
+seaborn>=0.12.0
+scipy>=1.10.0
+scikit-learn>=1.2.0
+kmodes>=0.12.2
+pytest>=7.3.0
+streamlit>=1.25.0
 
 # console (Serhat)
 streamlit>=1.39.0
