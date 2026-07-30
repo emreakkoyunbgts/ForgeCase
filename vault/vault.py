@@ -10,6 +10,7 @@ Stores Engagement Records and serves them over HTTP.
 See the Project Specification, sections 3 and 5.
 """
 import argparse
+import hashlib
 import json
 import sqlite3
 import sys
@@ -19,6 +20,17 @@ from common.contract import REQUIRED_FIELDS, load_record, load_corpus
 from common.errors import die
 
 DB_PATH = "vault/engagements.db"
+
+
+def etag_for(record):
+    """
+    Content hash of a record — used as an ETag (CF-62).
+
+    Two identical records always get the same tag; any field change
+    produces a different tag. That is how we detect concurrent edits.
+    """
+    payload = json.dumps(record, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def init_db():
@@ -155,51 +167,213 @@ def get(engagement_id):
     return _row_to_record(conn, row) if row else None
 
 
-def list_all():
-    """All stored records, ordered by id."""
+def exists(engagement_id):
+    """True if a record with this id is already stored."""
+    conn = init_db()
+    row = conn.execute(
+        "SELECT 1 FROM engagements WHERE id = ?", (engagement_id,)
+    ).fetchone()
+    return row is not None
+
+
+def delete(engagement_id):
+    """Delete one record. Returns True if something was deleted."""
+    conn = init_db()
+    with conn:
+        # CASCADE removes child outcomes / technologies rows too.
+        cur = conn.execute(
+            "DELETE FROM engagements WHERE id = ?", (engagement_id,)
+        )
+    return cur.rowcount > 0
+
+
+def list_all(domain=None, region=None, limit=None, offset=0):
+    """
+    Stored records, optionally filtered and paginated (CF-61).
+
+    Returns (items, total) where total is the count *before* limit/offset,
+    so callers can build pagination UIs.
+    """
     conn = init_db()
     conn.row_factory = sqlite3.Row
-    rows = conn.execute("SELECT * FROM engagements ORDER BY id").fetchall()
-    return [_row_to_record(conn, row) for row in rows]
+    where = []
+    params = []
+    if domain is not None:
+        where.append("domain = ?")
+        params.append(domain)
+    if region is not None:
+        where.append("region = ?")
+        params.append(region)
+    clause = (" WHERE " + " AND ".join(where)) if where else ""
+
+    total = conn.execute(
+        f"SELECT COUNT(*) FROM engagements{clause}", params
+    ).fetchone()[0]
+
+    sql = f"SELECT * FROM engagements{clause} ORDER BY id"
+    if limit is not None:
+        sql += " LIMIT ? OFFSET ?"
+        params = list(params) + [limit, offset]
+    rows = conn.execute(sql, params).fetchall()
+    return [_row_to_record(conn, row) for row in rows], total
+
+
+def _require_fields(record):
+    missing = [f for f in REQUIRED_FIELDS if f not in record]
+    if missing:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=422,
+            detail=f"missing required field(s): {', '.join(missing)}",
+        )
+
+
+def _check_if_match(record, if_match):
+    """
+    ETag concurrency gate (CF-62).
+
+    - no If-Match header  -> 428 Precondition Required
+    - wrong ETag          -> 412 Precondition Failed
+    - matching ETag       -> ok, proceed
+    """
+    from fastapi import HTTPException
+
+    current = etag_for(record)
+    if if_match is None:
+        raise HTTPException(
+            status_code=428,
+            detail="If-Match header required for this operation",
+        )
+    # Clients may send the tag quoted: "abc..." — strip quotes.
+    offered = if_match.strip().strip('"')
+    if offered != current:
+        raise HTTPException(
+            status_code=412,
+            detail="ETag mismatch — record was changed by someone else",
+        )
 
 
 def create_app():
     """
-    The REST API (L2). Built as a factory so tests can create the app
-    without starting a real server.
+    The REST API (L2 + L4).
 
-        POST /engagements        -> save a record
-        GET  /engagements/{id}   -> fetch one (404 if missing)
-        GET  /engagements        -> list them all
+        POST   /engagements           -> create (201 / 409 / 422)
+        GET    /engagements           -> list (+ filter / pagination)
+        GET    /engagements/{id}      -> fetch one (200 + ETag / 404)
+        PUT    /engagements/{id}      -> replace (200 / 404 / 412 / 428)
+        DELETE /engagements/{id}      -> remove (204 / 404 / 412 / 428)
+
+    OpenAPI docs: http://127.0.0.1:8000/docs
     """
-    from fastapi import FastAPI, HTTPException
+    from typing import Optional
 
-    app = FastAPI(title="Vault — Engagement Record store")
+    from fastapi import FastAPI, Header, HTTPException, Query, Response
+
+    app = FastAPI(
+        title="Vault — Engagement Record store",
+        description=(
+            "Stores Engagement Records and serves them over HTTP. "
+            "L4 adds full REST verbs, correct status codes, pagination, "
+            "and ETag concurrency control."
+        ),
+        version="0.4.0",
+    )
 
     @app.post("/engagements", status_code=201)
-    def create_engagement(record: dict):
-        missing = [f for f in REQUIRED_FIELDS if f not in record]
-        if missing:
+    def create_engagement(record: dict, response: Response):
+        """Create a new record. Fails with 409 if the id already exists."""
+        _require_fields(record)
+        if exists(record["id"]):
             raise HTTPException(
-                status_code=422,
-                detail=f"missing required field(s): {', '.join(missing)}",
+                status_code=409,
+                detail=f"engagement '{record['id']}' already exists "
+                       f"— use PUT to update",
             )
         store(record)
-        return {"stored": record["id"]}
+        tag = etag_for(record)
+        response.headers["ETag"] = f'"{tag}"'
+        response.headers["Location"] = f"/engagements/{record['id']}"
+        return record
 
     @app.get("/engagements")
-    def list_engagements():
-        return list_all()
+    def list_engagements(
+        domain: Optional[str] = Query(None, description="Filter by domain"),
+        region: Optional[str] = Query(
+            None, description="Filter by region (UK/DE/NL/TR/GCC)"
+        ),
+        limit: Optional[int] = Query(
+            None, ge=1, description="Page size"
+        ),
+        offset: int = Query(0, ge=0, description="Page offset"),
+    ):
+        """List records. Optional domain/region filters and pagination."""
+        items, total = list_all(
+            domain=domain, region=region, limit=limit, offset=offset
+        )
+        return {
+            "items": items,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
 
     @app.get("/engagements/{engagement_id}")
-    def get_engagement(engagement_id: str):
+    def get_engagement(engagement_id: str, response: Response):
+        """Fetch one record. Returns ETag for later concurrent updates."""
         record = get(engagement_id)
         if record is None:
             raise HTTPException(
                 status_code=404,
                 detail=f"no engagement with id '{engagement_id}'",
             )
+        tag = etag_for(record)
+        response.headers["ETag"] = f'"{tag}"'
         return record
+
+    @app.put("/engagements/{engagement_id}")
+    def put_engagement(
+        engagement_id: str,
+        record: dict,
+        response: Response,
+        if_match: Optional[str] = Header(None, alias="If-Match"),
+    ):
+        """
+        Replace an existing record. Requires If-Match with the current ETag
+        so two writers cannot silently overwrite each other.
+        """
+        _require_fields(record)
+        if record.get("id") != engagement_id:
+            raise HTTPException(
+                status_code=422,
+                detail="body id must match the path id",
+            )
+        current = get(engagement_id)
+        if current is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"no engagement with id '{engagement_id}'",
+            )
+        _check_if_match(current, if_match)
+        store(record)
+        tag = etag_for(record)
+        response.headers["ETag"] = f'"{tag}"'
+        return record
+
+    @app.delete("/engagements/{engagement_id}", status_code=204)
+    def delete_engagement(
+        engagement_id: str,
+        if_match: Optional[str] = Header(None, alias="If-Match"),
+    ):
+        """Delete a record. Requires If-Match (same concurrency rule as PUT)."""
+        current = get(engagement_id)
+        if current is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"no engagement with id '{engagement_id}'",
+            )
+        _check_if_match(current, if_match)
+        delete(engagement_id)
+        return Response(status_code=204)
 
     return app
 
