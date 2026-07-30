@@ -16,9 +16,16 @@ from xml.sax.saxutils import escape
 
 from docx import Document
 from reportlab.lib.colors import HexColor
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+from reportlab.platypus import (
+    KeepInFrame,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 from common.contract import load_seed
 from common.errors import die
@@ -27,6 +34,12 @@ TEMPLATE = "caseforge-testdata/templates/case_study_template.docx"
 
 NAVY = HexColor("#1B2A4A")
 ORANGE = HexColor("#C45C26")
+
+PDF_LAYOUTS = (
+    "full-case-study",
+    "one-pager",
+    "single-slide",
+)
 
 
 def safe_text(value):
@@ -126,12 +139,20 @@ def render_docx(case_study, template_path, out_path):
     return out_path
 
 
-def render_pdf(case_study, out_path):
-    """Create a branded BGTS PDF from a case study."""
+def render_pdf(case_study, out_path, layout="full-case-study"):
+    """Create a branded BGTS PDF using the selected layout."""
+    if layout not in PDF_LAYOUTS:
+        raise ValueError(
+            f"unsupported PDF layout '{layout}'; "
+            f"use one of: {', '.join(PDF_LAYOUTS)}"
+        )
+
     display = prepare_display_values(case_study)
 
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    page_size = landscape(A4) if layout == "single-slide" else A4
 
     styles = getSampleStyleSheet()
     brand = ParagraphStyle(
@@ -184,6 +205,179 @@ def render_pdf(case_study, out_path):
         spaceBefore=24,
     )
 
+    if layout == "one-pager":
+        one_brand = ParagraphStyle(
+            "OneBrand",
+            parent=styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=9,
+            textColor=NAVY,
+            spaceAfter=4,
+        )
+        one_title = ParagraphStyle(
+            "OneTitle",
+            parent=styles["Heading1"],
+            fontName="Helvetica-Bold",
+            fontSize=12,
+            textColor=NAVY,
+            spaceAfter=4,
+        )
+        one_client = ParagraphStyle(
+            "OneClient",
+            parent=styles["Normal"],
+            fontName="Helvetica-Oblique",
+            fontSize=8,
+            textColor=ORANGE,
+            spaceAfter=6,
+        )
+        one_heading = ParagraphStyle(
+            "OneHeading",
+            parent=styles["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=9,
+            textColor=NAVY,
+            spaceBefore=4,
+            spaceAfter=2,
+        )
+        one_body = ParagraphStyle(
+            "OneBody",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=7,
+            leading=9,
+            spaceAfter=3,
+        )
+        one_footer = ParagraphStyle(
+            "OneFooter",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=7,
+            textColor=NAVY,
+            spaceBefore=6,
+        )
+
+        document = SimpleDocTemplate(
+            str(out_path),
+            pagesize=A4,
+            leftMargin=28,
+            rightMargin=28,
+            topMargin=24,
+            bottomMargin=24,
+        )
+        avail_width = A4[0] - 56
+        avail_height = A4[1] - 48
+        story = [
+            KeepInFrame(
+                avail_width,
+                avail_height,
+                [
+                    Paragraph(escape("BGTS INTERNATIONAL"), one_brand),
+                    Paragraph(escape(display["title"]), one_title),
+                    Paragraph(escape(display["client_type"]), one_client),
+                    Paragraph(escape("THE CHALLENGE"), one_heading),
+                    Paragraph(escape(display["challenge"]), one_body),
+                    Paragraph(escape("OUR APPROACH"), one_heading),
+                    Paragraph(escape(display["approach"]), one_body),
+                    Paragraph(escape("TECHNOLOGY"), one_heading),
+                    Paragraph(escape(display["technology"]), one_body),
+                    Paragraph(escape("OUTCOMES"), one_heading),
+                    Paragraph(escape(display["outcomes"]), one_body),
+                    Paragraph(
+                        escape("Confidential — BGTS International"),
+                        one_footer,
+                    ),
+                ],
+                mode="shrink",
+            )
+        ]
+        document.build(story)
+        return out_path
+
+    if layout == "single-slide":
+        slide_heading = ParagraphStyle(
+            "SlideHeading",
+            parent=styles["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=11,
+            textColor=NAVY,
+            spaceBefore=0,
+            spaceAfter=4,
+        )
+        slide_body = ParagraphStyle(
+            "SlideBody",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=8,
+            leading=10,
+            spaceAfter=0,
+        )
+
+        def slide_cell(heading_text, body_text):
+            return [
+                Paragraph(escape(heading_text), slide_heading),
+                Paragraph(escape(body_text), slide_body),
+            ]
+
+        header = [
+            Paragraph(escape("BGTS INTERNATIONAL"), brand),
+            Paragraph(escape(display["title"]), title),
+            Paragraph(escape(display["client_type"]), client),
+        ]
+
+        grid = Table(
+            [
+                [
+                    slide_cell("THE CHALLENGE", display["challenge"]),
+                    slide_cell("OUR APPROACH", display["approach"]),
+                ],
+                [
+                    slide_cell("TECHNOLOGY", display["technology"]),
+                    slide_cell("OUTCOMES", display["outcomes"]),
+                ],
+            ],
+            colWidths=["50%", "50%"],
+        )
+        grid.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ]
+            )
+        )
+
+        document = SimpleDocTemplate(
+            str(out_path),
+            pagesize=page_size,
+            leftMargin=36,
+            rightMargin=36,
+            topMargin=28,
+            bottomMargin=28,
+        )
+        avail_width = page_size[0] - 72
+        avail_height = page_size[1] - 56
+        story = [
+            KeepInFrame(
+                avail_width,
+                avail_height,
+                header
+                + [
+                    grid,
+                    Spacer(1, 8),
+                    Paragraph(
+                        escape("Confidential — BGTS International"),
+                        footer,
+                    ),
+                ],
+                mode="shrink",
+            )
+        ]
+        document.build(story)
+        return out_path
+
     story = [
         Paragraph(escape("BGTS INTERNATIONAL"), brand),
         Paragraph(escape(display["title"]), title),
@@ -200,17 +394,33 @@ def render_pdf(case_study, out_path):
         Paragraph(escape("Confidential — BGTS International"), footer),
     ]
 
-    document = SimpleDocTemplate(str(out_path), pagesize=A4)
+    document = SimpleDocTemplate(str(out_path), pagesize=page_size)
     document.build(story)
     return out_path
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Case study -> branded document")
+    parser = argparse.ArgumentParser(
+        description="Case study -> branded document"
+    )
     parser.add_argument("case_study")
-    parser.add_argument("--out", default="out/case_study.docx")
-    parser.add_argument("--template", default=TEMPLATE)
-    parser.add_argument("--print-json", action="store_true")
+    parser.add_argument(
+        "--out",
+        default="out/case_study.docx",
+    )
+    parser.add_argument(
+        "--template",
+        default=TEMPLATE,
+    )
+    parser.add_argument(
+        "--layout",
+        choices=PDF_LAYOUTS,
+        default="full-case-study",
+    )
+    parser.add_argument(
+        "--print-json",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     try:
@@ -227,15 +437,32 @@ def main():
 
     out_path = Path(args.out)
     suffix = out_path.suffix.lower()
+
     if suffix == ".docx":
-        written = render_docx(case_study, args.template, out_path)
+        if args.layout != "full-case-study":
+            die(
+                "runtime layout selection is available for "
+                "PDF output only"
+            )
+
+        written = render_docx(
+            case_study,
+            args.template,
+            out_path,
+        )
     elif suffix == ".pdf":
-        written = render_pdf(case_study, out_path)
+        written = render_pdf(
+            case_study,
+            out_path,
+            layout=args.layout,
+        )
     else:
-        die(f"unsupported output type '{suffix}' — use .docx or .pdf")
+        die(
+            f"unsupported output type '{suffix}' "
+            "— use .docx or .pdf"
+        )
 
     print(f"[publisher] wrote {written}", file=sys.stderr)
-
 
 if __name__ == "__main__":
     main()

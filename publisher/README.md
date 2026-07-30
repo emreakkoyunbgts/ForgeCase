@@ -61,6 +61,34 @@ python -m publisher.publisher caseforge-testdata/case_studies/eng-01_clean.json 
 python -m publisher.publisher drafts/eng-01.json --out out/eng-01.docx
 ```
 
+## Runtime PDF layouts
+
+Supported `--layout` values:
+
+- `full-case-study`
+- `one-pager`
+- `single-slide`
+
+Layout differences:
+
+- `full-case-study`: detailed portrait document; may span multiple pages
+- `one-pager`: compact single-page portrait document
+- `single-slide`: single-page landscape slide-like document
+
+Runtime layout selection is currently supported for PDF output.
+DOCX output continues to use the existing full-case-study template.
+Non-default layouts with DOCX are rejected instead of silently ignored.
+
+Same case-study input, three PDF layouts (Windows PowerShell):
+
+```powershell
+.venv\Scripts\python.exe -m publisher.publisher caseforge-testdata\case_studies\eng-01_clean.json --layout full-case-study --out out\full-case-study.pdf
+
+.venv\Scripts\python.exe -m publisher.publisher caseforge-testdata\case_studies\eng-01_clean.json --layout one-pager --out out\one-pager.pdf
+
+.venv\Scripts\python.exe -m publisher.publisher caseforge-testdata\case_studies\eng-01_clean.json --layout single-slide --out out\single-slide.pdf
+```
+
 ## Your levels
 - **L1** — Load a case study, fill the `{{PLACEHOLDERS}}` in the Word template,
   save the `.docx`.
