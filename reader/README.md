@@ -37,11 +37,26 @@ back to the default install location (`C:\Program Files\Tesseract-OCR`)
 automatically — or set `TESSERACT_CMD` / `POPPLER_PATH` to point at them
 explicitly. On Linux: `apt-get install tesseract-ocr poppler-utils`.
 
-The OCR test has failed about three times in fifty local runs and has never
-been reproduced deliberately (28 targeted attempts), so the cause is still
-unknown — most likely the OCR temp files being held briefly by something else
-on Windows. If you hit it, re-run; if it persists, the error message names the
-underlying failure, and that message is worth reporting.
+**Two Windows quirks worth knowing about.**
+
+Rendering shells out to Poppler, and that launch fails now and then even with
+Poppler installed and on PATH — `pdfinfo` and `pdftoppm` run fine by hand at
+the same moment. It surfaces as `Unable to get page count. Is poppler installed
+and in PATH?`, which reads like a broken PDF when nothing is wrong with the
+PDF. The failures cluster: a run of them after the OCR path has been exercised
+hard, then long clean stretches, which looks like the OS throttling repeated
+launches. The reader retries once, which clears the short blips. If you get a
+run of them, wait rather than debug your document.
+
+Poppler also cannot read its own data files when it is installed under a path
+containing non-ASCII characters — a Turkish name in `C:\Users\...` is enough:
+
+```
+Couldn't open 'nameToUnicode' file 'C:\Users\<c7>a<f0>r<fd> Tirelioglu\...
+```
+
+Those warnings go to stderr and OCR still works, so this is noise rather than
+breakage — but it is worth knowing before someone spends an afternoon on it.
 
 ## Your levels
 - **L1** — Get text out of a normal PDF (`pdfplumber`). Detect a scan (almost no

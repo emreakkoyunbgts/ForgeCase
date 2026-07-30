@@ -13,6 +13,7 @@ import json
 import os
 import shutil
 import sys
+import time
 
 from common.contract import load_seed
 from common.errors import die, BAD_INPUT
@@ -82,11 +83,25 @@ def _ocr(pdf_path):
         pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
     poppler_path = os.environ.get("POPPLER_PATH") or None
 
-    try:
-        images = convert_from_path(pdf_path, poppler_path=poppler_path)
-    except Exception as e:
-        # Poppler missing, or the file cannot be rendered to images.
-        raise ExtractionError(f"could not render {pdf_path} for OCR: {e}")
+    # Rendering shells out to Poppler, and on Windows that launch fails now and
+    # then even though Poppler is installed and works when run by hand. It comes
+    # back as "Unable to get page count", which reads as "your PDF is broken"
+    # when there is nothing wrong with the PDF. The failures cluster — a run of
+    # them after the OCR path has been exercised hard, then long clean stretches
+    # — so it looks like the OS throttling repeated launches rather than
+    # anything about the document. One retry clears the short blips; a longer
+    # cluster still fails, and should, because by then something really is wrong
+    # with the environment.
+    images = None
+    for attempt in (1, 2):
+        try:
+            images = convert_from_path(pdf_path, poppler_path=poppler_path)
+            break
+        except Exception as e:
+            if attempt == 1:
+                time.sleep(0.5)
+                continue
+            raise ExtractionError(f"could not render {pdf_path} for OCR: {e}")
 
     parts = []
     for image in images:
