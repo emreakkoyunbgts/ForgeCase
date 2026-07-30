@@ -102,8 +102,15 @@ def two_column():
     for i, (label, value) in enumerate(FIELDS[half:]):
         c.drawString(right_x, y - i * 5 * mm, f"{label}: {value}")
 
+    # A full-width line under the header. It crosses the gutter, so it is a
+    # spanning line: it closes the header band and opens the two-column body.
+    y = y - half * 5 * mm - 7 * mm
+    _wrap(c, "This report summarises the engagement delivered by BGTS "
+             "International for the client named above, and is the source of "
+             "record for every claim made about it.", left_x, y, 165 * mm)
+
     # Body: left column carries sections 1 and 2, right column 3 and 4.
-    y = y - half * 5 * mm - 8 * mm
+    y -= 8 * mm
     c.setFont("Helvetica-Bold", 10)
     c.drawString(left_x, y, "1. The Challenge")
     y_left = _wrap(c, CHALLENGE, left_x, y - 6 * mm, col_w)

@@ -115,9 +115,16 @@ def group_lines(words, gutters):
     is genuinely full-width (a banner or a spanning heading), so it stays whole
     and is marked as spanning with column = None.
     """
+    def centre(word):
+        return (word["x0"] + word["x1"]) / 2
+
     lines = []
     for row in group_words_into_rows(words):
-        straddles = any(w["x0"] < g_end and w["x1"] > g_start
+        # A word spans the columns when its *centre* falls in the gutter.
+        # Merely reaching into it is not enough: justified body text routinely
+        # runs a few points past the column edge, and treating that as a
+        # full-width line would throw the reading order of the whole band.
+        straddles = any(g_start <= centre(w) <= g_end
                         for w in row["words"] for g_start, g_end in gutters)
         if straddles or not gutters:
             lines.append(_as_line(row["words"], None))
@@ -125,7 +132,7 @@ def group_lines(words, gutters):
 
         by_column = {}
         for word in row["words"]:
-            index = sum(1 for g_start, _ in gutters if word["x0"] >= g_start)
+            index = sum(1 for g_start, _ in gutters if centre(word) >= g_start)
             by_column.setdefault(index, []).append(word)
         for index in sorted(by_column):
             lines.append(_as_line(by_column[index], index))

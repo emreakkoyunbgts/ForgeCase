@@ -136,9 +136,79 @@ def test_two_column_sections_come_out_in_reading_order():
     assert [s["heading"] for s in doc["sections"]] == [
         "The Challenge", "Our Approach", "Technology", "Outcomes"]
 
-    challenge = doc["sections"][0]
-    assert "business hours." in challenge["text"], \
-        "the left column's paragraph must be complete, not cut off by column 2"
+
+def test_each_two_column_section_holds_its_own_complete_text():
+    """
+    Ordering the headings correctly is not enough — the text under each one has
+    to be that section's text, whole.
+
+    This is the assertion that catches a line being wrongly treated as
+    full-width: when that happens the headings can still come out in order
+    while a paragraph is torn out of its section and dropped further down the
+    page, next to unrelated text.
+    """
+    doc = layout.analyse(os.path.join(FIXTURES, "two_column_closeout.pdf"))
+    sections = {s["number"]: s["text"] for s in doc["sections"]}
+
+    assert sections[1].startswith("The legacy core banking platform")
+    assert sections[1].rstrip().endswith("business hours.")
+
+    assert sections[2].startswith("A phased migration"), \
+        f"section 2 lost its paragraph: {sections[2]!r}"
+    assert sections[2].rstrip().endswith("cutover.")
+
+    assert "Java, Spring Boot, Kafka, PostgreSQL" in sections[3]
+
+    for outcome in ("payment latency reduced 45%",
+                    "batch window shortened from 6 hours to 90 minutes",
+                    "zero unplanned downtime during cutover"):
+        assert outcome in sections[4], f"outcome missing: {outcome}"
+
+    # The header block belongs to no section: its lines must not leak into one.
+    for number, text in sections.items():
+        assert "Region: GCC" not in text, \
+            f"a header field leaked into section {number}"
+
+
+def test_text_reaching_the_column_edge_is_not_treated_as_full_width():
+    """
+    Justified body text routinely runs a few points past the column edge and
+    into the gutter. If that counts as spanning the page, the whole band's
+    reading order collapses. Only a word whose centre is in the gutter really
+    spans the columns.
+    """
+    path = os.path.join(FIXTURES, "two_column_closeout.pdf")
+    with __import__("pdfplumber").open(path) as pdf:
+        page = pdf.pages[0]
+        words = page.extract_words()
+        gutters = layout.find_gutters(words, page.width)
+        lines = layout.group_lines(words, gutters)
+
+    assert gutters, "the fixture must have a gutter for this test to mean anything"
+
+    def centred_in_a_gutter(word):
+        middle = (word["x0"] + word["x1"]) / 2
+        return any(start <= middle <= end for start, end in gutters)
+
+    # The fixture has to contain the awkward case, or this proves nothing.
+    assert any(w["x0"] < gutters[0][1] and w["x1"] > gutters[0][0]
+               and not centred_in_a_gutter(w) for w in words), \
+        "the fixture must contain text that reaches into the gutter"
+
+    # The invariant: a line is full-width only when a word genuinely straddles
+    # the gutter — never merely because one reached into it.
+    for line in lines:
+        if line["column"] is None:
+            assert any(centred_in_a_gutter(w) for w in line["words"]), \
+                (f"line treated as full-width with no word straddling the "
+                 f"gutter: {line['text']!r}")
+
+    # And concretely: the left column's paragraph runs to the column edge, yet
+    # stays in column 0.
+    paragraph = [l for l in lines if l["text"].startswith("A phased migration")]
+    assert paragraph, "the left column's paragraph line was not found"
+    assert paragraph[0]["column"] == 0, \
+        "a line that reaches the column edge was pushed out of its column"
 
 
 def test_fields_extract_from_a_two_column_page():
