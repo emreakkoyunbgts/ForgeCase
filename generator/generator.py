@@ -698,7 +698,7 @@ def generate(record):
     return cs
     # ----------------------------------------------------------------------
 
-async def get_five_sections_with_llm(record):
+def get_five_sections_with_llm(record):
     """
     Use the LLM to generate the five sections of a case study.
 
@@ -716,7 +716,7 @@ async def get_five_sections_with_llm(record):
     response = ask_for_json(SYSTEM, user_prompt)
     logger.info(f"LLM response: {response}")
     pdf_name = ",".join(record["engagement_ids"])
-    path = await asyncio.to_thread(save_llm_output_to_pdf, response, pdf_name)
+    path =  save_llm_output_to_pdf(response, pdf_name)
     logger.info(f"LLM output saved to: {path}")
     end_time=time.perf_counter()
     logger.info(f"LLM processing time: {end_time-start_time:.2f} seconds")

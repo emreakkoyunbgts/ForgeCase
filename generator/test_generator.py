@@ -5,7 +5,7 @@ import pytest
 
 from common.contract import load_seed, load_corpus
 from generator.generator import generate, get_five_sections_with_llm, generate_multi_source, generate_single_stream, \
-    get_llm_punchy, get_llm_concise
+    get_llm_punchy, get_llm_concise, generate_two_source
 import re , json
 import time
 
@@ -111,7 +111,7 @@ def ungrounded_numbers (output_text, record):
     in_source=set(re.findall(r"\d+(?:\.\d+)?%?", json.dumps(record)))
     invented=in_output-in_source
     return invented
-'''
+
 def test_no_hallucinated_numbers():
     """Any number in the output that is NOT in the source was invented."""
     record = load_seed("eng-01")
@@ -129,11 +129,9 @@ def test_no_hallucinated_numbers_eng12():
     print("Invented numbers: "+str(invented))
     assert invented==set() , f"Invented numbers: {invented}"
 
-'''
 
 
 
-'''
 def test_generate_one_stream():
     record1 = load_seed("eng-01")
     record2 = load_seed("eng-02")
@@ -156,11 +154,10 @@ def test_generate_one_stream():
         f"LLM generation took too long: {elapsed_time:.2f} seconds"
     )
 
-'''
 def test_multi_source_generate():
     record1=load_seed("eng-01")
     record2=load_seed("eng-02")
-    tcs=generate_multi_source(record1, record2)
+    tcs=generate_two_source(record1, record2)
     for section in ["context", "challenge", "approach", "technology", "outcomes"]:
         assert section in tcs["sections"]
 
