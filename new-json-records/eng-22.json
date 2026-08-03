@@ -1,0 +1,29 @@
+{
+    "id": "eng-22",
+    "client": "SilkRoad Market",
+    "client_type": "Cross-border e-commerce platform",
+    "may_be_named": true,
+    "domain": "e-commerce",
+    "region": "EU",
+    "challenge": "Search engine latency was over 3 seconds during high-traffic promotional periods like Black Friday.",
+    "solution": "Replaced relational DB text search with a distributed Elasticsearch cluster paired with a Redis query cache.",
+    "technologies": [
+      "Node.js",
+      "Elasticsearch",
+      "Redis",
+      "MongoDB",
+      "Kafka"
+    ],
+    "team_size": 11,
+    "duration_months": 6,
+    "outcomes": [
+      {
+        "metric": "p99 search latency improved from 3200ms to 110ms",
+        "source_ref": "perf_metrics.pdf#page=8"
+      },
+      {
+        "metric": "search-to-cart conversion increased by 18%",
+        "source_ref": "perf_metrics.pdf#page=11"
+      }
+    ]
+  }

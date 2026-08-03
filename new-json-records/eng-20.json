@@ -1,0 +1,29 @@
+{
+    "id": "eng-20",
+    "client": "Anatolia Pay",
+    "client_type": "Regional payment gateway",
+    "may_be_named": true,
+    "domain": "fintech / payments",
+    "region": "TR",
+    "challenge": "High checkout drop-off rates due to slow 3D-Secure transaction processing and frequent payment gateway timeouts.",
+    "solution": "Built an intelligent payment routing engine with automatic retry mechanisms and dynamic gateway switching.",
+    "technologies": [
+      "Java",
+      "Spring Boot",
+      "Redis",
+      "PostgreSQL",
+      "Docker"
+    ],
+    "team_size": 6,
+    "duration_months": 5,
+    "outcomes": [
+      {
+        "metric": "transaction failure rate reduced by 35%",
+        "source_ref": "report_q3.pdf#page=12"
+      },
+      {
+        "metric": "average response time dropped under 200ms",
+        "source_ref": "report_q3.pdf#page=14"
+      }
+    ]
+  }

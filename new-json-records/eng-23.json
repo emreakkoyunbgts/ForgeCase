@@ -1,0 +1,28 @@
+{
+    "id": "eng-23",
+    "client": "OmniRetail Global",
+    "client_type": "Enterprise retail chain",
+    "may_be_named": false,
+    "domain": "inventory management",
+    "region": "NA",
+    "challenge": "Stock inventory discrepancies between physical stores and the web store caused overselling and order cancellations.",
+    "solution": "Implemented an event-driven inventory synchronization system updating stock levels in near real-time.",
+    "technologies": [
+      "Go",
+      "Apache Kafka",
+      "PostgreSQL",
+      "Google Cloud Platform"
+    ],
+    "team_size": 7,
+    "duration_months": 9,
+    "outcomes": [
+      {
+        "metric": "inventory mismatch errors reduced by 94%",
+        "source_ref": "audit_2025.pdf#page=3"
+      },
+      {
+        "metric": "out-of-stock cancellations fell to under 0.1%",
+        "source_ref": "audit_2025.pdf#page=7"
+      }
+    ]
+  }

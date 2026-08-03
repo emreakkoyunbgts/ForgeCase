@@ -1,0 +1,29 @@
+{
+    "id": "eng-24",
+    "client": "Aethel Health",
+    "client_type": "Private hospital network",
+    "may_be_named": true,
+    "domain": "healthcare",
+    "region": "UK",
+    "challenge": "Patient records were fragmented across three legacy Electronic Health Record (EHR) systems with no unified API.",
+    "solution": "Designed a central FHIR-compliant interoperability layer consolidating patient records into a unified view.",
+    "technologies": [
+      "C#",
+      ".NET 8",
+      "Azure FHIR API",
+      "SQL Server",
+      "Azure Functions"
+    ],
+    "team_size": 10,
+    "duration_months": 12,
+    "outcomes": [
+      {
+        "metric": "patient record retrieval time decreased by 75%",
+        "source_ref": "ehealth_summary.docx#page=1"
+      },
+      {
+        "metric": "100% compliance achieved with national data standards",
+        "source_ref": "ehealth_summary.docx#page=4"
+      }
+    ]
+  }

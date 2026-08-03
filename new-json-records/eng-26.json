@@ -1,0 +1,57 @@
+{
+    "id": "eng-26",
+    "client": "TransContinent Freight",
+    "client_type": "Tier-1 logistics operator",
+    "may_be_named": true,
+    "domain": "logistics & fleet",
+    "region": "GCC",
+    "challenge": "Suboptimal truck routing led to excessive fuel usage and delayed deliveries across long-haul interstate routes.",
+    "solution": "Built a dynamic route optimization engine taking into account real-time traffic, weather, and driver shift constraints.",
+    "technologies": [
+      "Python",
+      "OR-Tools",
+      "PostGIS",
+      "RabbitMQ",
+      "Vue.js"
+    ],
+    "team_size": 5,
+    "duration_months": 6,
+    "outcomes": [
+      {
+        "metric": "total fuel consumption decreased by 14%",
+        "source_ref": "sustainability_report.pdf#page=18"
+      },
+      {
+        "metric": "on-time delivery rate increased to 98.2%",
+        "source_ref": "sustainability_report.pdf#page=22"
+      }
+    ]
+  },
+  {
+    "id": "eng-10",
+    "client": "AeroMobile Telco",
+    "client_type": "National mobile network operator",
+    "may_be_named": false,
+    "domain": "telecom / billing",
+    "region": "DE",
+    "challenge": "Real-time data usage rating was bottlenecked, delaying prepaid balance deduction and allowing overage leakage.",
+    "solution": "Migrated rating engine to an in-memory distributed stream processing architecture.",
+    "technologies": [
+      "Java",
+      "Apache Flink",
+      "Apache Cassandra",
+      "Kafka"
+    ],
+    "team_size": 12,
+    "duration_months": 10,
+    "outcomes": [
+      {
+        "metric": "rating throughput increased to 100k events/sec",
+        "source_ref": "arch_review.pdf#page=15"
+      },
+      {
+        "metric": "unbilled revenue leakage reduced by 90%",
+        "source_ref": "arch_review.pdf#page=19"
+      }
+    ]
+  }

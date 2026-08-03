@@ -1,0 +1,29 @@
+{
+    "id": "eng-28",
+    "client": "EduFlex Academy",
+    "client_type": "EdTech platform",
+    "may_be_named": true,
+    "domain": "education",
+    "region": "TR",
+    "challenge": "Live streaming video classes experienced heavy buffering and sync issues during peak exam preparation periods.",
+    "solution": "Deployed a multi-CDN strategy with adaptive bitrate streaming (HLS) and localized edge caching.",
+    "technologies": [
+      "Node.js",
+      "AWS CloudFront",
+      "FFmpeg",
+      "React",
+      "WebSockets"
+    ],
+    "team_size": 4,
+    "duration_months": 4,
+    "outcomes": [
+      {
+        "metric": "video buffering ratio reduced from 8.5% to 0.4%",
+        "source_ref": "q2_review.pdf#page=7"
+      },
+      {
+        "metric": "concurrent live viewer capacity increased to 50,000",
+        "source_ref": "q2_review.pdf#page=9"
+      }
+    ]
+  }

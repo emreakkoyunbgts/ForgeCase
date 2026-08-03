@@ -1,0 +1,29 @@
+{
+    "id": "eng-21",
+    "client": "Crescent NeoBank",
+    "client_type": "Digital-only challenger bank",
+    "may_be_named": false,
+    "domain": "core banking",
+    "region": "GCC",
+    "challenge": "Inability to onboard new micro-business users automatically due to legacy manual KYC verification bottlenecks.",
+    "solution": "Engineered an AI-assisted automated KYC pipeline with optical character recognition (OCR) and facial verification integrations.",
+    "technologies": [
+      "Python",
+      "FastAPI",
+      "AWS Textract",
+      "DynamoDB",
+      "Kubernetes"
+    ],
+    "team_size": 9,
+    "duration_months": 8,
+    "outcomes": [
+      {
+        "metric": "onboarding time reduced from 48 hours to 4 minutes",
+        "source_ref": "case_study.pdf#page=2"
+      },
+      {
+        "metric": "customer acquisition cost decreased by 60%",
+        "source_ref": "case_study.pdf#page=5"
+      }
+    ]
+  }

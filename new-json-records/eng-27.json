@@ -1,0 +1,29 @@
+{
+    "id": "eng-27",
+    "client": "GreenGrid Energy",
+    "client_type": "Renewable energy producer",
+    "may_be_named": true,
+    "domain": "energy / IoT",
+    "region": "UK",
+    "challenge": "Solar panel telemetry data was overwhelming existing databases, causing reporting failures during peak daylight hours.",
+    "solution": "Implemented a scalable time-series data platform capable of ingesting millions of sensor metrics per minute.",
+    "technologies": [
+      "Rust",
+      "InfluxDB",
+      "Apache Kafka",
+      "Grafana",
+      "Kubernetes"
+    ],
+    "team_size": 6,
+    "duration_months": 5,
+    "outcomes": [
+      {
+        "metric": "ingestion capacity expanded 10x with 0 dropped frames",
+        "source_ref": "ops_summary.pdf#page=3"
+      },
+      {
+        "metric": "query dashboard load times dropped from 45s to 1.2s",
+        "source_ref": "ops_summary.pdf#page=6"
+      }
+    ]
+  }

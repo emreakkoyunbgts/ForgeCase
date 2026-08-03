@@ -716,8 +716,8 @@ def get_five_sections_with_llm(record):
     response = ask_for_json(SYSTEM, user_prompt)
     logger.info(f"LLM response: {response}")
     pdf_name = ",".join(record["engagement_ids"])
-    path =  save_llm_output_to_pdf(response, pdf_name)
-    logger.info(f"LLM output saved to: {path}")
+    #path =  save_llm_output_to_pdf(response, pdf_name)
+    #logger.info(f"LLM output saved to: {path}")
     end_time=time.perf_counter()
     logger.info(f"LLM processing time: {end_time-start_time:.2f} seconds")
     return response
