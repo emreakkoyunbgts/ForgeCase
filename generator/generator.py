@@ -34,6 +34,17 @@ logging.basicConfig(level=logging.INFO,
 logger=logging.getLogger(__name__)
 
 
+SYSTEM_CHECK="""
+you are a text comprator, there is rules; 
+""" + GROUNDING_RULES + """
+
+I am gone give you 2 json document one is source which is multi source case ,
+another is text to be checked which is LLM output,
+don't Text correction! Only remove incorrect or fabricated information.
+Do not add any text or information.just compare with source json .
+"""
+
+
 SYSTEM = """You write case studies for BGTS, a software consultancy that
 serves banks.
 
@@ -755,13 +766,31 @@ def get_llm_concise(mcs: dict):
     return response
 
 
+def chech_llm_output_with_source(mcs, llm_output):
+    start_time=time.perf_counter()
+    user_promt = f"Multi-source case study:\n{json.dumps(mcs, indent=2, ensure_ascii=False)}\n\n"
+    user_promt += f"LLM output:\n{json.dumps(llm_output, indent=2, ensure_ascii=False)}\n\n"
+    user_promt += "Compare the LLM output with the multi-source case study and remove any incorrect or fabricated information. "
+
+
+    response=ask_for_json(SYSTEM_CHECK, user_promt)
+    logger.info(f"LLM check response: {response}")
+    pdf_name=",".join(mcs["engagement_ids"])+"_check"
+    path=save_llm_output_to_pdf(response, pdf_name)
+    logger.info(f"LLM check output saved to: {path}")
+    end_time=time.perf_counter()
+    logger.info(f"LLM check processing time: {end_time-start_time:.2f} seconds")
+    return response
+
+
 def generate_single_stream(records):
 
     mcs=generate_multi_source(records)
     llm_out=get_five_sections_with_llm(mcs)
+    last_output=chech_llm_output_with_source(mcs,llm_out)
     #path=save_llm_output_to_pdf(llm_out, ",".join(mcs["engagement_ids"]))
     #logger.info(f"LLM output saved to: {path}")
-    return llm_out
+    return last_output
 
 
 def main():
