@@ -7,14 +7,17 @@ Validates claims extracted from drafts against ground-truth records.
 import re
 
 QUALITATIVE_CLAIM_PATTERNS = [
-        r"\bhuge success\b",
+        r"\bhuge\s+success\b",
         r"\bdramatically\b",
         r"\bunprecedented\b",
-        r"\bmassive (increase | growth | reduction)\b",
+        r"\bmassive\s+(increase | growth | reduction)\b",
         r"\brevolutionary\b",
         r"\bgroundbreaking\b",
-        r"\bzero delay\b",
-        r"\bslashed expenses\b",
+        r"\bzero\s+delay\b",
+        r"\bslashed\s+expenses\b",
+        r"\bgame-changer\b",
+        r"\bskyrocketed\b",
+        r"\bsecond\s+to\s+none\b",
     ]
 
 class EntailmentChecker:
