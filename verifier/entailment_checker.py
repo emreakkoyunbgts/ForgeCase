@@ -6,9 +6,48 @@ Validates claims extracted from drafts against ground-truth records.
 """
 import re
 
+QUALITATIVE_CLAIM_PATTERNS = [
+        r"\bhuge success\b",
+        r"\bdramatically\b",
+        r"\bunprecedented\b",
+        r"\bmassive (increase | growth | reduction)\b",
+        r"\brevolutionary\b",
+        r"\bgroundbreaking\b",
+        r"\bzero delay\b",
+        r"\bslashed expenses\b",
+    ]
+
 class EntailmentChecker:
+
     def __init__(self):
         pass
+
+    def check_paraphrased_claims(self, claim_text: str, ground_truth: dict) -> list:
+        """
+        L4: Detects exaggerated or unsupported qualitative claims 
+        (paraphrased inventions) within the text
+        """
+        problems = []
+        text_lower = claim_text.lower()
+
+        # 1. Semantic Regex/Pattern Control
+        for pattern in QUALITATIVE_CLAIM_PATTERNS:
+            match = re.search(pattern, text_lower)
+            if match:
+                found_phrase = match.group(0)
+                """
+                # 2. Ground Truth Verification: Is there an explicit verification flag or metric
+                 in the source data that supports this exaggeration/claim?
+                """
+                # (Throws an error if not supported by default)
+                if not ground_truth.get("supports_qualitative_claims", False):
+                    problems.append({
+                        "type": "unsupported_qualitative_claim",
+                        "detail": f"Unsupported qualitative assertion/invention found: '{found_phrase}'",
+                        "claim": claim_text
+                    })
+        
+        return problems
 
     def extract_numbers(self, text):
         # Extracts numbers and percentages (ex: '45%', '45', '90')

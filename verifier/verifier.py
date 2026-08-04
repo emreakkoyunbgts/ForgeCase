@@ -134,6 +134,7 @@ def find_unsupported_claims(case_study, record):
     record_outcomes = record.get("outcomes", [])
     problems = []
 
+    # --- L1-L2-L3 Tasks: Numerical Metric Controls ---
     for c in extracted_claim_objs:
         if isinstance(c, dict) and c.get("type") == "metric_claim":
             target_val = c.get("target_value", "")
@@ -149,6 +150,19 @@ def find_unsupported_claims(case_study, record):
                     "value": target_val if target_val else raw_text,
                     "why": "this claim metric is not suported by record outcomes",
                 })
+
+            # --- L4: Exaggeration/fabrication check based on the parsed claim text ---
+            l4_problems = checker.check_paraphrased_claims(raw_text, record)
+            problems.extend(l4_problems)
+        
+    # --- L4 (Additional Safety Valve): If there is an unparsed general text block ---
+    # case_study can be a dict or a string; we take the general text and run it through the check
+    full_text = json.dumps(case_study, ensure_ascii=False) if isinstance(case_study, dict) else str(case_study)
+
+    # If no L4 issues were found during the loop, we also check the general text block once
+    if not any(p.get("type") == "unsupported_qunlitative_claim" for p in problems):
+        general_l4_problems = checker.check_paraphrased_claims(full_text, record)
+        problems.extend(general_l4_problems)
 
     return problems
 
