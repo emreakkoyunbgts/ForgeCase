@@ -587,6 +587,16 @@ def generate_multi_source(records):
                 record.get("client_type", "[MISSING: client type]")
             )
 
+    domain1 = records[0].get("domain", "[MISSING: domain]")
+    for record in records[1:]:
+        domain = record.get("domain", "[MISSING: domain]")
+        if domain != domain1:
+            logger.warning(f"Different domains found: {domain1} vs {domain}")
+            print(
+                f"[generator] WARNING: Different domains found: {domain1} vs {domain}",
+                file=sys.stderr,
+            )
+
     if len(set(client_names)) > 1:
         logger.warning(f"Different client names/types found: {client_names}")
         print(
@@ -791,6 +801,15 @@ def generate_single_stream(records):
     #path=save_llm_output_to_pdf(llm_out, ",".join(mcs["engagement_ids"]))
     #logger.info(f"LLM output saved to: {path}")
     return last_output
+
+def generate_one_source_single_stream_case_study(record):
+    mcs=generate_multi_source([record])
+    llm_out=get_five_sections_with_llm(mcs)
+    last_output=chech_llm_output_with_source(mcs,llm_out)
+
+    #return last_output
+    return mcs
+
 
 
 def main():
