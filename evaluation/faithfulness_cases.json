@@ -1,0 +1,1846 @@
+{
+  "schema_version": 1,
+  "metric": "faithfulness",
+  "metric_definition": "supported generated claims / all generated claims",
+  "review_instructions": [
+    "Compare every claim with the included source_record.",
+    "Set supported to true only when the source record supports the complete claim.",
+    "For a supported claim, add one or more source field paths to evidence.",
+    "For an unsupported claim, explain the problem in notes.",
+    "Do not use the suggested evidence fields without manually checking the source."
+  ],
+  "case_count": 10,
+  "cases": [
+    {
+      "case_id": "eng-01",
+      "engagement_id": "eng-01",
+      "source_record": {
+        "id": "eng-01",
+        "client": "Gulf Union Bank",
+        "client_type": "Tier-1 GCC retail bank",
+        "may_be_named": false,
+        "domain": "core banking",
+        "region": "GCC",
+        "challenge": "The legacy core banking platform could not support real-time payments, and end-of-day batch windows were overrunning into business hours.",
+        "solution": "A phased migration from the legacy core to a modern event-driven platform, run as a shadow migration so the old and new systems processed in parallel until cutover.",
+        "technologies": [
+          "Java",
+          "Spring Boot",
+          "Kafka",
+          "PostgreSQL"
+        ],
+        "team_size": 14,
+        "duration_months": 11,
+        "outcomes": [
+          {
+            "metric": "payment latency reduced 45%",
+            "source_ref": "closeout.pdf#page=5"
+          },
+          {
+            "metric": "batch window shortened from 6 hours to 90 minutes",
+            "source_ref": "closeout.pdf#page=5"
+          },
+          {
+            "metric": "zero unplanned downtime during cutover",
+            "source_ref": "closeout.pdf#page=6"
+          }
+        ]
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-01",
+        "title": "core banking for Tier-1 GCC retail bank",
+        "sections": {
+          "context": "Tier-1 GCC retail bank in GCC.",
+          "challenge": "The legacy core banking platform could not support real-time payments, and end-of-day batch windows were overrunning into business hours.",
+          "approach": "A phased migration from the legacy core to a modern event-driven platform, run as a shadow migration so the old and new systems processed in parallel until cutover.",
+          "technology": "Java, Spring Boot, Kafka, PostgreSQL",
+          "outcomes": "payment latency reduced 45%; batch window shortened from 6 hours to 90 minutes; zero unplanned downtime during cutover"
+        },
+        "citations": [
+          {
+            "claim": "payment latency reduced 45%",
+            "source_ref": "closeout.pdf#page=5"
+          },
+          {
+            "claim": "batch window shortened from 6 hours to 90 minutes",
+            "source_ref": "closeout.pdf#page=5"
+          },
+          {
+            "claim": "zero unplanned downtime during cutover",
+            "source_ref": "closeout.pdf#page=6"
+          }
+        ],
+        "client_named": false
+      },
+      "claims": [
+        {
+          "claim_id": "eng-01-title-01",
+          "section": "title",
+          "text": "core banking for Tier-1 GCC retail bank",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client_type"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-01-context-01",
+          "section": "context",
+          "text": "Tier-1 GCC retail bank in GCC.",
+          "supported": true,
+          "evidence": [
+            "client_type",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-01-challenge-01",
+          "section": "challenge",
+          "text": "The legacy core banking platform could not support real-time payments, and end-of-day batch windows were overrunning into business hours.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-01-approach-01",
+          "section": "approach",
+          "text": "A phased migration from the legacy core to a modern event-driven platform, run as a shadow migration so the old and new systems processed in parallel until cutover.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-01-technology-01",
+          "section": "technology",
+          "text": "Java",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-01-technology-02",
+          "section": "technology",
+          "text": "Spring Boot",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-01-technology-03",
+          "section": "technology",
+          "text": "Kafka",
+          "supported": true,
+          "evidence": [
+            "technologies[2]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-01-technology-04",
+          "section": "technology",
+          "text": "PostgreSQL",
+          "supported": true,
+          "evidence": [
+            "technologies[3]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-01-outcomes-01",
+          "section": "outcomes",
+          "text": "payment latency reduced 45%",
+          "supported": true,
+          "evidence": [
+            "outcomes[0].metric",
+            "outcomes[0].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        },
+        {
+          "claim_id": "eng-01-outcomes-02",
+          "section": "outcomes",
+          "text": "batch window shortened from 6 hours to 90 minutes",
+          "supported": true,
+          "evidence": [
+            "outcomes[1].metric",
+            "outcomes[1].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        },
+        {
+          "claim_id": "eng-01-outcomes-03",
+          "section": "outcomes",
+          "text": "zero unplanned downtime during cutover",
+          "supported": true,
+          "evidence": [
+            "outcomes[2].metric",
+            "outcomes[2].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "eng-02",
+      "engagement_id": "eng-02",
+      "source_record": {
+        "id": "eng-02",
+        "client": "Nordbank Deutschland",
+        "client_type": "German commercial bank",
+        "may_be_named": true,
+        "domain": "regulatory reporting",
+        "region": "DE",
+        "challenge": "Manual regulatory reporting to BaFin consumed 3 weeks per quarter and was prone to reconciliation errors.",
+        "solution": "An automated reporting pipeline with lineage tracking and a reconciliation engine, replacing spreadsheet-based assembly.",
+        "technologies": [
+          "Python",
+          "Airflow",
+          "PostgreSQL",
+          "dbt"
+        ],
+        "team_size": 8,
+        "duration_months": 7,
+        "outcomes": [
+          {
+            "metric": "reporting cycle cut from 15 days to 3 days",
+            "source_ref": "closeout.pdf#page=4"
+          },
+          {
+            "metric": "reconciliation errors reduced 80%",
+            "source_ref": "closeout.pdf#page=4"
+          }
+        ]
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-02",
+        "title": "regulatory reporting for Nordbank Deutschland",
+        "sections": {
+          "context": "Nordbank Deutschland in DE.",
+          "challenge": "Manual regulatory reporting to BaFin consumed 3 weeks per quarter and was prone to reconciliation errors.",
+          "approach": "An automated reporting pipeline with lineage tracking and a reconciliation engine, replacing spreadsheet-based assembly.",
+          "technology": "Python, Airflow, PostgreSQL, dbt",
+          "outcomes": "reporting cycle cut from 15 days to 3 days; reconciliation errors reduced 80%"
+        },
+        "citations": [
+          {
+            "claim": "reporting cycle cut from 15 days to 3 days",
+            "source_ref": "closeout.pdf#page=4"
+          },
+          {
+            "claim": "reconciliation errors reduced 80%",
+            "source_ref": "closeout.pdf#page=4"
+          }
+        ],
+        "client_named": true
+      },
+      "claims": [
+        {
+          "claim_id": "eng-02-title-01",
+          "section": "title",
+          "text": "regulatory reporting for Nordbank Deutschland",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-02-context-01",
+          "section": "context",
+          "text": "Nordbank Deutschland in DE.",
+          "supported": true,
+          "evidence": [
+            "client",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-02-challenge-01",
+          "section": "challenge",
+          "text": "Manual regulatory reporting to BaFin consumed 3 weeks per quarter and was prone to reconciliation errors.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-02-approach-01",
+          "section": "approach",
+          "text": "An automated reporting pipeline with lineage tracking and a reconciliation engine, replacing spreadsheet-based assembly.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-02-technology-01",
+          "section": "technology",
+          "text": "Python",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-02-technology-02",
+          "section": "technology",
+          "text": "Airflow",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-02-technology-03",
+          "section": "technology",
+          "text": "PostgreSQL",
+          "supported": true,
+          "evidence": [
+            "technologies[2]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-02-technology-04",
+          "section": "technology",
+          "text": "dbt",
+          "supported": true,
+          "evidence": [
+            "technologies[3]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-02-outcomes-01",
+          "section": "outcomes",
+          "text": "reporting cycle cut from 15 days to 3 days",
+          "supported": true,
+          "evidence": [
+            "outcomes[0].metric",
+            "outcomes[0].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        },
+        {
+          "claim_id": "eng-02-outcomes-02",
+          "section": "outcomes",
+          "text": "reconciliation errors reduced 80%",
+          "supported": true,
+          "evidence": [
+            "outcomes[1].metric",
+            "outcomes[1].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "eng-03",
+      "engagement_id": "eng-03",
+      "source_record": {
+        "id": "eng-03",
+        "client": "Meridian Insurance",
+        "client_type": "UK specialist insurer",
+        "may_be_named": false,
+        "domain": "document intelligence",
+        "region": "UK",
+        "challenge": "Claims handlers spent hours manually keying data from scanned claim forms and supporting documents.",
+        "solution": "An OCR and extraction pipeline that reads scanned claims, extracts structured fields, and routes low-confidence cases to human review.",
+        "technologies": [
+          "Python",
+          "Tesseract",
+          "FastAPI",
+          "React"
+        ],
+        "team_size": 6,
+        "duration_months": 5,
+        "outcomes": [
+          {
+            "metric": "manual keying time reduced 62%",
+            "source_ref": "closeout.pdf#page=3"
+          },
+          {
+            "metric": "straight-through processing rate increased to 71%",
+            "source_ref": "closeout.pdf#page=3"
+          }
+        ]
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-03",
+        "title": "document intelligence for UK specialist insurer",
+        "sections": {
+          "context": "UK specialist insurer in UK.",
+          "challenge": "Claims handlers spent hours manually keying data from scanned claim forms and supporting documents.",
+          "approach": "An OCR and extraction pipeline that reads scanned claims, extracts structured fields, and routes low-confidence cases to human review.",
+          "technology": "Python, Tesseract, FastAPI, React",
+          "outcomes": "manual keying time reduced 62%; straight-through processing rate increased to 71%"
+        },
+        "citations": [
+          {
+            "claim": "manual keying time reduced 62%",
+            "source_ref": "closeout.pdf#page=3"
+          },
+          {
+            "claim": "straight-through processing rate increased to 71%",
+            "source_ref": "closeout.pdf#page=3"
+          }
+        ],
+        "client_named": false
+      },
+      "claims": [
+        {
+          "claim_id": "eng-03-title-01",
+          "section": "title",
+          "text": "document intelligence for UK specialist insurer",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client_type"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-03-context-01",
+          "section": "context",
+          "text": "UK specialist insurer in UK.",
+          "supported": true,
+          "evidence": [
+            "client_type",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-03-challenge-01",
+          "section": "challenge",
+          "text": "Claims handlers spent hours manually keying data from scanned claim forms and supporting documents.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-03-approach-01",
+          "section": "approach",
+          "text": "An OCR and extraction pipeline that reads scanned claims, extracts structured fields, and routes low-confidence cases to human review.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-03-technology-01",
+          "section": "technology",
+          "text": "Python",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-03-technology-02",
+          "section": "technology",
+          "text": "Tesseract",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-03-technology-03",
+          "section": "technology",
+          "text": "FastAPI",
+          "supported": true,
+          "evidence": [
+            "technologies[2]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-03-technology-04",
+          "section": "technology",
+          "text": "React",
+          "supported": true,
+          "evidence": [
+            "technologies[3]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-03-outcomes-01",
+          "section": "outcomes",
+          "text": "manual keying time reduced 62%",
+          "supported": true,
+          "evidence": [
+            "outcomes[0].metric",
+            "outcomes[0].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        },
+        {
+          "claim_id": "eng-03-outcomes-02",
+          "section": "outcomes",
+          "text": "straight-through processing rate increased to 71%",
+          "supported": true,
+          "evidence": [
+            "outcomes[1].metric",
+            "outcomes[1].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "eng-04",
+      "engagement_id": "eng-04",
+      "source_record": {
+        "id": "eng-04",
+        "client": "Anadolu Finans",
+        "client_type": "Turkish participation bank",
+        "may_be_named": false,
+        "domain": "core banking",
+        "region": "TR",
+        "challenge": "A FlexCube-based core needed migration to a modern platform without disrupting branch operations.",
+        "solution": "A migration readiness assessment followed by a phased data and contract migration, with a mock environment for parallel testing.",
+        "technologies": [
+          "Java",
+          "Oracle",
+          "Kafka"
+        ],
+        "team_size": 19,
+        "duration_months": 14,
+        "outcomes": [
+          {
+            "metric": "migration delivered 2 months ahead of schedule",
+            "source_ref": "closeout.pdf#page=7"
+          },
+          {
+            "metric": "branch downtime limited to a single weekend",
+            "source_ref": "closeout.pdf#page=7"
+          }
+        ]
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-04",
+        "title": "core banking for Turkish participation bank",
+        "sections": {
+          "context": "Turkish participation bank in TR.",
+          "challenge": "A FlexCube-based core needed migration to a modern platform without disrupting branch operations.",
+          "approach": "A migration readiness assessment followed by a phased data and contract migration, with a mock environment for parallel testing.",
+          "technology": "Java, Oracle, Kafka",
+          "outcomes": "migration delivered 2 months ahead of schedule; branch downtime limited to a single weekend"
+        },
+        "citations": [
+          {
+            "claim": "migration delivered 2 months ahead of schedule",
+            "source_ref": "closeout.pdf#page=7"
+          },
+          {
+            "claim": "branch downtime limited to a single weekend",
+            "source_ref": "closeout.pdf#page=7"
+          }
+        ],
+        "client_named": false
+      },
+      "claims": [
+        {
+          "claim_id": "eng-04-title-01",
+          "section": "title",
+          "text": "core banking for Turkish participation bank",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client_type"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-04-context-01",
+          "section": "context",
+          "text": "Turkish participation bank in TR.",
+          "supported": true,
+          "evidence": [
+            "client_type",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-04-challenge-01",
+          "section": "challenge",
+          "text": "A FlexCube-based core needed migration to a modern platform without disrupting branch operations.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-04-approach-01",
+          "section": "approach",
+          "text": "A migration readiness assessment followed by a phased data and contract migration, with a mock environment for parallel testing.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-04-technology-01",
+          "section": "technology",
+          "text": "Java",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-04-technology-02",
+          "section": "technology",
+          "text": "Oracle",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-04-technology-03",
+          "section": "technology",
+          "text": "Kafka",
+          "supported": true,
+          "evidence": [
+            "technologies[2]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-04-outcomes-01",
+          "section": "outcomes",
+          "text": "migration delivered 2 months ahead of schedule",
+          "supported": true,
+          "evidence": [
+            "outcomes[0].metric",
+            "outcomes[0].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        },
+        {
+          "claim_id": "eng-04-outcomes-02",
+          "section": "outcomes",
+          "text": "branch downtime limited to a single weekend",
+          "supported": true,
+          "evidence": [
+            "outcomes[1].metric",
+            "outcomes[1].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "eng-05",
+      "engagement_id": "eng-05",
+      "source_record": {
+        "id": "eng-05",
+        "client": "Delta Payments",
+        "client_type": "Netherlands payments provider",
+        "may_be_named": false,
+        "domain": "cloud & observability",
+        "region": "NL",
+        "challenge": "An underused observability platform cost significant licence spend while incidents still took hours to diagnose.",
+        "solution": "An observability maturity assessment, followed by instrumentation of critical payment paths and consolidation of dashboards and alerting.",
+        "technologies": [
+          "Datadog",
+          "Kubernetes",
+          "Go",
+          "Terraform"
+        ],
+        "team_size": 5,
+        "duration_months": 4,
+        "outcomes": [
+          {
+            "metric": "mean time to detect reduced 55%",
+            "source_ref": "closeout.pdf#page=2"
+          },
+          {
+            "metric": "licence spend reduced by 30% through consolidation",
+            "source_ref": "closeout.pdf#page=2"
+          }
+        ]
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-05",
+        "title": "cloud & observability for Netherlands payments provider",
+        "sections": {
+          "context": "Netherlands payments provider in NL.",
+          "challenge": "An underused observability platform cost significant licence spend while incidents still took hours to diagnose.",
+          "approach": "An observability maturity assessment, followed by instrumentation of critical payment paths and consolidation of dashboards and alerting.",
+          "technology": "Datadog, Kubernetes, Go, Terraform",
+          "outcomes": "mean time to detect reduced 55%; licence spend reduced by 30% through consolidation"
+        },
+        "citations": [
+          {
+            "claim": "mean time to detect reduced 55%",
+            "source_ref": "closeout.pdf#page=2"
+          },
+          {
+            "claim": "licence spend reduced by 30% through consolidation",
+            "source_ref": "closeout.pdf#page=2"
+          }
+        ],
+        "client_named": false
+      },
+      "claims": [
+        {
+          "claim_id": "eng-05-title-01",
+          "section": "title",
+          "text": "cloud & observability for Netherlands payments provider",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client_type"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-05-context-01",
+          "section": "context",
+          "text": "Netherlands payments provider in NL.",
+          "supported": true,
+          "evidence": [
+            "client_type",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-05-challenge-01",
+          "section": "challenge",
+          "text": "An underused observability platform cost significant licence spend while incidents still took hours to diagnose.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-05-approach-01",
+          "section": "approach",
+          "text": "An observability maturity assessment, followed by instrumentation of critical payment paths and consolidation of dashboards and alerting.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-05-technology-01",
+          "section": "technology",
+          "text": "Datadog",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-05-technology-02",
+          "section": "technology",
+          "text": "Kubernetes",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-05-technology-03",
+          "section": "technology",
+          "text": "Go",
+          "supported": true,
+          "evidence": [
+            "technologies[2]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-05-technology-04",
+          "section": "technology",
+          "text": "Terraform",
+          "supported": true,
+          "evidence": [
+            "technologies[3]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-05-outcomes-01",
+          "section": "outcomes",
+          "text": "mean time to detect reduced 55%",
+          "supported": true,
+          "evidence": [
+            "outcomes[0].metric",
+            "outcomes[0].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        },
+        {
+          "claim_id": "eng-05-outcomes-02",
+          "section": "outcomes",
+          "text": "licence spend reduced by 30% through consolidation",
+          "supported": true,
+          "evidence": [
+            "outcomes[1].metric",
+            "outcomes[1].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "eng-06",
+      "engagement_id": "eng-06",
+      "source_record": {
+        "id": "eng-06",
+        "client": "Sterling Wealth",
+        "client_type": "UK wealth manager",
+        "may_be_named": false,
+        "domain": "data platform",
+        "region": "UK",
+        "challenge": "Client reporting data was scattered across four systems with no single source of truth.",
+        "solution": "A consolidated data platform with a governed semantic layer and automated data-quality checks.",
+        "technologies": [
+          "Python",
+          "Snowflake",
+          "dbt",
+          "Airflow"
+        ],
+        "team_size": 9,
+        "duration_months": 8,
+        "outcomes": [
+          {
+            "metric": "client report generation time cut from 4 days to 6 hours",
+            "source_ref": "closeout.pdf#page=5"
+          }
+        ]
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-06",
+        "title": "data platform for UK wealth manager",
+        "sections": {
+          "context": "UK wealth manager in UK.",
+          "challenge": "Client reporting data was scattered across four systems with no single source of truth.",
+          "approach": "A consolidated data platform with a governed semantic layer and automated data-quality checks.",
+          "technology": "Python, Snowflake, dbt, Airflow",
+          "outcomes": "client report generation time cut from 4 days to 6 hours"
+        },
+        "citations": [
+          {
+            "claim": "client report generation time cut from 4 days to 6 hours",
+            "source_ref": "closeout.pdf#page=5"
+          }
+        ],
+        "client_named": false
+      },
+      "claims": [
+        {
+          "claim_id": "eng-06-title-01",
+          "section": "title",
+          "text": "data platform for UK wealth manager",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client_type"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-06-context-01",
+          "section": "context",
+          "text": "UK wealth manager in UK.",
+          "supported": true,
+          "evidence": [
+            "client_type",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-06-challenge-01",
+          "section": "challenge",
+          "text": "Client reporting data was scattered across four systems with no single source of truth.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-06-approach-01",
+          "section": "approach",
+          "text": "A consolidated data platform with a governed semantic layer and automated data-quality checks.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-06-technology-01",
+          "section": "technology",
+          "text": "Python",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-06-technology-02",
+          "section": "technology",
+          "text": "Snowflake",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-06-technology-03",
+          "section": "technology",
+          "text": "dbt",
+          "supported": true,
+          "evidence": [
+            "technologies[2]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-06-technology-04",
+          "section": "technology",
+          "text": "Airflow",
+          "supported": true,
+          "evidence": [
+            "technologies[3]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-06-outcomes-01",
+          "section": "outcomes",
+          "text": "client report generation time cut from 4 days to 6 hours",
+          "supported": true,
+          "evidence": [
+            "outcomes[0].metric",
+            "outcomes[0].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "eng-07",
+      "engagement_id": "eng-07",
+      "source_record": {
+        "id": "eng-07",
+        "client": "Rhein Kredit",
+        "client_type": "German mid-market lender",
+        "may_be_named": false,
+        "domain": "regulatory reporting",
+        "region": "DE",
+        "challenge": "New DORA operational-resilience requirements demanded evidence of ICT risk controls the bank could not readily produce.",
+        "solution": "A control-evidence platform mapping ICT risks to controls, with automated evidence collection and an auditor-facing view.",
+        "technologies": [
+          "Java",
+          "Spring Boot",
+          "PostgreSQL",
+          "React"
+        ],
+        "team_size": 7,
+        "duration_months": 6,
+        "outcomes": [
+          {
+            "metric": "evidence collection effort reduced 70%",
+            "source_ref": "closeout.pdf#page=3"
+          },
+          {
+            "metric": "audit findings closed 40% faster",
+            "source_ref": "closeout.pdf#page=4"
+          }
+        ]
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-07",
+        "title": "regulatory reporting for German mid-market lender",
+        "sections": {
+          "context": "German mid-market lender in DE.",
+          "challenge": "New DORA operational-resilience requirements demanded evidence of ICT risk controls the bank could not readily produce.",
+          "approach": "A control-evidence platform mapping ICT risks to controls, with automated evidence collection and an auditor-facing view.",
+          "technology": "Java, Spring Boot, PostgreSQL, React",
+          "outcomes": "evidence collection effort reduced 70%; audit findings closed 40% faster"
+        },
+        "citations": [
+          {
+            "claim": "evidence collection effort reduced 70%",
+            "source_ref": "closeout.pdf#page=3"
+          },
+          {
+            "claim": "audit findings closed 40% faster",
+            "source_ref": "closeout.pdf#page=4"
+          }
+        ],
+        "client_named": false
+      },
+      "claims": [
+        {
+          "claim_id": "eng-07-title-01",
+          "section": "title",
+          "text": "regulatory reporting for German mid-market lender",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client_type"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-07-context-01",
+          "section": "context",
+          "text": "German mid-market lender in DE.",
+          "supported": true,
+          "evidence": [
+            "client_type",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-07-challenge-01",
+          "section": "challenge",
+          "text": "New DORA operational-resilience requirements demanded evidence of ICT risk controls the bank could not readily produce.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-07-approach-01",
+          "section": "approach",
+          "text": "A control-evidence platform mapping ICT risks to controls, with automated evidence collection and an auditor-facing view.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-07-technology-01",
+          "section": "technology",
+          "text": "Java",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-07-technology-02",
+          "section": "technology",
+          "text": "Spring Boot",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-07-technology-03",
+          "section": "technology",
+          "text": "PostgreSQL",
+          "supported": true,
+          "evidence": [
+            "technologies[2]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-07-technology-04",
+          "section": "technology",
+          "text": "React",
+          "supported": true,
+          "evidence": [
+            "technologies[3]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-07-outcomes-01",
+          "section": "outcomes",
+          "text": "evidence collection effort reduced 70%",
+          "supported": true,
+          "evidence": [
+            "outcomes[0].metric",
+            "outcomes[0].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        },
+        {
+          "claim_id": "eng-07-outcomes-02",
+          "section": "outcomes",
+          "text": "audit findings closed 40% faster",
+          "supported": true,
+          "evidence": [
+            "outcomes[1].metric",
+            "outcomes[1].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "eng-08",
+      "engagement_id": "eng-08",
+      "source_record": {
+        "id": "eng-08",
+        "client": "Bosphorus Sigorta",
+        "client_type": "Turkish insurer",
+        "may_be_named": false,
+        "domain": "document intelligence",
+        "region": "TR",
+        "challenge": "Policy documents arrived in inconsistent formats, making automated underwriting checks impossible.",
+        "solution": "A document normalisation and extraction service producing a consistent structured policy record.",
+        "technologies": [
+          "Python",
+          "FastAPI",
+          "PostgreSQL"
+        ],
+        "team_size": 4,
+        "duration_months": 4,
+        "outcomes": [
+          {
+            "metric": "underwriting review time reduced 38%",
+            "source_ref": "closeout.pdf#page=2"
+          }
+        ]
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-08",
+        "title": "document intelligence for Turkish insurer",
+        "sections": {
+          "context": "Turkish insurer in TR.",
+          "challenge": "Policy documents arrived in inconsistent formats, making automated underwriting checks impossible.",
+          "approach": "A document normalisation and extraction service producing a consistent structured policy record.",
+          "technology": "Python, FastAPI, PostgreSQL",
+          "outcomes": "underwriting review time reduced 38%"
+        },
+        "citations": [
+          {
+            "claim": "underwriting review time reduced 38%",
+            "source_ref": "closeout.pdf#page=2"
+          }
+        ],
+        "client_named": false
+      },
+      "claims": [
+        {
+          "claim_id": "eng-08-title-01",
+          "section": "title",
+          "text": "document intelligence for Turkish insurer",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client_type"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-08-context-01",
+          "section": "context",
+          "text": "Turkish insurer in TR.",
+          "supported": true,
+          "evidence": [
+            "client_type",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-08-challenge-01",
+          "section": "challenge",
+          "text": "Policy documents arrived in inconsistent formats, making automated underwriting checks impossible.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-08-approach-01",
+          "section": "approach",
+          "text": "A document normalisation and extraction service producing a consistent structured policy record.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-08-technology-01",
+          "section": "technology",
+          "text": "Python",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-08-technology-02",
+          "section": "technology",
+          "text": "FastAPI",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-08-technology-03",
+          "section": "technology",
+          "text": "PostgreSQL",
+          "supported": true,
+          "evidence": [
+            "technologies[2]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-08-outcomes-01",
+          "section": "outcomes",
+          "text": "underwriting review time reduced 38%",
+          "supported": true,
+          "evidence": [
+            "outcomes[0].metric",
+            "outcomes[0].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "eng-09",
+      "engagement_id": "eng-09",
+      "source_record": {
+        "id": "eng-09",
+        "client": "Cedar Bank",
+        "client_type": "GCC corporate bank",
+        "may_be_named": false,
+        "domain": "data platform",
+        "region": "GCC",
+        "challenge": "Corporate onboarding required manually assembling entity profiles from dozens of scattered documents.",
+        "solution": "An entity-profile extraction pipeline consolidating corporate documents into a single verified profile.",
+        "technologies": [
+          "Python",
+          "React",
+          "PostgreSQL"
+        ],
+        "team_size": 6,
+        "duration_months": 5,
+        "outcomes": [
+          {
+            "metric": "onboarding time reduced from 12 days to 4 days",
+            "source_ref": "closeout.pdf#page=3"
+          },
+          {
+            "metric": "data entry errors reduced 65%",
+            "source_ref": "closeout.pdf#page=3"
+          }
+        ]
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-09",
+        "title": "data platform for GCC corporate bank",
+        "sections": {
+          "context": "GCC corporate bank in GCC.",
+          "challenge": "Corporate onboarding required manually assembling entity profiles from dozens of scattered documents.",
+          "approach": "An entity-profile extraction pipeline consolidating corporate documents into a single verified profile.",
+          "technology": "Python, React, PostgreSQL",
+          "outcomes": "onboarding time reduced from 12 days to 4 days; data entry errors reduced 65%"
+        },
+        "citations": [
+          {
+            "claim": "onboarding time reduced from 12 days to 4 days",
+            "source_ref": "closeout.pdf#page=3"
+          },
+          {
+            "claim": "data entry errors reduced 65%",
+            "source_ref": "closeout.pdf#page=3"
+          }
+        ],
+        "client_named": false
+      },
+      "claims": [
+        {
+          "claim_id": "eng-09-title-01",
+          "section": "title",
+          "text": "data platform for GCC corporate bank",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client_type"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-09-context-01",
+          "section": "context",
+          "text": "GCC corporate bank in GCC.",
+          "supported": true,
+          "evidence": [
+            "client_type",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-09-challenge-01",
+          "section": "challenge",
+          "text": "Corporate onboarding required manually assembling entity profiles from dozens of scattered documents.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-09-approach-01",
+          "section": "approach",
+          "text": "An entity-profile extraction pipeline consolidating corporate documents into a single verified profile.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-09-technology-01",
+          "section": "technology",
+          "text": "Python",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-09-technology-02",
+          "section": "technology",
+          "text": "React",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-09-technology-03",
+          "section": "technology",
+          "text": "PostgreSQL",
+          "supported": true,
+          "evidence": [
+            "technologies[2]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-09-outcomes-01",
+          "section": "outcomes",
+          "text": "onboarding time reduced from 12 days to 4 days",
+          "supported": true,
+          "evidence": [
+            "outcomes[0].metric",
+            "outcomes[0].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        },
+        {
+          "claim_id": "eng-09-outcomes-02",
+          "section": "outcomes",
+          "text": "data entry errors reduced 65%",
+          "supported": true,
+          "evidence": [
+            "outcomes[1].metric",
+            "outcomes[1].source_ref"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "eng-12",
+      "engagement_id": "eng-12",
+      "source_record": {
+        "id": "eng-12",
+        "client": "Thames Mutual",
+        "client_type": "UK building society",
+        "may_be_named": false,
+        "domain": "data platform",
+        "region": "UK",
+        "challenge": "Reporting was slow and the society wanted to modernise its analytics stack.",
+        "solution": "An assessment and roadmap for a modern analytics platform, followed by a proof of concept.",
+        "technologies": [
+          "Python",
+          "Snowflake"
+        ],
+        "team_size": 3,
+        "duration_months": 2,
+        "outcomes": []
+      },
+      "generated_case_study": {
+        "engagement_id": "eng-12",
+        "title": "data platform for UK building society",
+        "sections": {
+          "context": "UK building society in UK.",
+          "challenge": "Reporting was slow and the society wanted to modernise its analytics stack.",
+          "approach": "An assessment and roadmap for a modern analytics platform, followed by a proof of concept.",
+          "technology": "Python, Snowflake",
+          "outcomes": "[MISSING: no measurable outcome was recorded for this engagement]"
+        },
+        "citations": [],
+        "client_named": false
+      },
+      "claims": [
+        {
+          "claim_id": "eng-12-title-01",
+          "section": "title",
+          "text": "data platform for UK building society",
+          "supported": true,
+          "evidence": [
+            "domain",
+            "client_type"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "domain",
+            "client_type or client when may_be_named is true"
+          ]
+        },
+        {
+          "claim_id": "eng-12-context-01",
+          "section": "context",
+          "text": "UK building society in UK.",
+          "supported": true,
+          "evidence": [
+            "client_type",
+            "region"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "client_type or client when may_be_named is true",
+            "region"
+          ]
+        },
+        {
+          "claim_id": "eng-12-challenge-01",
+          "section": "challenge",
+          "text": "Reporting was slow and the society wanted to modernise its analytics stack.",
+          "supported": true,
+          "evidence": [
+            "challenge"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "challenge"
+          ]
+        },
+        {
+          "claim_id": "eng-12-approach-01",
+          "section": "approach",
+          "text": "An assessment and roadmap for a modern analytics platform, followed by a proof of concept.",
+          "supported": true,
+          "evidence": [
+            "solution"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "solution"
+          ]
+        },
+        {
+          "claim_id": "eng-12-technology-01",
+          "section": "technology",
+          "text": "Python",
+          "supported": true,
+          "evidence": [
+            "technologies[0]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-12-technology-02",
+          "section": "technology",
+          "text": "Snowflake",
+          "supported": true,
+          "evidence": [
+            "technologies[1]"
+          ],
+          "notes": "",
+          "suggested_evidence_fields": [
+            "technologies"
+          ]
+        },
+        {
+          "claim_id": "eng-12-outcomes-01",
+          "section": "outcomes",
+          "text": "[MISSING: no measurable outcome was recorded for this engagement]",
+          "supported": true,
+          "evidence": [
+            "outcomes"
+          ],
+          "notes": "The source record contains an empty outcomes list, so the missing-outcome statement is supported.",
+          "suggested_evidence_fields": [
+            "outcomes[].metric",
+            "outcomes[].source_ref",
+            "outcome_missing"
+          ]
+        }
+      ]
+    }
+  ]
+}
