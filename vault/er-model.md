@@ -1,6 +1,6 @@
-# Vault ó E-R Model (L1)
+# Vault ù E-R Model (L1)
 
-Author: Kaan ∑ Reviewer: ÷mer ∑ Status: draft for review
+Author: Kaan ù Reviewer: ùmer ù Status: draft for review
 
 ## The model
 
@@ -8,6 +8,7 @@ Author: Kaan ∑ Reviewer: ÷mer ∑ Status: draft for review
 erDiagram
     ENGAGEMENTS ||--o{ OUTCOMES : "has 0..N"
     ENGAGEMENTS ||--o{ TECHNOLOGIES : "uses 0..N"
+    ENGAGEMENTS ||--o{ ENGAGEMENT_VERSIONS : "history 0..N (logical)"
 
     ENGAGEMENTS {
         TEXT    id              PK "eng-NN, from the contract"
@@ -35,6 +36,13 @@ erDiagram
         INTEGER position      PK "0-based list index"
         TEXT    name
     }
+
+    ENGAGEMENT_VERSIONS {
+        TEXT    engagement_id PK "no FK ù history survives DELETE"
+        INTEGER version       PK "1, 2, 3ù"
+        TEXT    recorded_at   "ISO-8601 UTC"
+        TEXT    data          "full JSON snapshot"
+    }
 ```
 
 ## Design decisions
@@ -43,7 +51,7 @@ erDiagram
    Each outcome is a structured object (`metric` + `source_ref`) with its own
    NOT NULL rules, and downstream prototypes (Analyst, Verifier) will want to
    query outcomes individually. eng-12's *empty* list is naturally "zero rows"
-   ó nothing special to handle.
+   ù nothing special to handle.
 
 2. **`technologies` is also a one-to-many table.**
    Same reasoning; it makes "which engagements used Kafka?" a plain query,
@@ -63,16 +71,21 @@ erDiagram
    `team_size`, `duration_months` (MAY fields) and `outcome_missing`
    (conditional) may be missing from a record. If the column is NULL, the
    read path *omits the key entirely* instead of emitting `"team_size": null`
-   ó otherwise the reloaded record would not equal the original.
+   ù otherwise the reloaded record would not equal the original.
 
 6. **CHECK constraints enforce the contract at the database layer.**
    `region` must be one of the five valid values, booleans must be 0/1, and
-   `metric`/`source_ref` must be non-empty (spec ß3.2). Bad data fails loudly
+   `metric`/`source_ref` must be non-empty (spec ù3.2). Bad data fails loudly
    at insert time instead of poisoning the store.
 
 7. **Foreign keys with `ON DELETE CASCADE`.**
    Replacing or deleting an engagement automatically removes its child rows;
    no orphaned outcomes.
+
+8. **`engagement_versions` is append-only history (CF-63 / L5).**
+   Every store appends a full JSON snapshot with `recorded_at`. There is
+   *no* foreign key to `engagements`, so deleting the current row still
+   leaves as-of history queryable.
 
 ## Verified against the test data
 
