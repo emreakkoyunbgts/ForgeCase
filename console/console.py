@@ -18,7 +18,7 @@ import streamlit as st
 
 from common.contract import load_corpus, client_label, has_outcomes
 from generator.generator import generate
-
+from verifier.verifier import verify
 st.set_page_config(page_title="CaseForge", page_icon="📄", layout="wide")
 
 import json
@@ -114,9 +114,16 @@ if case_study is not None:
         save_review_state(state)
         st.success("Kaydedildi.")
         st.rerun()
-    
-        
-
+        st.divider()
+    st.subheader("Grounding check")
+    report = verify(case_study, record)
+    verdict_ok = report["verdict"] == "PASS"
+    if verdict_ok:
+        st.success("PASS - grounded")   
+    if not verdict_ok:
+        st.error(f"BLOCK - {len(report['problems'])} problem(s) found")
+        for p in report["problems"]:
+            st.write(str(p))
 st.divider()
 
 current_status = state.get(engagement_id, {}).get("approved", False)
