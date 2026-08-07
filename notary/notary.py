@@ -63,7 +63,7 @@ def print_chain():
 # Small Testing
 if __name__ == "__main__":
     # Test 1
-    """
+    
     print("--- CHAIN TEST BEGINS ---")
 
     # Test 1: Adding first block (Should be written in the Genesis hash)
@@ -96,6 +96,6 @@ if __name__ == "__main__":
     append_to_log("First Block: Noter Module is Active")
     append_to_log("Second Block: Process Accepted")
     append_to_log("Third Block: Closing Done")
-    """
+    
     
     print_chain()
