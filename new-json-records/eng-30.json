@@ -1,0 +1,24 @@
+{
+    "id": "eng-30",
+    "client": "StyleHub Retail",
+    "client_type": "Fashion e-commerce brand",
+    "may_be_named": true,
+    "domain": "e-commerce / recommendations",
+    "region": "NA",
+    "challenge": "Generic product recommendations failed to convert cross-category shoppers.",
+    "solution": "Integrated a personalized collaborative filtering algorithm into the checkout and product pages.",
+    "technologies": [
+      "Python",
+      "PyTorch",
+      "Redis",
+      "AWS SageMaker"
+    ],
+    "team_size": 4,
+    "duration_months": 3,
+    "outcomes": [
+      {
+        "metric": "click-through rate on recommended products rose 22%",
+        "source_ref": ""
+      }
+    ]
+  }

@@ -1,0 +1,29 @@
+{
+    "id": "eng-25",
+    "client": "PharmaTrace Corp",
+    "client_type": "Global pharmaceutical distributor",
+    "may_be_named": false,
+    "domain": "supply chain",
+    "region": "EU",
+    "challenge": "Counterfeit drugs and cold-chain temperature violations during transit were difficult to detect and trace.",
+    "solution": "Developed an IoT-enabled shipment tracking dashboard with real-time temperature telemetry and batch lineage tracing.",
+    "technologies": [
+      "Python",
+      "AWS IoT Core",
+      "TimescaleDB",
+      "React",
+      "GraphQL"
+    ],
+    "team_size": 8,
+    "duration_months": 7,
+    "outcomes": [
+      {
+        "metric": "spoilage losses reduced by $1.2M annually",
+        "source_ref": "roi_analysis.pdf#page=9"
+      },
+      {
+        "metric": "traceability audit time reduced from 5 days to 10 minutes",
+        "source_ref": "roi_analysis.pdf#page=12"
+      }
+    ]
+  }

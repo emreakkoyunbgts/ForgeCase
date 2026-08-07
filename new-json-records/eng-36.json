@@ -1,0 +1,17 @@
+{
+    "id": "eng-36",
+    "client": "SureGuard Insurance",
+    "client_type": "Commercial insurer",
+    "may_be_named": false,
+    "domain": "insurtech / claims",
+    "region": "NA",
+    "challenge": "FNOL (First Notice of Loss) claims processing took weeks to process due to unstructured document inputs.",
+    "solution": "",
+    "technologies": [
+      "Python",
+      "AWS OCR"
+    ],
+    "team_size": 5,
+    "duration_months": 4,
+    "outcomes": []
+  }
