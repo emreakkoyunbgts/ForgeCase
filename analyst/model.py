@@ -22,8 +22,8 @@ def build_features_target(df,use_kmodes_cluster=False):
     def has_outcomes(row):
         outcomes = row.get("outcomes")
         if not outcomes or (isinstance(outcomes, list) and len(outcomes) >= 2):
-            return 0
-        return 1
+            return 1
+        return 0
     y=df.apply(has_outcomes,axis=1).values
 
     domain_encoded= pd.get_dummies(df["domain"], prefix="domain")
@@ -150,12 +150,19 @@ def predict_new_opportunity(model, feature_columns, mlb, domain, region, technol
             warnings.append(f"K-Modes cluster assignment failed: {e}")
 
     proba = model.predict_proba(row)[0][1] 
+    proba = model.predict_proba(row)[0][1] 
+
+    penalty_per_warning = 0.15
+    total_penalty = len(warnings) * penalty_per_warning
+    
+    adjusted_proba = max(0.0, proba - total_penalty)
 
     result = {
         "domain": domain,
         "region": region,
         "technologies": technologies,
-        "evidence_score": round(float(proba), 3),
+        "base_model_score": round(float(proba), 3),  # Modelin ham tahmini
+        "evidence_score": round(float(adjusted_proba), 3),  # Cezalandırılmış gerçekçi skor
         "warnings": warnings,
     }
     
@@ -163,7 +170,6 @@ def predict_new_opportunity(model, feature_columns, mlb, domain, region, technol
         result["win_theme_cluster"] = assigned_cluster
 
     return result
-
 def analyze_rfp(domain, region, technologies, corpus_path="caseforge-testdata/records/corpus.json"):
     
     import json
