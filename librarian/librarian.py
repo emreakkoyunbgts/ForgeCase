@@ -129,17 +129,200 @@ def explain_match(query_embedding, record, model, max_reasons=3):
 
     return "Matched on " + "; ".join(reasons)
 
+def unique_strings(values):
+    """
+    Return unique, non-empty strings while preserving their original order.
+    """
+    result = []
+    seen = set()
+
+    for value in values:
+        if not isinstance(value, str):
+            continue
+
+        cleaned = value.strip()
+        if not cleaned:
+            continue
+
+        normalized = cleaned.casefold()
+        if normalized in seen:
+            continue
+
+        seen.add(normalized)
+        result.append(cleaned)
+
+    return result
+
+
+def format_list(values):
+    """
+    Format a list as:
+    - A
+    - A and B
+    - A, B, and C
+    """
+    if not values:
+        return ""
+
+    if len(values) == 1:
+        return values[0]
+
+    if len(values) == 2:
+        return f"{values[0]} and {values[1]}"
+
+    return f"{', '.join(values[:-1])}, and {values[-1]}"
+
+
+def build_capability_statement(
+    matches,
+    corpus,
+    max_technologies=5,
+    max_outcomes=3,
+):
+    """
+    Build a grounded capability statement from retrieved engagements.
+
+    Every fact in the output comes directly from the selected engagement
+    records. Real client names are never included.
+    """
+    records_by_id = {
+        record["id"]: record
+        for record in corpus
+    }
+
+    selected_records = []
+
+    for match in matches:
+        engagement_id = match.get("engagement_id")
+        record = records_by_id.get(engagement_id)
+
+        if record is not None:
+            selected_records.append(record)
+
+    if not selected_records:
+        return {
+            "text": "No relevant engagement evidence was found.",
+            "evidence": [],
+        }
+
+    domains = unique_strings(
+        record.get("domain")
+        for record in selected_records
+    )
+
+    regions = unique_strings(
+        record.get("region")
+        for record in selected_records
+    )
+
+    technologies = unique_strings(
+        technology
+        for record in selected_records
+        for technology in record.get("technologies", [])
+    )[:max_technologies]
+
+    sentences = []
+    evidence = []
+
+    if domains:
+        sentences.append(
+            "The retrieved engagements provide evidence of BGTS work in "
+            f"{format_list(domains)}."
+        )
+
+        for record in selected_records:
+            domain = record.get("domain")
+
+            if domain in domains:
+                evidence.append({
+                    "engagement_id": record["id"],
+                    "field": "domain",
+                    "value": domain,
+                })
+
+    if regions:
+        sentences.append(
+            "The relevant engagement evidence covers "
+            f"{format_list(regions)}."
+        )
+
+        for record in selected_records:
+            region = record.get("region")
+
+            if region in regions:
+                evidence.append({
+                    "engagement_id": record["id"],
+                    "field": "region",
+                    "value": region,
+                })
+
+    if technologies:
+        sentences.append(
+            "Relevant technologies include "
+            f"{format_list(technologies)}."
+        )
+
+        for record in selected_records:
+            for technology in record.get("technologies", []):
+                if technology in technologies:
+                    evidence.append({
+                        "engagement_id": record["id"],
+                        "field": "technology",
+                        "value": technology,
+                    })
+
+    documented_outcomes = []
+
+    for record in selected_records:
+        for outcome in record.get("outcomes", []):
+            metric = outcome.get("metric")
+            source_ref = outcome.get("source_ref")
+
+            # Outcomes without a source cannot be used in grounded output.
+            if not metric or not source_ref:
+                continue
+
+            documented_outcomes.append(metric)
+
+            evidence.append({
+                "engagement_id": record["id"],
+                "field": "outcome",
+                "value": metric,
+                "source_ref": source_ref,
+            })
+
+            if len(documented_outcomes) == max_outcomes:
+                break
+
+        if len(documented_outcomes) == max_outcomes:
+            break
+
+    if documented_outcomes:
+        sentences.append(
+            "Documented outcomes include: "
+            f"{'; '.join(documented_outcomes)}."
+        )
+
+    return {
+        "text": " ".join(sentences),
+        "evidence": evidence,
+    }
+
 def search(query, corpus, top_k=3):
     """
     Return the top_k engagements most relevant to the query.
 
-    TODO(Arda) L1: replace this keyword count with real embeddings.
-        - embed each record's searchable_text() into a vector
-        - embed the query
+    L1:
+        - embed each engagement record
+        - embed the RFP query
         - use FAISS to find nearest neighbours
-    TODO(Arda) L2: explain WHY each one matched.
-    TODO(Arda) L3: synthesise a grounded capability statement — and hold
-        yourself to the same no-invention rule as Taha's Generator.
+
+    L2:
+        - explain each result using structured fields from the record
+
+    L3:
+        - build a grounded capability statement from the retrieved records
+        - use only facts contained in those records
     """
     if not query.strip():
         die("RFP text is empty")
@@ -192,8 +375,22 @@ def main():
     if not query.strip():
         die(f"empty RFP file: {args.rfp}")
 
-    matches = search(query, load_corpus(), args.top)
-    json.dump({"matches": matches}, sys.stdout, indent=2, ensure_ascii=False)
+    corpus = load_corpus()
+
+    matches = search(query, corpus, args.top)
+    capability_statement = build_capability_statement(matches, corpus)
+
+    output = {
+        "matches": matches,
+        "capability_statement": capability_statement,
+    }
+
+    json.dump(
+        output,
+        sys.stdout,
+        indent=2,
+        ensure_ascii=False,
+    )
     print()
 
 

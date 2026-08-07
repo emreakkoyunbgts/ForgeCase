@@ -1,6 +1,6 @@
 """Tests for the Librarian."""
 from common.contract import load_corpus
-from librarian.librarian import search
+from librarian.librarian import build_capability_statement, search
 
 
 def load_rfp(filename):
@@ -64,5 +64,89 @@ def test_matches_include_l2_explanations():
             f"{match['engagement_id']} still contains a TODO"
         )
         
-# TODO(Arda): rfp_02 (DORA, German lender) should surface eng-07. Test it.
-# TODO(Arda): make eng-01 rank FIRST, not just top-3.
+def test_capability_statement_is_grounded():
+    """
+    The statement should use facts from the selected engagement and should
+    attach source references to measurable outcomes.
+    """
+    corpus = load_corpus()
+
+    eng01 = next(
+        record
+        for record in corpus
+        if record["id"] == "eng-01"
+    )
+
+    matches = [{
+        "engagement_id": "eng-01",
+        "score": 1.0,
+        "why": "Matched on domain: core banking",
+    }]
+
+    result = build_capability_statement(matches, corpus)
+
+    assert result["text"]
+    assert result["evidence"]
+
+    assert eng01["domain"] in result["text"]
+    assert eng01["region"] in result["text"]
+
+    # The confidential real client name must not appear.
+    assert eng01["client"] not in result["text"]
+
+    valid_outcomes = {
+        (
+            outcome["metric"],
+            outcome["source_ref"],
+        )
+        for outcome in eng01.get("outcomes", [])
+    }
+
+    outcome_evidence = [
+        item
+        for item in result["evidence"]
+        if item["field"] == "outcome"
+    ]
+
+    assert outcome_evidence
+
+    for item in outcome_evidence:
+        assert (
+            item["value"],
+            item["source_ref"],
+        ) in valid_outcomes
+
+def test_capability_statement_does_not_invent_missing_outcomes():
+    """
+    eng-12 has no measurable outcomes. L3 must not manufacture one.
+    """
+    corpus = load_corpus()
+
+    matches = [{
+        "engagement_id": "eng-12",
+        "score": 1.0,
+        "why": "Matched on structured engagement fields",
+    }]
+
+    result = build_capability_statement(matches, corpus)
+
+    outcome_evidence = [
+        item
+        for item in result["evidence"]
+        if item["field"] == "outcome"
+    ]
+
+    assert outcome_evidence == []
+    assert "Documented outcomes include:" not in result["text"]
+
+def test_capability_statement_handles_no_matches():
+    """No matches should produce a clear, non-invented response."""
+    result = build_capability_statement(
+        matches=[],
+        corpus=load_corpus(),
+    )
+
+    assert result == {
+        "text": "No relevant engagement evidence was found.",
+        "evidence": [],
+    }
