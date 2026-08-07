@@ -1,0 +1,13 @@
+Requirements:
+
+1. Support real-time payments on a modern core banking platform using event-driven integration and Kafka.
+
+2. Provide DORA operational-resilience control mapping and automated ICT risk evidence collection.
+
+3. Extract structured information from scanned insurance claim forms and route low-confidence cases for human review.
+
+4. Improve observability of critical payment services and reduce incident detection times.
+
+5. Provide blockchain-based digital-asset custody and cryptocurrency wallet operations.
+
+6. Migrate a manufacturing company from SAP ERP to an aerospace supply-chain platform.
