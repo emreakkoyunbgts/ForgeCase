@@ -9,8 +9,11 @@ Case study -> branded BGTS document.
 See the Project Specification, sections 4.1 and 7.
 """
 import argparse
+import calendar
+import hashlib
 import json
 import sys
+from datetime import date
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -63,6 +66,127 @@ def print_case_study(case_study):
     print(json.dumps(case_study, indent=2, ensure_ascii=False))
 
 
+def collect_provenance_sources(case_study):
+    """Collect source records and unique source references from a case study."""
+    source_records = []
+    engagement_id = case_study.get("engagement_id")
+    if isinstance(engagement_id, str) and engagement_id.strip():
+        source_records.append(engagement_id.strip())
+
+    source_references = []
+    seen = set()
+    citations = case_study.get("citations")
+    if not isinstance(citations, list):
+        citations = []
+
+    for citation in citations:
+        if not isinstance(citation, dict):
+            continue
+        source_ref = citation.get("source_ref")
+        if not isinstance(source_ref, str):
+            continue
+        cleaned = source_ref.strip()
+        if not cleaned or cleaned in seen:
+            continue
+        seen.add(cleaned)
+        source_references.append(cleaned)
+
+    return {
+        "source_records": source_records,
+        "source_references": source_references,
+    }
+
+
+def compute_content_hash(published_content):
+    """Return a deterministic SHA-256 hash of safe published content."""
+    canonical = json.dumps(
+        published_content,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _subtract_calendar_months(value, months):
+    """Return the date that is months calendar months before value."""
+    year = value.year
+    month = value.month - months
+    while month <= 0:
+        month += 12
+        year -= 1
+    day = min(value.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def compute_freshness(completed_at, as_of_date):
+    """Classify published content freshness from completed_at and as_of_date."""
+    if completed_at is None:
+        return {
+            "freshness_status": "UNKNOWN",
+            "freshness_reason": "DATE_MISSING",
+        }
+    if not isinstance(completed_at, str) or not completed_at.strip():
+        return {
+            "freshness_status": "UNKNOWN",
+            "freshness_reason": "DATE_MISSING",
+        }
+
+    try:
+        completed_date = date.fromisoformat(completed_at.strip())
+        as_of = date.fromisoformat(as_of_date)
+    except ValueError:
+        return {
+            "freshness_status": "UNKNOWN",
+            "freshness_reason": "DATE_INVALID",
+        }
+
+    cutoff_date = _subtract_calendar_months(as_of, 6)
+    if completed_date < cutoff_date:
+        return {
+            "freshness_status": "STALE",
+            "freshness_reason": "OLDER_THAN_SIX_MONTHS",
+        }
+    return {
+        "freshness_status": "FRESH",
+        "freshness_reason": "WITHIN_SIX_MONTHS",
+    }
+
+
+def build_provenance_metadata(case_study, published_content, as_of_date):
+    """Combine sources, content hash and freshness into one metadata dict."""
+    sources = collect_provenance_sources(case_study)
+    freshness = compute_freshness(
+        case_study.get("completed_at"),
+        as_of_date,
+    )
+    return {
+        "source_records": sources["source_records"],
+        "source_references": sources["source_references"],
+        "completed_at": case_study.get("completed_at"),
+        "as_of_date": as_of_date,
+        "content_hash": compute_content_hash(published_content),
+        "freshness_status": freshness["freshness_status"],
+        "freshness_reason": freshness["freshness_reason"],
+    }
+
+
+def write_provenance_sidecar(asset_path, metadata):
+    """Write provenance metadata beside a published asset as UTF-8 JSON."""
+    asset_path = Path(asset_path)
+    sidecar_path = asset_path.with_name(asset_path.name + ".provenance.json")
+    with open(sidecar_path, "w", encoding="utf-8") as f:
+        json.dump(
+            metadata,
+            f,
+            indent=2,
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        f.write("\n")
+    return sidecar_path
+
+
 def prepare_display_values(case_study):
     """
     Build the safe display values used by both DOCX and PDF output.
@@ -103,9 +227,14 @@ def prepare_display_values(case_study):
     }
 
 
-def render_docx(case_study, template_path, out_path):
+def render_docx(case_study, template_path, out_path, as_of_date=None):
     """Fill the template's {{PLACEHOLDERS}} from the case study."""
     display = prepare_display_values(case_study)
+    provenance = build_provenance_metadata(
+        case_study,
+        display,
+        _resolve_as_of_date(as_of_date),
+    )
 
     values = {
         "{{TITLE}}":      display["title"],
@@ -133,13 +262,57 @@ def render_docx(case_study, template_path, out_path):
                 if key in run.text:
                     run.text = run.text.replace(key, value)
 
+    doc.add_paragraph("")
+    for line in _provenance_lines(provenance):
+        doc.add_paragraph(line)
+
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(out_path)
+    write_provenance_sidecar(out_path, provenance)
     return out_path
 
 
-def render_pdf(case_study, out_path, layout="full-case-study"):
+def _resolve_as_of_date(as_of_date):
+    """Return an explicit as_of_date or today's ISO date."""
+    return as_of_date or date.today().isoformat()
+
+
+def _provenance_lines(metadata):
+    """Return plain-text provenance lines for PDF and DOCX output."""
+    completed_at = metadata.get("completed_at")
+    if completed_at is None or (
+        isinstance(completed_at, str) and not completed_at.strip()
+    ):
+        completed_display = "UNKNOWN"
+    else:
+        completed_display = str(completed_at)
+
+    source_records = ", ".join(metadata.get("source_records") or [])
+    source_references = ", ".join(metadata.get("source_references") or [])
+
+    return [
+        "Provenance",
+        f"Source records: {source_records}",
+        f"Source references: {source_references}",
+        f"Content hash: {metadata['content_hash']}",
+        f"Freshness: {metadata['freshness_status']}",
+        f"Reason: {metadata['freshness_reason']}",
+        f"Completed at: {completed_display}",
+        f"As of date: {metadata['as_of_date']}",
+    ]
+
+
+def _provenance_flowables(metadata, heading_style, body_style):
+    """Build visible provenance Paragraph flowables from metadata."""
+    lines = _provenance_lines(metadata)
+    return [
+        Paragraph(escape(lines[0]), heading_style),
+        *[Paragraph(escape(line), body_style) for line in lines[1:]],
+    ]
+
+
+def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
     """Create a branded BGTS PDF using the selected layout."""
     if layout not in PDF_LAYOUTS:
         raise ValueError(
@@ -148,6 +321,11 @@ def render_pdf(case_study, out_path, layout="full-case-study"):
         )
 
     display = prepare_display_values(case_study)
+    provenance = build_provenance_metadata(
+        case_study,
+        display,
+        _resolve_as_of_date(as_of_date),
+    )
 
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -204,6 +382,23 @@ def render_pdf(case_study, out_path, layout="full-case-study"):
         textColor=NAVY,
         spaceBefore=24,
     )
+    provenance_heading = ParagraphStyle(
+        "ProvenanceHeading",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=11,
+        textColor=NAVY,
+        spaceBefore=10,
+        spaceAfter=4,
+    )
+    provenance_body = ParagraphStyle(
+        "ProvenanceBody",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=8,
+        leading=10,
+        spaceAfter=2,
+    )
 
     if layout == "one-pager":
         one_brand = ParagraphStyle(
@@ -255,6 +450,23 @@ def render_pdf(case_study, out_path, layout="full-case-study"):
             textColor=NAVY,
             spaceBefore=6,
         )
+        one_provenance_heading = ParagraphStyle(
+            "OneProvenanceHeading",
+            parent=styles["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=7,
+            textColor=NAVY,
+            spaceBefore=4,
+            spaceAfter=1,
+        )
+        one_provenance_body = ParagraphStyle(
+            "OneProvenanceBody",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=6,
+            leading=7,
+            spaceAfter=1,
+        )
 
         document = SimpleDocTemplate(
             str(out_path),
@@ -282,6 +494,11 @@ def render_pdf(case_study, out_path, layout="full-case-study"):
                     Paragraph(escape(display["technology"]), one_body),
                     Paragraph(escape("OUTCOMES"), one_heading),
                     Paragraph(escape(display["outcomes"]), one_body),
+                    *_provenance_flowables(
+                        provenance,
+                        one_provenance_heading,
+                        one_provenance_body,
+                    ),
                     Paragraph(
                         escape("Confidential — BGTS International"),
                         one_footer,
@@ -290,10 +507,7 @@ def render_pdf(case_study, out_path, layout="full-case-study"):
                 mode="shrink",
             )
         ]
-        document.build(story)
-        return out_path
-
-    if layout == "single-slide":
+    elif layout == "single-slide":
         slide_heading = ParagraphStyle(
             "SlideHeading",
             parent=styles["Heading2"],
@@ -310,6 +524,23 @@ def render_pdf(case_study, out_path, layout="full-case-study"):
             fontSize=8,
             leading=10,
             spaceAfter=0,
+        )
+        slide_provenance_heading = ParagraphStyle(
+            "SlideProvenanceHeading",
+            parent=styles["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            textColor=NAVY,
+            spaceBefore=4,
+            spaceAfter=2,
+        )
+        slide_provenance_body = ParagraphStyle(
+            "SlideProvenanceBody",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=6,
+            leading=8,
+            spaceAfter=1,
         )
 
         def slide_cell(heading_text, body_text):
@@ -367,6 +598,11 @@ def render_pdf(case_study, out_path, layout="full-case-study"):
                 + [
                     grid,
                     Spacer(1, 8),
+                    *_provenance_flowables(
+                        provenance,
+                        slide_provenance_heading,
+                        slide_provenance_body,
+                    ),
                     Paragraph(
                         escape("Confidential — BGTS International"),
                         footer,
@@ -375,27 +611,32 @@ def render_pdf(case_study, out_path, layout="full-case-study"):
                 mode="shrink",
             )
         ]
-        document.build(story)
-        return out_path
+    else:
+        story = [
+            Paragraph(escape("BGTS INTERNATIONAL"), brand),
+            Paragraph(escape(display["title"]), title),
+            Paragraph(escape(display["client_type"]), client),
+            Paragraph(escape("The Challenge"), heading),
+            Paragraph(escape(display["challenge"]), body),
+            Paragraph(escape("Our Approach"), heading),
+            Paragraph(escape(display["approach"]), body),
+            Paragraph(escape("Technology"), heading),
+            Paragraph(escape(display["technology"]), body),
+            Paragraph(escape("Outcomes"), heading),
+            Paragraph(escape(display["outcomes"]), body),
+            Spacer(1, 12),
+            *_provenance_flowables(
+                provenance,
+                provenance_heading,
+                provenance_body,
+            ),
+            Spacer(1, 18),
+            Paragraph(escape("Confidential — BGTS International"), footer),
+        ]
+        document = SimpleDocTemplate(str(out_path), pagesize=page_size)
 
-    story = [
-        Paragraph(escape("BGTS INTERNATIONAL"), brand),
-        Paragraph(escape(display["title"]), title),
-        Paragraph(escape(display["client_type"]), client),
-        Paragraph(escape("The Challenge"), heading),
-        Paragraph(escape(display["challenge"]), body),
-        Paragraph(escape("Our Approach"), heading),
-        Paragraph(escape(display["approach"]), body),
-        Paragraph(escape("Technology"), heading),
-        Paragraph(escape(display["technology"]), body),
-        Paragraph(escape("Outcomes"), heading),
-        Paragraph(escape(display["outcomes"]), body),
-        Spacer(1, 18),
-        Paragraph(escape("Confidential — BGTS International"), footer),
-    ]
-
-    document = SimpleDocTemplate(str(out_path), pagesize=page_size)
     document.build(story)
+    write_provenance_sidecar(out_path, provenance)
     return out_path
 
 
@@ -420,6 +661,14 @@ def main():
     parser.add_argument(
         "--print-json",
         action="store_true",
+    )
+    parser.add_argument(
+        "--as-of-date",
+        default=None,
+        help=(
+            "Freshness evaluation date in YYYY-MM-DD format. "
+            "Defaults to the publication date when omitted."
+        ),
     )
     args = parser.parse_args()
 
@@ -449,12 +698,14 @@ def main():
             case_study,
             args.template,
             out_path,
+            as_of_date=args.as_of_date,
         )
     elif suffix == ".pdf":
         written = render_pdf(
             case_study,
             out_path,
             layout=args.layout,
+            as_of_date=args.as_of_date,
         )
     else:
         die(
