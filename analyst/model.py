@@ -161,8 +161,8 @@ def predict_new_opportunity(model, feature_columns, mlb, domain, region, technol
         "domain": domain,
         "region": region,
         "technologies": technologies,
-        "base_model_score": round(float(proba), 3),  # Modelin ham tahmini
-        "evidence_score": round(float(adjusted_proba), 3),  # Cezalandırılmış gerçekçi skor
+        "base_model_score": round(float(proba), 3),  
+        "evidence_score": round(float(adjusted_proba), 3), 
         "warnings": warnings,
     }
     
