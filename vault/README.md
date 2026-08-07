@@ -19,6 +19,11 @@ python -m vault.vault serve          # API on :8000 — docs at /docs
   - `DELETE /engagements/{id}` → 204 (needs `If-Match`)
   - `GET /engagements?domain=&region=&limit=&offset=` → filter + pagination
   - Stale ETag → **412**; missing `If-Match` → **428**
+- **L5 (stretch)** — Record versioning (as-of):
+  - Every `store` / create / update appends an immutable snapshot to `engagement_versions`
+  - `GET /engagements/{id}?as_of=ISO8601` → newest snapshot with `recorded_at <= as_of`
+  - `GET /engagements/{id}/versions` → version list (`version`, `recorded_at`, `etag`)
+  - DELETE removes the current row but keeps history (as-of still works)
 
 ## Watch out
 - `eng-12` has an empty `outcomes` list — schema must handle it.

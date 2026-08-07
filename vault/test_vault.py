@@ -1,13 +1,21 @@
-"""Tests for the Vault (L1 storage + L2/L4 REST API)."""
+"""Tests for the Vault (L1 storage + L2/L4/L5 REST API)."""
 from fastapi.testclient import TestClient
 
 from common.contract import load_corpus, load_seed
-from vault.vault import create_app, store, get, delete, etag_for
+from vault.vault import (
+    create_app, store, get, delete, etag_for, init_db, list_versions,
+)
 
 
 def _clear(engagement_id):
-    """Remove a record if it is there — keeps tests independent of prior runs."""
+    """Remove current row and version history — keeps tests independent."""
     delete(engagement_id)
+    conn = init_db()
+    with conn:
+        conn.execute(
+            "DELETE FROM engagement_versions WHERE engagement_id = ?",
+            (engagement_id,),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -183,3 +191,96 @@ def test_etag_changes_when_record_changes():
     b = dict(a)
     b["challenge"] = a["challenge"] + "!"
     assert etag_for(a) != etag_for(b)
+
+
+# ---------------------------------------------------------------------------
+# L5 / CF-63 — record versioning (as-of)
+# ---------------------------------------------------------------------------
+
+def test_as_of_returns_older_snapshot():
+    """After an update, as_of before the change returns the old content."""
+    _clear("eng-01")
+    original = load_seed("eng-01")
+    store(original, recorded_at="2026-01-01T10:00:00Z")
+
+    updated = dict(original)
+    updated["challenge"] = "Changed for versioning test"
+    store(updated, recorded_at="2026-01-01T12:00:00Z")
+
+    assert get("eng-01")["challenge"] == updated["challenge"]
+    past = get("eng-01", as_of="2026-01-01T11:00:00Z")
+    assert past is not None
+    assert past["challenge"] == original["challenge"]
+
+
+def test_as_of_before_any_version_returns_none():
+    """as_of earlier than the first snapshot finds nothing."""
+    _clear("eng-01")
+    store(load_seed("eng-01"), recorded_at="2026-06-01T00:00:00Z")
+    assert get("eng-01", as_of="2026-01-01T00:00:00Z") is None
+
+
+def test_versions_list_grows_on_each_store():
+    """Each store appends one immutable version."""
+    _clear("eng-01")
+    original = load_seed("eng-01")
+    store(original, recorded_at="2026-01-01T10:00:00Z")
+    updated = dict(original)
+    updated["challenge"] = "v2"
+    store(updated, recorded_at="2026-01-01T11:00:00Z")
+    versions = list_versions("eng-01")
+    assert len(versions) == 2
+    assert versions[0]["version"] == 1
+    assert versions[1]["version"] == 2
+
+
+def test_api_as_of_query_param():
+    """GET /engagements/{id}?as_of=... returns the historical snapshot."""
+    client = TestClient(create_app())
+    _clear("eng-01")
+    original = load_seed("eng-01")
+    store(original, recorded_at="2026-02-01T08:00:00Z")
+    updated = dict(original)
+    updated["challenge"] = "API as-of challenge"
+    store(updated, recorded_at="2026-02-01T10:00:00Z")
+
+    past = client.get(
+        "/engagements/eng-01",
+        params={"as_of": "2026-02-01T09:00:00Z"},
+    )
+    assert past.status_code == 200
+    assert past.json()["challenge"] == original["challenge"]
+
+    current = client.get("/engagements/eng-01")
+    assert current.json()["challenge"] == updated["challenge"]
+
+
+def test_api_versions_endpoint():
+    """GET /engagements/{id}/versions lists snapshots."""
+    client = TestClient(create_app())
+    _clear("eng-01")
+    store(load_seed("eng-01"), recorded_at="2026-03-01T00:00:00Z")
+    body = client.get("/engagements/eng-01/versions").json()
+    assert body["id"] == "eng-01"
+    assert len(body["versions"]) == 1
+    assert "recorded_at" in body["versions"][0]
+    assert "etag" in body["versions"][0]
+
+
+def test_delete_keeps_version_history_for_as_of():
+    """Deleting the current row must not erase as-of history."""
+    client = TestClient(create_app())
+    _clear("eng-01")
+    original = load_seed("eng-01")
+    store(original, recorded_at="2026-04-01T00:00:00Z")
+    etag = client.get("/engagements/eng-01").headers["ETag"]
+    assert client.delete(
+        "/engagements/eng-01", headers={"If-Match": etag}
+    ).status_code == 204
+    assert client.get("/engagements/eng-01").status_code == 404
+    past = client.get(
+        "/engagements/eng-01",
+        params={"as_of": "2026-04-01T12:00:00Z"},
+    )
+    assert past.status_code == 200
+    assert past.json()["id"] == "eng-01"
