@@ -13,6 +13,7 @@ import json
 import os
 import shutil
 import sys
+import time
 
 from common.contract import load_seed
 from common.errors import die, BAD_INPUT
@@ -34,14 +35,16 @@ class ExtractionError(Exception):
 
 
 def _read_text_layer(pdf_path):
-    """Pull whatever text lives in the PDF's text layer. Returns a string."""
-    import pdfplumber
+    """
+    Pull the text out of the PDF's text layer, in reading order.
 
-    parts = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            parts.append(page.extract_text() or "")
-    return "\n".join(parts)
+    This goes through the layout module rather than straight to
+    page.extract_text(), because a plain top-to-bottom read of a two-column
+    page interleaves the columns into nonsense. See reader/layout.py.
+    """
+    from reader import layout
+
+    return layout.analyse(pdf_path)["text"]
 
 
 def _locate_tesseract():
@@ -80,11 +83,25 @@ def _ocr(pdf_path):
         pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
     poppler_path = os.environ.get("POPPLER_PATH") or None
 
-    try:
-        images = convert_from_path(pdf_path, poppler_path=poppler_path)
-    except Exception as e:
-        # Poppler missing, or the file cannot be rendered to images.
-        raise ExtractionError(f"could not render {pdf_path} for OCR: {e}")
+    # Rendering shells out to Poppler, and on Windows that launch fails now and
+    # then even though Poppler is installed and works when run by hand. It comes
+    # back as "Unable to get page count", which reads as "your PDF is broken"
+    # when there is nothing wrong with the PDF. The failures cluster — a run of
+    # them after the OCR path has been exercised hard, then long clean stretches
+    # — so it looks like the OS throttling repeated launches rather than
+    # anything about the document. One retry clears the short blips; a longer
+    # cluster still fails, and should, because by then something really is wrong
+    # with the environment.
+    images = None
+    for attempt in (1, 2):
+        try:
+            images = convert_from_path(pdf_path, poppler_path=poppler_path)
+            break
+        except Exception as e:
+            if attempt == 1:
+                time.sleep(0.5)
+                continue
+            raise ExtractionError(f"could not render {pdf_path} for OCR: {e}")
 
     parts = []
     for image in images:
@@ -162,7 +179,26 @@ def main():
     parser.add_argument("--text-only", action="store_true",
                         help="print the extracted text and stop (Reader L1); "
                              "do not build a record")
+    parser.add_argument("--layout", action="store_true",
+                        help="print the layout analysis as JSON — columns, "
+                             "tables, labelled fields and sections, each with "
+                             "the region of the page it came from")
     args = parser.parse_args()
+
+    if args.layout:
+        try:
+            from reader import layout
+            analysis = layout.analyse(args.document)
+        except ExtractionError as e:
+            die(str(e), BAD_INPUT)
+        except Exception as e:
+            die(f"could not read {args.document}: {e}", BAD_INPUT)
+        if not analysis["text"].strip():
+            die(f"{args.document}: no text found — is it a scan? "
+                f"layout analysis needs a text layer", BAD_INPUT)
+        json.dump(analysis, sys.stdout, indent=2, ensure_ascii=False)
+        print()
+        return
 
     try:
         text = extract_text(args.document)
