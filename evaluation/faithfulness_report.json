@@ -1,0 +1,116 @@
+{
+  "metric": "faithfulness",
+  "definition": "supported generated claims / all generated claims",
+  "faithfulness": 1.0,
+  "faithfulness_percent": 100.0,
+  "supported_claims": 93,
+  "total_claims": 93,
+  "unsupported_claim_count": 0,
+  "case_count": 10,
+  "per_engagement": [
+    {
+      "engagement_id": "eng-01",
+      "supported_claims": 11,
+      "total_claims": 11,
+      "faithfulness": 1.0
+    },
+    {
+      "engagement_id": "eng-02",
+      "supported_claims": 10,
+      "total_claims": 10,
+      "faithfulness": 1.0
+    },
+    {
+      "engagement_id": "eng-03",
+      "supported_claims": 10,
+      "total_claims": 10,
+      "faithfulness": 1.0
+    },
+    {
+      "engagement_id": "eng-04",
+      "supported_claims": 9,
+      "total_claims": 9,
+      "faithfulness": 1.0
+    },
+    {
+      "engagement_id": "eng-05",
+      "supported_claims": 10,
+      "total_claims": 10,
+      "faithfulness": 1.0
+    },
+    {
+      "engagement_id": "eng-06",
+      "supported_claims": 9,
+      "total_claims": 9,
+      "faithfulness": 1.0
+    },
+    {
+      "engagement_id": "eng-07",
+      "supported_claims": 10,
+      "total_claims": 10,
+      "faithfulness": 1.0
+    },
+    {
+      "engagement_id": "eng-08",
+      "supported_claims": 8,
+      "total_claims": 8,
+      "faithfulness": 1.0
+    },
+    {
+      "engagement_id": "eng-09",
+      "supported_claims": 9,
+      "total_claims": 9,
+      "faithfulness": 1.0
+    },
+    {
+      "engagement_id": "eng-12",
+      "supported_claims": 7,
+      "total_claims": 7,
+      "faithfulness": 1.0
+    }
+  ],
+  "per_section": [
+    {
+      "section": "title",
+      "supported_claims": 10,
+      "total_claims": 10,
+      "faithfulness": 1.0
+    },
+    {
+      "section": "context",
+      "supported_claims": 10,
+      "total_claims": 10,
+      "faithfulness": 1.0
+    },
+    {
+      "section": "challenge",
+      "supported_claims": 10,
+      "total_claims": 10,
+      "faithfulness": 1.0
+    },
+    {
+      "section": "approach",
+      "supported_claims": 10,
+      "total_claims": 10,
+      "faithfulness": 1.0
+    },
+    {
+      "section": "technology",
+      "supported_claims": 35,
+      "total_claims": 35,
+      "faithfulness": 1.0
+    },
+    {
+      "section": "outcomes",
+      "supported_claims": 18,
+      "total_claims": 18,
+      "faithfulness": 1.0
+    }
+  ],
+  "unsupported_claims": [],
+  "limitations": [
+    "Faithfulness measures whether generated claims are supported.",
+    "It does not measure whether every useful source fact was included.",
+    "Labels are manually reviewed and should be spot-checked by another reviewer."
+  ]
+}

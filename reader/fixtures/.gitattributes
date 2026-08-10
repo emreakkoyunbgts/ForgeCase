@@ -1,0 +1,6 @@
+# These PDFs are binary. Without this, Git's text heuristic sees the newlines
+# inside them and — with core.autocrlf=true, which is the default on Windows and
+# what this cohort is running — rewrites LF as CRLF on checkout. That shifts
+# every byte offset in the PDF's xref table, so the file differs between
+# machines and stricter PDF tools reject it.
+*.pdf binary

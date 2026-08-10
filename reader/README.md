@@ -6,8 +6,57 @@ You build the front door. Everything downstream depends on your output.
 
 ## Run it
 ```bash
+# full record (the LLM step is still a stub)
 python -m reader.reader caseforge-testdata/documents/eng-01_closeout.pdf
+
+# just the extracted text, in reading order (L1)
+python -m reader.reader caseforge-testdata/documents/eng-01_closeout.pdf --text-only
+
+# the layout analysis: columns, tables, labelled fields, sections, regions (L4)
+python -m reader.reader reader/fixtures/two_column_closeout.pdf --layout
 ```
+
+Exit codes: `0` success · `2` bad input (empty / corrupt / blank — a clear
+message on stderr, never a stack trace).
+
+## Setup — the OCR tools (needed for scanned PDFs)
+
+Text-layer PDFs work with the Python packages in `requirements.txt` alone.
+Scanned PDFs need two extra **programs** (not pip packages): **Tesseract**
+(the OCR engine) and **Poppler** (renders PDF pages to images).
+
+**Windows** (the cohort's setup):
+```powershell
+winget install UB-Mannheim.TesseractOCR
+winget install oschwartz10612.Poppler
+```
+Then open a **new** terminal so PATH updates take effect.
+
+The Tesseract installer does not always add itself to PATH. The reader falls
+back to the default install location (`C:\Program Files\Tesseract-OCR`)
+automatically — or set `TESSERACT_CMD` / `POPPLER_PATH` to point at them
+explicitly. On Linux: `apt-get install tesseract-ocr poppler-utils`.
+
+**Two Windows quirks worth knowing about.**
+
+Rendering shells out to Poppler, and that launch fails now and then even with
+Poppler installed and on PATH — `pdfinfo` and `pdftoppm` run fine by hand at
+the same moment. It surfaces as `Unable to get page count. Is poppler installed
+and in PATH?`, which reads like a broken PDF when nothing is wrong with the
+PDF. The failures cluster: a run of them after the OCR path has been exercised
+hard, then long clean stretches, which looks like the OS throttling repeated
+launches. The reader retries once, which clears the short blips. If you get a
+run of them, wait rather than debug your document.
+
+Poppler also cannot read its own data files when it is installed under a path
+containing non-ASCII characters — a Turkish name in `C:\Users\...` is enough:
+
+```
+Couldn't open 'nameToUnicode' file 'C:\Users\<c7>a<f0>r<fd> Tirelioglu\...
+```
+
+Those warnings go to stderr and OCR still works, so this is noise rather than
+breakage — but it is worth knowing before someone spends an afternoon on it.
 
 ## Your levels
 - **L1** — Get text out of a normal PDF (`pdfplumber`). Detect a scan (almost no
@@ -16,6 +65,48 @@ python -m reader.reader caseforge-testdata/documents/eng-01_closeout.pdf
   Every outcome carries a `source_ref`. Flag `eng-12` as `outcome_missing`.
   Fail cleanly on the three broken files.
 - **L3** — Confidence per field; a review screen.
+- **L4** — Layout-aware extraction (CF-49, done) and per-field confidence with
+  region-level `source_ref` (CF-50, next).
+
+## Layout-aware extraction (CF-49)
+
+`reader/layout.py` reads a page by its geometry rather than straight down it:
+
+| It handles | How |
+|---|---|
+| **Columns** | Finds the whitespace gutters, then reads column by column. A top-to-bottom read of a two-column page interleaves the columns mid-sentence and fuses side-by-side headings into `"1. The Challenge 3. Technology"`. |
+| **Ruled tables** | `pdfplumber` line-based detection. |
+| **Unruled tables** | Aligned cell starts repeating across consecutive lines — the common case in business documents, where a table is laid out with tabs and no ink at all. |
+| **Labelled fields** | `Label: value` from lines *and* from two-column tables, mapped to contract names (`Client profile` → `client_type`), with `14 people` → `14`. |
+| **Sections** | Numbered headings (`1. The Challenge`) split the body, so the next stage can ask for one section instead of one long string. |
+| **Figures** | Reported with their region, not silently dropped. |
+
+Every field, table and section records the **region** (page + bbox) it came
+from. That is what CF-50 builds `source_ref` regions and confidence on.
+
+A false table is worse than a missed one — it invents structure — so cell
+contents have to be short and the alignment has to repeat before something is
+called a table. The single-column closeouts correctly yield no tables at all.
+
+### Test fixtures
+
+The supplied pack is all single-column prose — no table, no multi-column page —
+so there was nothing to test this against. `reader/fixtures/` holds three PDFs
+carrying eng-01's facts laid out three other ways (two columns, ruled table,
+whitespace-aligned table). They are committed, so the tests need nothing extra;
+`reader/fixtures/make_fixtures.py` regenerates them (needs `reportlab`).
+
+### Known limitation, not repaired
+
+`eng-11_closeout.pdf` has a broken font encoding: the Turkish dotless ı (U+0131)
+is mapped to the wrong code point, so **every** extractor misreads the client
+name — `pdfplumber` gives `Pera Yatnrnm`, Poppler's `pdftotext` gives
+`Pera Yat?r?m`, where `corpus.json` says `Pera Yatırım`. The glyphs look right
+on screen; the text behind them is wrong.
+
+We do not add a repair table. Deciding that `n` was meant to be `ı` is a guess
+about a client's name, and CaseForge never invents a fact. The Reader reports
+what the document says; the fix belongs wherever these PDFs are generated.
 
 ## Your test data
 | File | Why |
