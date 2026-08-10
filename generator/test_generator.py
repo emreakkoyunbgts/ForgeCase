@@ -5,7 +5,7 @@ import pytest
 
 from common.contract import load_seed, load_corpus
 from generator.generator import generate, get_five_sections_with_llm, generate_multi_source, generate_single_stream, \
-    get_llm_punchy, get_llm_concise, generate_two_source
+    get_llm_punchy, get_llm_concise, generate_two_source, chech_llm_output_with_source
 import re , json
 import time
 
@@ -220,3 +220,17 @@ def test_concise_llm_output():
     assert invented == set(), f"Invented numbers: {invented}"
 
 
+def test_generate_eng2():
+    case_study = generate_multi_source([load_seed("eng-02")])
+    print("case study from eng-02: "+str(case_study))
+
+    get_five_sections_with_llm(case_study)
+
+    for section in ["context", "challenge", "approach", "technology", "outcomes"]:
+        assert section in case_study["sections"]
+
+
+def test_check_mcs2():
+    mcs={'engagement_ids': ['eng-02'], 'titles': [{'title': 'regulatory reporting for Nordbank Deutschland', 'page': 'eng-02'}], 'sections': {'context': [{'region': 'Nordbank Deutschland in DE.', 'page': 'eng-02'}], 'challenge': [{'challenge': 'Manual regulatory reporting to BaFin consumed 3 weeks per quarter and was prone to reconciliation errors.', 'page': 'eng-02'}], 'approach': [{'approach': 'An automated reporting pipeline with lineage tracking and a reconciliation engine, replacing spreadsheet-based assembly.', 'page': 'eng-02'}], 'technology': [{'technologies': 'Python, Airflow, PostgreSQL, dbt', 'page': 'eng-02'}], 'outcomes': [{'outcomes': 'reporting cycle cut from 15 days to 3 days; reconciliation errors reduced 80%', 'page': 'eng-02'}]}, 'citations': [{'claim': 'reporting cycle cut from 15 days to 3 days', 'source_ref': 'closeout.pdf#page=4', 'page_ref': 'eng-02'}, {'claim': 'reconciliation errors reduced 80%', 'source_ref': 'closeout.pdf#page=4', 'page_ref': 'eng-02'}], 'client_named': True}
+    llm_out={'context': 'The engagement involved [MISSING: client_type] in DE.', 'challenge': 'Manual regulatory reporting to BaFin consumed 3 weeks per quarter and was prone to reconciliation errors.', 'approach': 'BGTS implemented an automated reporting pipeline with lineage tracking and a reconciliation engine, replacing spreadsheet-based assembly.', 'technology': 'Python, Airflow, PostgreSQL, dbt.', 'outcomes': 'The reporting cycle was cut from 15 days to 3 days. Reconciliation errors were reduced 80%.İncome reduce 200%.'}
+    chech_llm_output_with_source(mcs, llm_out)
