@@ -1,6 +1,7 @@
 import sys
+import uuid
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException , Response , Request
 import logging
 
 from common.contract import load_seed
@@ -17,7 +18,7 @@ app=FastAPI()
 
 
 @app.get("/mcs/{id}")
-async def get_mcs(id: str):
+async def get_mcs(id: str , request: Request , response: Response):
     """
     Get the multi-source content for a given record ID.
     """
@@ -25,14 +26,35 @@ async def get_mcs(id: str):
         logger.error("Record ID is None")
         raise HTTPException(status_code=400, detail="Record ID is required")
 
+
+    correlation_id=request.headers.get("X-Correlation-ID", None)
+    if correlation_id is None:
+        logger.warning(f"Correlation ID: {correlation_id}")
+        correlation_id=str(uuid.uuid4())
+        logger.info(f"Generated new Correlation ID: {correlation_id}")
+
+    authorization=request.headers.get("Authorization", None)
+    headers={"X-Correlation-ID": correlation_id,}
+
+    if authorization:
+        headers["Authorization"]=authorization
+    else:
+        logger.warning("Authorization header is missing")
+
+
+
+
     # There is stub for now , we will implement the actual logic when finished with vault api
     try:
-        record =await get_record_from_vault(id)
+        record =await get_record_from_vault(id, headers=headers)
     except Exception as e:
         logger.error(f"Error loading seed record for ID {id}: {e}")
         raise HTTPException(status_code=404, detail=f"Record with ID {id} not found")
 
     mcs=generate_multi_source([record])
+
+    response.headers["X-Correlation-ID"]=correlation_id
+
 
     return mcs
 

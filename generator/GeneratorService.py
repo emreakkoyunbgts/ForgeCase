@@ -10,10 +10,10 @@ logging.basicConfig(level=logging.INFO,
 
 logger=logging.getLogger(__name__)
 
-async def get_record_from_vault(record_id:str):
+async def get_record_from_vault(record_id:str , headers:dict=None):
     try:
         async with httpx.AsyncClient() as client:
-            response=await client.get(f"https://127.0.0.1/8080/engagements/{record_id}")
+            response=await client.get(f"http://127.0.0.1:8000/engagements/{record_id}", headers=headers)
             if response.status_code==404:
                 logger.error(f"Record with ID {record_id} not found in vault")
                 raise HTTPException(status_code=404,
