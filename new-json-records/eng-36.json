@@ -4,7 +4,7 @@
     "client_type": "Commercial insurer",
     "may_be_named": false,
     "domain": "insurtech / claims",
-    "region": "NA",
+    "region": "NL",
     "challenge": "FNOL (First Notice of Loss) claims processing took weeks to process due to unstructured document inputs.",
     "solution": "",
     "technologies": [
