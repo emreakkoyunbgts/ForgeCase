@@ -17,7 +17,7 @@ from generator.GeneratorService import get_record_from_vault
 app=FastAPI()
 
 @app.post("/verify/{id}")
-async def verify_record_id(record_id: str , mcs: dict , request: Request , response: Response):
+async def verify_record_id(record: dict , mcs: dict , request: Request , response: Response):
 
     if id is None:
         logger.error("Record ID is None")
@@ -45,15 +45,17 @@ async def verify_record_id(record_id: str , mcs: dict , request: Request , respo
 
 
 
-
+    """
     try:
         record = await get_record_from_vault(record_id,headers=headers)
     except Exception as e:
         logger.error(f"Error loading seed record for ID {record_id}: {e}")
         raise HTTPException(status_code=404, detail=f"Record with ID {id} not found")
+        
+    """
 
     response_verifier=verify(mcs,record)
-    logger.info(f"Verification completed for record ID {record_id} with verdict: {response_verifier['verdict']}")
+    logger.info(f"Verification completed for record ID {record["id"]} with verdict: {response_verifier['verdict']}")
     response.headers["X-Correlation-ID"]=correlation_id
     return response_verifier
 

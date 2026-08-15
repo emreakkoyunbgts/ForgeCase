@@ -17,8 +17,8 @@ logger=logging.getLogger(__name__)
 app=FastAPI()
 
 
-@app.get("/mcs/{id}")
-async def get_mcs(id: str , request: Request , response: Response):
+@app.post("generator/mcs")
+async def get_mcs(record: dict, request: Request , response: Response):
     """
     Get the multi-source content for a given record ID.
     """
@@ -41,15 +41,14 @@ async def get_mcs(id: str , request: Request , response: Response):
     else:
         logger.warning("Authorization header is missing")
 
-
-
-
-    # There is stub for now , we will implement the actual logic when finished with vault api
+    """
     try:
         record =await get_record_from_vault(id, headers=headers)
     except Exception as e:
         logger.error(f"Error loading seed record for ID {id}: {e}")
         raise HTTPException(status_code=404, detail=f"Record with ID {id} not found")
+        
+    """
 
     mcs=generate_multi_source([record])
 
