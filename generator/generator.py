@@ -57,6 +57,30 @@ Write five sections: context, challenge, approach, technology, outcomes.
 Keep it factual and professional. No marketing language.
 """
 
+SYSTEM_GERMAN = """You write case studies for BGTS, a software consultancy that
+serves banks.
+
+""" + GROUNDING_RULES + """
+
+Write five sections: context, challenge, approach, technology, outcomes.
+Keep it factual and professional. No marketing language.
+Then translate the case study into German.Fieald names should remain in English,
+but the content should be translated into German.
+"""
+
+SYSTEM_TURKISH = """You write case studies for BGTS, a software consultancy that
+serves banks.
+
+""" + GROUNDING_RULES + """
+
+Write five sections: context, challenge, approach, technology, outcomes.
+Keep it factual and professional. No marketing language.
+Then translate the case study into Turkish.Fieald names should remain in English,
+but the content should be translated into Turkish.
+"""
+
+
+
 SYSTEM_TAHA="""You are a analytical AI assistant that generates case studies for BGTS, 
 a software consultancy that serves banks.
 
@@ -772,6 +796,34 @@ def get_five_sections_with_llm(record):
 
     json_path=save_llm_output_as_json(response,record["engagement_ids"])
     logger.info(f"LLM output saved to JSON: {json_path}")
+
+    return response
+
+
+def get_llm_output_german(mcs:dict):
+    start_time=time.perf_counter()
+    user_prompt = f"Record:\n{json.dumps(mcs, indent=2, ensure_ascii=False)}\n\n"
+    user_prompt += "Analyze the given record.just return the german translation."
+
+    response=ask_for_json(SYSTEM_GERMAN, user_prompt)
+    logger.info(f"LLM German response: {response}")
+
+    end_time = time.perf_counter()
+    logger.info(f"LLM processing time: {end_time - start_time:.2f} seconds")
+
+    return response
+
+
+def get_llm_output_turkish(mcs: dict):
+    start_time = time.perf_counter()
+    user_prompt = f"Record:\n{json.dumps(mcs, indent=2, ensure_ascii=False)}\n\n"
+    user_prompt += "Analyze the given record.just return the turkish translation."
+
+    response = ask_for_json(SYSTEM_TURKISH, user_prompt)
+    logger.info(f"LLM Turkish response: {response}")
+
+    end_time = time.perf_counter()
+    logger.info(f"LLM processing time: {end_time - start_time:.2f} seconds")
 
     return response
 
