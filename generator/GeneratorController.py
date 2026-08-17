@@ -4,10 +4,11 @@ import uuid
 from fastapi import FastAPI, HTTPException , Response , Request
 import logging
 
-from common.contract import load_seed
+from common.contract import load_seed, load_corpus
 from generator.GeneratorService import get_record_from_vault
 from generator.generator import generate_multi_source, get_five_sections_with_llm, get_llm_output_german, \
     get_llm_output_turkish
+from librarian.multi_requirement import evaluate_rfp_requirements
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -126,6 +127,57 @@ async def create_turkish_translation(record: dict, request: Request, response: R
     response.headers["X-Correlation-ID"] = correlation_id
 
     return llm_output_tr
+
+
+
+@app.post("/generator/mcs/query")
+async def create_mcs_with_query(query: str , request: Request , response: Response):
+    """
+    Create a multi-source content for a given query.
+    """
+    if query is None:
+        logger.error("Query is None")
+        raise HTTPException(status_code=400, detail="Query is required")
+
+    correlation_id = request.headers.get("X-Correlation-ID", None)
+    if correlation_id is None:
+        logger.warning(f"Correlation ID: {correlation_id}")
+        correlation_id = str(uuid.uuid4())
+        logger.info(f"Generated new Correlation ID: {correlation_id}")
+
+    headers = {"X-Correlation-ID": correlation_id, }
+
+    authorization = request.headers.get("Authorization", None)
+    if authorization:
+        headers["Authorization"] = authorization
+    else:
+        logger.warning("Authorization header is missing")
+
+    try:
+        # Implement the logic when api is exposed
+        librerian_response = evaluate_rfp_requirements(query ,load_corpus(), top_k=1)
+    except Exception as e:
+        logger.error(f"Error loading seed record for query {query}: {e}")
+        raise HTTPException(status_code=404, detail=f"Record with query {query} not found")
+
+
+    logger.info(f"Succesfully loaded respose : {librerian_response}")
+    record_id = librerian_response["requirements"]["best_match"]["engagement_id"]
+
+    try:
+        record = await get_record_from_vault(record_id, headers=headers)
+        logger.info(f"Successfully loaded seed record for ID {record_id}")
+    except Exception as e:
+        logger.error(f"Error loading seed record for ID {record_id}: {e}")
+        raise HTTPException(status_code=404, detail=f"Record with ID {record_id} not found")
+
+    mcs = generate_multi_source([record])
+
+    response.headers["X-Correlation-ID"] = correlation_id
+
+    return mcs
+
+
 
 
 async def get_llm_output_from_record_id(id: str):
