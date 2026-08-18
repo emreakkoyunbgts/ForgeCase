@@ -377,6 +377,8 @@ def create_app():
 
     from fastapi import FastAPI, Header, HTTPException, Query, Response
 
+    from fastapi.middleware.cors import CORSMiddleware
+
     app = FastAPI(
         title="Vault — Engagement Record store",
         description=(
@@ -385,6 +387,15 @@ def create_app():
             "L5 (CF-63): record versioning with as-of reads."
         ),
         version="0.5.0",
+    )
+
+    # Allow the generator UI to call this API from localhost:5173
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     @app.post("/engagements", status_code=201)

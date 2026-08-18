@@ -2,7 +2,9 @@ import sys
 import uuid
 
 from fastapi import FastAPI, HTTPException , Response , Request
+from fastapi.middleware.cors import CORSMiddleware
 import logging
+
 
 from common.contract import load_seed, load_corpus
 from generator.GeneratorService import get_record_from_vault
@@ -17,9 +19,16 @@ logging.basicConfig(level=logging.INFO,
 
 logger=logging.getLogger(__name__)
 app=FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173",],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 
-@app.post("generator/mcs/eng")
+@app.post("/generator/mcs/eng")
 async def get_mcs(record: dict, request: Request , response: Response):
     """
     Get the multi-source content for a given record ID.
@@ -162,7 +171,7 @@ async def create_mcs_with_query(query: str , request: Request , response: Respon
 
 
     logger.info(f"Succesfully loaded respose : {librerian_response}")
-    record_id = librerian_response["requirements"]["best_match"]["engagement_id"]
+    record_id = librerian_response["requirements"][0]["best_match"]["engagement_id"]
 
     try:
         record = await get_record_from_vault(record_id, headers=headers)

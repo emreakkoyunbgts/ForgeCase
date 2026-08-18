@@ -1,0 +1,164 @@
+/* =========================================
+   ENGAGEMENTS PAGE
+========================================= */
+
+.engagements-container {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto;
+
+  padding: 10px 0 40px;
+
+  color: var(--text);
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.engagements-header {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 20px;
+
+  margin-bottom: 28px;
+}
+
+.engagements-header h1 {
+  margin: 0;
+
+  color: var(--text);
+
+  font-size: 32px;
+  font-weight: 700;
+}
+
+
+/* =========================================
+   ENGAGEMENT CARD
+========================================= */
+
+.engagement-card {
+  width: 100%;
+
+  padding: 22px;
+
+  margin-bottom: 14px;
+
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+
+  border-radius: 12px;
+
+  box-shadow: var(--shadow-sm);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+
+  overflow: hidden;
+}
+
+.engagement-card:hover {
+  transform: translateY(-2px);
+
+  border-color: var(--accent-border);
+
+  box-shadow: var(--shadow);
+}
+
+
+/* =========================================
+   CARD TITLE
+========================================= */
+
+.engagement-card h2 {
+  margin: 0 0 10px;
+
+  color: var(--accent);
+
+  font-size: 19px;
+  font-weight: 700;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================================
+   CARD TEXT
+========================================= */
+
+.engagement-card p {
+  margin: 7px 0;
+
+  color: var(--text-muted);
+
+  font-size: 14px;
+  line-height: 1.6;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.engagement-card p strong {
+  color: var(--text);
+
+  font-weight: 600;
+}
+
+
+/* =========================================
+   TAG
+========================================= */
+
+.engagement-tag {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 5px 9px;
+
+  margin-top: 8px;
+
+  border-radius: 6px;
+
+  background: var(--accent-bg);
+
+  color: var(--accent);
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+  .engagements-container {
+    padding: 0 0 30px;
+  }
+
+  .engagements-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .engagements-header h1 {
+    font-size: 26px;
+  }
+
+  .engagement-card {
+    padding: 18px;
+  }
+}
