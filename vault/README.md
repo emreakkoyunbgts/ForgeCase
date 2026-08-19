@@ -29,6 +29,31 @@ python -m vault.vault serve          # API on :8000 — docs at /docs
   Bad data gets a **422** that names the problem, never an opaque 500.
 - **CF-84 (service APIs)** — `GET /health` for the mesh: reports `ok` +
   record count when the database answers, **503** when it does not.
+- **CF-85 (auth)** — every data endpoint needs
+  `Authorization: Bearer <CASEFORGE_TOKEN>`; missing or wrong → **401** with
+  `WWW-Authenticate: Bearer`. `/health` and `/docs` stay open so the mesh can
+  still poll us.
+
+## Calling Vault from another service
+
+```bash
+# leave CASEFORGE_TOKEN unset and Vault serves everyone (it warns at startup)
+$env:CASEFORGE_TOKEN = "dev-token"        # PowerShell
+python -m vault.vault serve
+```
+
+```python
+requests.get(
+    "http://127.0.0.1:8000/engagements/eng-01",
+    headers={"Authorization": f"Bearer {os.environ['CASEFORGE_TOKEN']}"},
+    timeout=5,
+)
+```
+
+The token comes from the environment — never from code, never from git.
+Auth is rolled out in stages on purpose: with `CASEFORGE_TOKEN` unset nothing
+breaks, so no prototype is blocked mid-migration. Set the variable everywhere
+and the door is locked.
 
 ## Watch out
 - `eng-12` has an empty `outcomes` list — schema must handle it.
