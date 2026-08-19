@@ -50,59 +50,97 @@ def profile(corpus):
         "no_outcome": [r["id"] for r in corpus if not r["outcomes"]],
     }
 
-def coverage_gaps(corpus):
+def coverage_gaps(corpus, show_chart=True):
 
     domains = sorted({r["domain"] for r in corpus})
     regions = sorted({r["region"] for r in corpus})
-    
+
     grid_data = {}
-    
+
     for r in corpus:
         combo = (r["domain"], r["region"])
         is_missing = not bool(r.get("outcomes"))
-        
+
         if combo not in grid_data:
             grid_data[combo] = is_missing
         else:
             if is_missing:
                 grid_data[combo] = True
-    
+
     have = set(grid_data.keys())
 
-    gaps = sorted((d, g) for d in domains for g in regions if (d, g) not in have)
+    gaps = sorted(
+        (d, g)
+        for d in domains
+        for g in regions
+        if (d, g) not in have
+    )
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-    
-    for d in domains:
-        for r in regions:
-            combo = (d, r)
-            if combo in gaps:
-                ax.scatter(r, d, color="red", marker="x", s=100, label="Gap")
-            else:
-                if grid_data[combo]: 
-                    ax.scatter(r, d, color="orange", marker="^", s=120, label="No Outcome")
+    if show_chart:
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        for d in domains:
+            for r in regions:
+                combo = (d, r)
+
+                if combo in gaps:
+                    ax.scatter(
+                        r,
+                        d,
+                        color="red",
+                        marker="x",
+                        s=100,
+                        label="Gap",
+                    )
                 else:
-                    ax.scatter(r, d, color="green", marker="o", s=100, label="Proof Point")
+                    if grid_data[combo]:
+                        ax.scatter(
+                            r,
+                            d,
+                            color="orange",
+                            marker="^",
+                            s=120,
+                            label="No Outcome",
+                        )
+                    else:
+                        ax.scatter(
+                            r,
+                            d,
+                            color="green",
+                            marker="o",
+                            s=100,
+                            label="Proof Point",
+                        )
 
-    
-    ax.set_title("Coverage Map: Domain x Region", fontweight="bold")
-    ax.set_xlabel("Region")
-    ax.set_ylabel("Domain")
-    ax.grid(True, linestyle="--", alpha=0.5)
-    
-    
-    handles, labels = ax.get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    ax.legend(by_label.values(), by_label.keys(), bbox_to_anchor=(1.05, 1), loc='upper left')
-    
-    plt.tight_layout()
+        ax.set_title(
+            "Coverage Map: Domain x Region",
+            fontweight="bold",
+        )
+        ax.set_xlabel("Region")
+        ax.set_ylabel("Domain")
+        ax.grid(True, linestyle="--", alpha=0.5)
 
-# pytest çalıştırılırsa grafiğin test sürecini bloklamaması için ekledim.
-    if "pytest" not in sys.modules:
-        plt.show()
-    plt.close()
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
 
-    return [{"domain": d, "region": g} for d, g in gaps]
+        ax.legend(
+            by_label.values(),
+            by_label.keys(),
+            bbox_to_anchor=(1.05, 1),
+            loc="upper left",
+        )
+
+        plt.tight_layout()
+
+        if "pytest" not in sys.modules:
+            plt.show()
+
+        plt.close()
+
+    return [
+        {"domain": d, "region": g}
+        for d, g in gaps
+    ]
 
 def generate_action_list(corpus):
     df= pd.DataFrame(corpus)
