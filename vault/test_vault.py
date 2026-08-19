@@ -284,3 +284,73 @@ def test_delete_keeps_version_history_for_as_of():
     )
     assert past.status_code == 200
     assert past.json()["id"] == "eng-01"
+
+
+# ---------------------------------------------------------------------------
+# Content validation — bad data must be a clear 422, never a 500
+# ---------------------------------------------------------------------------
+
+def test_api_invalid_region_returns_422():
+    """A region outside the contract gets a 422 that names the problem."""
+    client = TestClient(create_app())
+    _clear("eng-01")
+    record = load_seed("eng-01")
+    record["region"] = "EU"
+    response = client.post("/engagements", json=record)
+    assert response.status_code == 422
+    assert "region" in response.json()["detail"]
+
+
+def test_api_empty_outcome_fields_return_422():
+    """Empty metric / source_ref are rejected with an explanation."""
+    client = TestClient(create_app())
+    _clear("eng-01")
+    record = load_seed("eng-01")
+    record["outcomes"] = [{"metric": "", "source_ref": "closeout.pdf#page=1"}]
+    response = client.post("/engagements", json=record)
+    assert response.status_code == 422
+    assert "outcomes[0].metric" in response.json()["detail"]
+
+
+def test_api_empty_client_type_returns_422():
+    """client_type must be non-empty (schema CHECK, reported politely)."""
+    client = TestClient(create_app())
+    _clear("eng-01")
+    record = load_seed("eng-01")
+    record["client_type"] = ""
+    response = client.post("/engagements", json=record)
+    assert response.status_code == 422
+    assert "client_type" in response.json()["detail"]
+
+
+def test_api_put_validates_content_too():
+    """PUT goes through the same content validation as POST."""
+    client = TestClient(create_app())
+    _clear("eng-01")
+    record = load_seed("eng-01")
+    client.post("/engagements", json=record)
+    etag = client.get("/engagements/eng-01").headers["ETag"]
+    bad = dict(record)
+    bad["region"] = "NA"
+    response = client.put(
+        "/engagements/eng-01", json=bad, headers={"If-Match": etag}
+    )
+    assert response.status_code == 422
+    assert "region" in response.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# CF-84 — service mesh health check
+# ---------------------------------------------------------------------------
+
+def test_health_reports_ok_and_record_count():
+    """GET /health proves the database is reachable, not just the process."""
+    client = TestClient(create_app())
+    _clear("eng-01")
+    store(load_seed("eng-01"))
+    response = client.get("/health")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["service"] == "vault"
+    assert body["records"] >= 1

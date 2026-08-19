@@ -13,6 +13,9 @@ fastapi>=0.115.0
 uvicorn>=0.32.0
 requests>=2.32.0
 
+# reader API (Kaan, CF-81) — FastAPI file uploads need this
+python-multipart>=0.0.9
+
 # publisher (Ahmet)
 python-docx>=1.1.0
 reportlab>=4.0.0

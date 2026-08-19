@@ -24,6 +24,11 @@ python -m vault.vault serve          # API on :8000 — docs at /docs
   - `GET /engagements/{id}?as_of=ISO8601` → newest snapshot with `recorded_at <= as_of`
   - `GET /engagements/{id}/versions` → version list (`version`, `recorded_at`, `etag`)
   - DELETE removes the current row but keeps history (as-of still works)
+- **Validation** — POST/PUT check content against the contract (valid region,
+  non-empty `client_type` / `metric` / `source_ref`, boolean `may_be_named`).
+  Bad data gets a **422** that names the problem, never an opaque 500.
+- **CF-84 (service APIs)** — `GET /health` for the mesh: reports `ok` +
+  record count when the database answers, **503** when it does not.
 
 ## Watch out
 - `eng-12` has an empty `outcomes` list — schema must handle it.

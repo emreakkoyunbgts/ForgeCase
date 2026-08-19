@@ -335,6 +335,45 @@ def _require_fields(record):
         )
 
 
+def _validate_record(record):
+    """
+    Content validation at the API boundary.
+
+    The SQLite CHECK constraints would reject this data anyway, but an
+    unhandled IntegrityError surfaces as an opaque 500. Checking here
+    turns it into a 422 that tells the caller exactly what is wrong.
+    """
+    from common.contract import VALID_REGIONS
+    from fastapi import HTTPException
+
+    problems = []
+    if record.get("region") not in VALID_REGIONS:
+        problems.append(
+            f"region must be one of {', '.join(sorted(VALID_REGIONS))} "
+            f"(got {record.get('region')!r})"
+        )
+    if not isinstance(record.get("client_type"), str) or not record["client_type"]:
+        problems.append("client_type must be a non-empty string")
+    if not isinstance(record.get("may_be_named"), bool):
+        problems.append("may_be_named must be true or false")
+    if not isinstance(record.get("technologies"), list):
+        problems.append("technologies must be a list")
+    outcomes = record.get("outcomes")
+    if not isinstance(outcomes, list):
+        problems.append("outcomes must be a list")
+    else:
+        for i, outcome in enumerate(outcomes):
+            if not isinstance(outcome, dict):
+                problems.append(f"outcomes[{i}] must be an object")
+                continue
+            if not outcome.get("metric"):
+                problems.append(f"outcomes[{i}].metric must be non-empty")
+            if not outcome.get("source_ref"):
+                problems.append(f"outcomes[{i}].source_ref must be non-empty")
+    if problems:
+        raise HTTPException(status_code=422, detail="; ".join(problems))
+
+
 def _check_if_match(record, if_match):
     """
     ETag concurrency gate (CF-62).
@@ -377,8 +416,6 @@ def create_app():
 
     from fastapi import FastAPI, Header, HTTPException, Query, Response
 
-    from fastapi.middleware.cors import CORSMiddleware
-
     app = FastAPI(
         title="Vault — Engagement Record store",
         description=(
@@ -386,29 +423,56 @@ def create_app():
             "L4: full REST, status codes, pagination, ETag concurrency. "
             "L5 (CF-63): record versioning with as-of reads."
         ),
-        version="0.5.0",
+        version="0.6.0",
     )
 
-    # Allow the generator UI to call this API from localhost:5173
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["http://localhost:5173"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    @app.get("/health")
+    def health(response: Response):
+        """
+        Liveness + readiness for the service mesh (CF-84).
+
+        Not just "the process is up": it proves the database is reachable,
+        because a Vault that cannot reach its store is not healthy.
+        """
+        try:
+            conn = init_db()
+            count = conn.execute(
+                "SELECT COUNT(*) FROM engagements"
+            ).fetchone()[0]
+        except sqlite3.Error as exc:
+            response.status_code = 503
+            return {
+                "status": "unhealthy",
+                "service": "vault",
+                "detail": f"database unreachable: {exc}",
+            }
+        return {
+            "status": "ok",
+            "service": "vault",
+            "version": app.version,
+            "records": count,
+        }
 
     @app.post("/engagements", status_code=201)
     def create_engagement(record: dict, response: Response):
         """Create a new record. Fails with 409 if the id already exists."""
         _require_fields(record)
+        _validate_record(record)
         if exists(record["id"]):
             raise HTTPException(
                 status_code=409,
                 detail=f"engagement '{record['id']}' already exists "
                        f"— use PUT to update",
             )
-        store(record)
+        try:
+            store(record)
+        except sqlite3.IntegrityError as exc:
+            # Safety net: anything the validator missed but the schema
+            # rejects still comes back as a clear 422, never a 500.
+            raise HTTPException(
+                status_code=422,
+                detail=f"record violates the storage contract: {exc}",
+            )
         tag = etag_for(record)
         response.headers["ETag"] = f'"{tag}"'
         response.headers["Location"] = f"/engagements/{record['id']}"
@@ -494,6 +558,7 @@ def create_app():
         so two writers cannot silently overwrite each other.
         """
         _require_fields(record)
+        _validate_record(record)
         if record.get("id") != engagement_id:
             raise HTTPException(
                 status_code=422,
@@ -506,7 +571,13 @@ def create_app():
                 detail=f"no engagement with id '{engagement_id}'",
             )
         _check_if_match(current, if_match)
-        store(record)
+        try:
+            store(record)
+        except sqlite3.IntegrityError as exc:
+            raise HTTPException(
+                status_code=422,
+                detail=f"record violates the storage contract: {exc}",
+            )
         tag = etag_for(record)
         response.headers["ETag"] = f'"{tag}"'
         return record
