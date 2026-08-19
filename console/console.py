@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
-
+from common.services import ALL_SERVICES, call_service
 from common.contract import load_corpus, client_label, has_outcomes
 from generator.generator import generate
 from verifier.verifier import verify
@@ -142,7 +142,15 @@ if approved:
 else:
     st.warning("Draft — pending approval.")
     st.button("Download PDF", disabled=True, help="Approve first to unlock download.")
+st.divider()
+st.subheader("Service health")
 
+for name, url in ALL_SERVICES.items():
+    try:
+        call_service("GET", url + "/health", timeout=3)
+        st.success(f"{name}: OK")
+    except Exception as e:
+        st.warning(f"{name}: unreachable ({e})")
 
 
 
