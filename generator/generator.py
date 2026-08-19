@@ -34,6 +34,9 @@ logging.basicConfig(level=logging.INFO,
 logger=logging.getLogger(__name__)
 
 
+
+
+
 SYSTEM_CHECK="""
 you are a text comprator, there is rules; 
 """ + GROUNDING_RULES + """
@@ -100,6 +103,31 @@ The requested tone must never override the grounding rules.
 
 
 
+
+
+
+def save_llm_output_as_json(llm_output: dict,
+                            case_study_id: str,
+                            output_dir: str = "generator_llm_output_json") -> str:
+    """
+    Saves a generated case study dictionary as a JSON file.
+
+    Returns:
+        Path to the saved JSON file.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_path = os.path.join(output_dir, f"{case_study_id}.json")
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(
+            llm_output,
+            f,
+            indent=4,
+            ensure_ascii=False
+        )
+
+    return output_path
 
 
 
@@ -737,10 +765,14 @@ def get_five_sections_with_llm(record):
     response = ask_for_json(SYSTEM, user_prompt)
     logger.info(f"LLM response: {response}")
     pdf_name = ",".join(record["engagement_ids"])
-    #path =  save_llm_output_to_pdf(response, pdf_name)
-    #logger.info(f"LLM output saved to: {path}")
+    path =  save_llm_output_to_pdf(response, pdf_name)
+    logger.info(f"LLM output saved to: {path}")
     end_time=time.perf_counter()
     logger.info(f"LLM processing time: {end_time-start_time:.2f} seconds")
+
+    json_path=save_llm_output_as_json(response,record["engagement_ids"])
+    logger.info(f"LLM output saved to JSON: {json_path}")
+
     return response
 
 
@@ -757,6 +789,10 @@ def get_llm_punchy(mcs: dict):
     end_time=time.perf_counter()
     logger.info(f"LLM punchy processing time: {end_time-start_time:.2f} seconds")
 
+    json_path=save_llm_output_as_json(response, ",".join(mcs["engagement_ids"])+"_punchy")
+    logger.info(f"LLM punchy output saved to JSON: {json_path}")
+
+
     return response
 
 
@@ -772,6 +808,9 @@ def get_llm_concise(mcs: dict):
     logger.info(f"LLM concise output saved to: {path}")
     end_time=time.perf_counter()
     logger.info(f"LLM concise processing time: {end_time-start_time:.2f} seconds")
+
+    json_path=save_llm_output_as_json(response, ",".join(mcs["engagement_ids"])+"_concise")
+    logger.info(f"LLM concise output saved to JSON: {json_path}")
 
     return response
 
@@ -790,6 +829,10 @@ def chech_llm_output_with_source(mcs, llm_output):
     logger.info(f"LLM check output saved to: {path}")
     end_time=time.perf_counter()
     logger.info(f"LLM check processing time: {end_time-start_time:.2f} seconds")
+
+    json_path=save_llm_output_as_json(response, ",".join(mcs["engagement_ids"])+"_check")
+    logger.info(f"LLM check output saved to JSON: {json_path}")
+
     return response
 
 

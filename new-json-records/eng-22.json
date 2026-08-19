@@ -4,7 +4,7 @@
     "client_type": "Cross-border e-commerce platform",
     "may_be_named": true,
     "domain": "e-commerce",
-    "region": "EU",
+    "region": "GCC",
     "challenge": "Search engine latency was over 3 seconds during high-traffic promotional periods like Black Friday.",
     "solution": "Replaced relational DB text search with a distributed Elasticsearch cluster paired with a Redis query cache.",
     "technologies": [

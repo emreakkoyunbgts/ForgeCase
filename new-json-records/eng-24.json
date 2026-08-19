@@ -4,7 +4,7 @@
     "client_type": "Private hospital network",
     "may_be_named": true,
     "domain": "healthcare",
-    "region": "UK",
+    "region": "GCC",
     "challenge": "Patient records were fragmented across three legacy Electronic Health Record (EHR) systems with no unified API.",
     "solution": "Designed a central FHIR-compliant interoperability layer consolidating patient records into a unified view.",
     "technologies": [

@@ -4,7 +4,7 @@
     "client_type": "Enterprise retail chain",
     "may_be_named": false,
     "domain": "inventory management",
-    "region": "NA",
+    "region": "TR",
     "challenge": "Stock inventory discrepancies between physical stores and the web store caused overselling and order cancellations.",
     "solution": "Implemented an event-driven inventory synchronization system updating stock levels in near real-time.",
     "technologies": [

@@ -4,7 +4,7 @@
     "client_type": "Global pharmaceutical distributor",
     "may_be_named": false,
     "domain": "supply chain",
-    "region": "EU",
+    "region": "DE",
     "challenge": "Counterfeit drugs and cold-chain temperature violations during transit were difficult to detect and trace.",
     "solution": "Developed an IoT-enabled shipment tracking dashboard with real-time temperature telemetry and batch lineage tracing.",
     "technologies": [
