@@ -19,6 +19,7 @@ from common.services import ALL_SERVICES, call_service
 from common.contract import load_corpus, client_label, has_outcomes
 from generator.generator import generate
 from verifier.verifier import verify
+from reader.reader import extract_text, extract_record
 st.set_page_config(page_title="CaseForge", page_icon="📄", layout="wide")
 
 import json
@@ -142,6 +143,67 @@ if approved:
 else:
     st.warning("Draft — pending approval.")
     st.button("Download PDF", disabled=True, help="Approve first to unlock download.")
+st.divider()
+st.header("Upload a document")
+
+uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"])
+
+if uploaded_file is not None:
+    st.write(f"Uploaded: {uploaded_file.name}")
+if st.button("Run pipeline"):
+        with st.spinner("Reading document..."):
+            text = extract_text(uploaded_file)
+            record = extract_record(text, uploaded_file.name)
+
+        if record is None:
+            st.error("Could not extract a record from this document.")
+        else:
+            st.success(f"Extracted record: {record['id']}")
+            st.json(record)
+            with st.spinner("Generating case study..."):
+                case_study = generate(record)
+
+            st.success("Case study generated")
+            st.json(case_study)
+            with st.spinner("Verifying..."):
+                report = verify(case_study, record)
+
+            if report["verdict"] == "PASS":
+                st.success("Verified — every claim is grounded")
+
+                with st.spinner("Publishing..."):
+                    try:
+                        pub_response = call_service(
+                            "POST", ALL_SERVICES["publisher"] + "/publish",
+                            json={"record_id": record["id"]},
+                        )
+                        doc_path = pub_response.json()["path"]
+                        st.success(f"Document ready: {doc_path}")
+                    except Exception as e:
+                        st.warning(f"Publisher unavailable: {e}")
+
+            else:
+                st.error(f"BLOCKED — {len(report['problems'])} problem(s) found")
+                for p in report["problems"]:
+                    st.write(str(p))
+            
+            
+                    
+                        
+                            
+                            
+                        
+                        
+                        
+                    
+                        
+            
+            
+            
+                
+                
+                    
+
 st.divider()
 st.subheader("Service health")
 
