@@ -1,9 +1,11 @@
 """Tests for the Vault (L1 storage + L2/L4/L5 REST API)."""
+import pytest
 from fastapi.testclient import TestClient
 
 from common.contract import load_corpus, load_seed
 from vault.vault import (
-    create_app, store, get, delete, etag_for, init_db, list_versions,
+    TOKEN_ENV_VAR, create_app, store, get, delete, etag_for, init_db,
+    list_versions,
 )
 
 
@@ -354,3 +356,75 @@ def test_health_reports_ok_and_record_count():
     assert body["status"] == "ok"
     assert body["service"] == "vault"
     assert body["records"] >= 1
+
+
+# ---------------------------------------------------------------------------
+# CF-85 — service-to-service authentication
+# ---------------------------------------------------------------------------
+
+TEST_TOKEN = "test-service-token-123"
+
+
+@pytest.fixture
+def guarded_client(monkeypatch):
+    """A Vault with the service token configured, so auth is enforced."""
+    monkeypatch.setenv(TOKEN_ENV_VAR, TEST_TOKEN)
+    return TestClient(create_app())
+
+
+def test_no_token_is_rejected(guarded_client):
+    """Unidentified callers get 401 and are told how to authenticate."""
+    response = guarded_client.get("/engagements")
+    assert response.status_code == 401
+    assert response.headers["WWW-Authenticate"] == "Bearer"
+
+
+def test_wrong_token_is_rejected(guarded_client):
+    """A token that does not match is no better than no token at all."""
+    response = guarded_client.get(
+        "/engagements", headers={"Authorization": "Bearer not-the-token"}
+    )
+    assert response.status_code == 401
+
+
+def test_malformed_authorization_header_is_rejected(guarded_client):
+    """The scheme matters: Basic credentials are not a bearer token."""
+    response = guarded_client.get(
+        "/engagements", headers={"Authorization": f"Basic {TEST_TOKEN}"}
+    )
+    assert response.status_code == 401
+
+
+def test_valid_token_is_accepted(guarded_client):
+    """With the right token the endpoint behaves exactly as before."""
+    response = guarded_client.get(
+        "/engagements", headers={"Authorization": f"Bearer {TEST_TOKEN}"}
+    )
+    assert response.status_code == 200
+    assert "items" in response.json()
+
+
+def test_writes_are_guarded_too(guarded_client):
+    """Auth is not read-only: POST/PUT/DELETE need the token as well."""
+    _clear("eng-01")
+    record = load_seed("eng-01")
+    assert guarded_client.post(
+        "/engagements", json=record
+    ).status_code == 401
+    assert guarded_client.post(
+        "/engagements", json=record,
+        headers={"Authorization": f"Bearer {TEST_TOKEN}"},
+    ).status_code == 201
+
+
+def test_health_stays_open_when_auth_is_on(guarded_client):
+    """The mesh dashboard must be able to poll health without a token."""
+    assert guarded_client.get("/health").status_code == 200
+
+
+def test_without_configured_token_everyone_is_served(monkeypatch):
+    """Staged rollout: no CASEFORGE_TOKEN means no lock, so this merge
+    cannot break the other prototypes mid-migration."""
+    monkeypatch.delenv(TOKEN_ENV_VAR, raising=False)
+    client = TestClient(create_app())
+    assert client.get("/engagements").status_code == 200
