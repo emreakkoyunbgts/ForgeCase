@@ -1,10 +1,22 @@
-# 1 · READER — Çağrı
+# 1 · READER — Çağrı (API: Kaan, CF-81)
 
 **Document (PDF or scan) → `engagement_record.json`**
 
 You build the front door. Everything downstream depends on your output.
 
-## Run it
+## Run it as a service (CF-81 — Week 5 "expose")
+```bash
+python -m reader.api            # http://127.0.0.1:8001 — docs at /docs
+```
+
+- `POST /extract` — upload a PDF (multipart field `document`), get the record.
+  Bad input (empty / corrupt / blank scan) → **422** with a clear message.
+- `GET /health` — `ok` + whether the OCR fallback is available on this machine.
+
+Extraction logic is unchanged — `reader/api.py` is only a thin HTTP layer
+over the functions below (the migration plan: "logic unchanged, just callable").
+
+## Run it (CLI)
 ```bash
 # full record (the LLM step is still a stub)
 python -m reader.reader caseforge-testdata/documents/eng-01_closeout.pdf
