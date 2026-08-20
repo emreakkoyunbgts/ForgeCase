@@ -171,6 +171,8 @@
 .case-study-action {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
 
   margin-top: 32px;
   padding-top: 24px;

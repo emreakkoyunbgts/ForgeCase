@@ -9,7 +9,7 @@ function EngagementDetail() {
 
     const [engagement, setEngagement] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [creatingCaseStudy, setCreatingCaseStudy] = useState(false);
+    const [creatingCaseStudy, setCreatingCaseStudy] = useState(null);
     const [error, setError] = useState(null);
     const [caseStudy, setCaseStudy] = useState(null);
 
@@ -32,24 +32,30 @@ function EngagementDetail() {
         getEngagement();
     }, [id]);
 
-    const createCaseStudy = async () => {
+    const createCaseStudy = async (language = "English") => {
         if (!engagement) {
             return;
         }
 
-        setCreatingCaseStudy(true);
+        const endpointByLanguage = {
+            English: "eng",
+            German: "german",
+            Turkish: "turkish",
+        };
+
+        setCreatingCaseStudy(language);
         setError(null);
         setCaseStudy(null);
 
         try {
             const response = await axios.post(
-                "http://localhost:8001/generator/mcs/eng",
+                `http://localhost:8001/generator/mcs/${endpointByLanguage[language]}`,
                 engagement
             );
 
             console.log("Case study created:", response.data);
 
-            setCaseStudy(response.data);
+            setCaseStudy({ language, content: response.data });
         } catch (error) {
             console.error("Error creating case study:", error);
 
@@ -64,7 +70,7 @@ function EngagementDetail() {
                 setError("Failed to connect to the server.");
             }
         } finally {
-            setCreatingCaseStudy(false);
+            setCreatingCaseStudy(null);
         }
     };
 
@@ -166,12 +172,32 @@ function EngagementDetail() {
                 <div className="case-study-action">
                     <button
                         className="create-case-study-button"
-                        onClick={createCaseStudy}
-                        disabled={creatingCaseStudy}
+                        onClick={() => createCaseStudy("English")}
+                        disabled={Boolean(creatingCaseStudy)}
                     >
-                        {creatingCaseStudy
+                        {creatingCaseStudy === "English"
                             ? "Creating Case Study..."
                             : "Create Case Study"}
+                    </button>
+
+                    <button
+                        className="create-case-study-button"
+                        onClick={() => createCaseStudy("German")}
+                        disabled={Boolean(creatingCaseStudy)}
+                    >
+                        {creatingCaseStudy === "German"
+                            ? "Generating German MCS..."
+                            : "Generate German MCS"}
+                    </button>
+
+                    <button
+                        className="create-case-study-button"
+                        onClick={() => createCaseStudy("Turkish")}
+                        disabled={Boolean(creatingCaseStudy)}
+                    >
+                        {creatingCaseStudy === "Turkish"
+                            ? "Generating Turkish MCS..."
+                            : "Generate Turkish MCS"}
                     </button>
                 </div>
 
@@ -183,10 +209,10 @@ function EngagementDetail() {
 
                 {caseStudy && (
                     <div className="case-study-result">
-                        <h2>Generated Turkish Case Study</h2>
+                        <h2>Generated {caseStudy.language} Case Study</h2>
 
                         <pre>
-                            {JSON.stringify(caseStudy, null, 2)}
+                            {JSON.stringify(caseStudy.content, null, 2)}
                         </pre>
                     </div>
                 )}
