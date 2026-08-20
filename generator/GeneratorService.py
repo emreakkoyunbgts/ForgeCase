@@ -41,3 +41,31 @@ async def get_record_from_vault(record_id:str , headers:dict=None):
             detail=f"An error occurred while requesting record with ID {record_id} from vault: {e}",
         )
 
+
+
+async def call_librarian_for_matching(rfp_text:str,headers:dict=None):
+
+    url="http://localhost:8002/match"
+    payload={"rfp_text": rfp_text, "top_k": 1, "strategy": "hybrid", "min_dense_score": 0.45}
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response=await client.post(url, json=payload, headers=headers)
+            if response.status_code!=200:
+                logger.error(f"Error calling librarian for matching: {response.text}")
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Error calling librarian for matching: {response.text}",
+                )
+            response.raise_for_status()
+            return response.json()
+
+    except httpx.RequestError as e:
+        logger.error(f"An error occurred while calling librarian for matching: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"An error occurred while calling librarian for matching: {e}",
+        )
+
+
+

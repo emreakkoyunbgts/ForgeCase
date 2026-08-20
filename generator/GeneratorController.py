@@ -7,7 +7,7 @@ import logging
 
 
 from common.contract import load_seed, load_corpus
-from generator.GeneratorService import get_record_from_vault
+from generator.GeneratorService import get_record_from_vault, call_librarian_for_matching
 from generator.generator import generate_multi_source, get_five_sections_with_llm, get_llm_output_german, \
     get_llm_output_turkish
 from librarian.multi_requirement import evaluate_rfp_requirements
@@ -164,7 +164,8 @@ async def create_mcs_with_query(query: str , request: Request , response: Respon
 
     try:
         # Implement the logic when api is exposed
-        librerian_response = evaluate_rfp_requirements(query ,load_corpus(), top_k=1)
+        #librerian_response = evaluate_rfp_requirements(query ,load_corpus(), top_k=1)
+        librerian_response = await call_librarian_for_matching(query, headers=headers)
     except Exception as e:
         logger.error(f"Error loading seed record for query {query}: {e}")
         raise HTTPException(status_code=404, detail=f"Record with query {query} not found")
