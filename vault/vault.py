@@ -437,6 +437,7 @@ def create_app():
     from fastapi import (
         Depends, FastAPI, Header, HTTPException, Query, Response,
     )
+    from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
     app = FastAPI(
         title="Vault — Engagement Record store",
@@ -449,11 +450,14 @@ def create_app():
         version="0.7.0",
     )
 
+    # HTTPBearer (not a raw Header) is what makes /docs show the padlock
+    # and the Authorize button. auto_error=False: we return 401 ourselves
+    # so the message matches the rest of the API, and so an unset
+    # CASEFORGE_TOKEN can still let everyone through.
+    bearer_scheme = HTTPBearer(auto_error=False)
+
     def require_token(
-        authorization: Optional[str] = Header(
-            None,
-            description="Bearer token — `Authorization: Bearer <token>`",
-        ),
+        creds: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
     ):
         """
         Service-to-service authentication (CF-85).
@@ -475,14 +479,11 @@ def create_app():
                    "required — the token comes from CASEFORGE_TOKEN",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        if not authorization:
-            raise unauthenticated
-        scheme, _, offered = authorization.partition(" ")
-        if scheme.lower() != "bearer" or not offered.strip():
+        if creds is None or not creds.credentials.strip():
             raise unauthenticated
         # Constant-time comparison: a plain != leaks how many characters
         # matched through timing, which lets a caller guess the token.
-        if not secrets.compare_digest(offered.strip(), expected):
+        if not secrets.compare_digest(creds.credentials.strip(), expected):
             raise unauthenticated
 
     guarded = [Depends(require_token)]

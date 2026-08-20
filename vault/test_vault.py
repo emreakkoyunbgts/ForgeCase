@@ -428,3 +428,12 @@ def test_without_configured_token_everyone_is_served(monkeypatch):
     monkeypatch.delenv(TOKEN_ENV_VAR, raising=False)
     client = TestClient(create_app())
     assert client.get("/engagements").status_code == 200
+
+
+def test_openapi_advertises_bearer_auth():
+    """/docs must show the Authorize padlock — a raw Header dependency
+    does not appear in Swagger, which is why we use HTTPBearer."""
+    spec = TestClient(create_app()).get("/openapi.json").json()
+    schemes = spec["components"]["securitySchemes"]
+    assert any(s.get("scheme") == "bearer" for s in schemes.values())
+    assert spec["paths"]["/engagements"]["get"].get("security")

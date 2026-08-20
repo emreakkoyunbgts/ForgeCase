@@ -32,7 +32,8 @@ python -m vault.vault serve          # API on :8000 — docs at /docs
 - **CF-85 (auth)** — every data endpoint needs
   `Authorization: Bearer <CASEFORGE_TOKEN>`; missing or wrong → **401** with
   `WWW-Authenticate: Bearer`. `/health` and `/docs` stay open so the mesh can
-  still poll us.
+  still poll us. In `/docs`, use the **Authorize** padlock (top right) — paste
+  the token only, Swagger adds `Bearer` itself.
 
 ## Calling Vault from another service
 
