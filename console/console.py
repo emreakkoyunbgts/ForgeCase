@@ -19,6 +19,7 @@ import streamlit as st
 from common.contract import load_corpus, client_label, has_outcomes
 from generator.generator import generate
 from verifier.verifier import verify
+from common.services import ALL_SERVICES, call_service
 st.set_page_config(page_title="CaseForge", page_icon="📄", layout="wide")
 
 import json
@@ -142,6 +143,24 @@ if approved:
 else:
     st.warning("Draft — pending approval.")
     st.button("Download PDF", disabled=True, help="Approve first to unlock download.")
+    st.divider()
+st.header("🩺 System Health Dashboard")
+
+cols = st.columns(len(ALL_SERVICES))
+for col, (name, url) in zip(cols, ALL_SERVICES.items()):
+    with col:
+        try:
+            response = call_service("GET", url + "/health", timeout=3)
+            elapsed = response.elapsed.total_seconds()
+            if elapsed < 2:
+                st.markdown(f"🟢 **{name}**")
+                st.caption("healthy")
+            else:
+                st.markdown(f"🟡 **{name}**")
+                st.caption(f"slow ({elapsed:.1f}s)")
+        except Exception:
+            st.markdown(f"🔴 **{name}**")
+            st.caption("unreachable")
 
 
 
