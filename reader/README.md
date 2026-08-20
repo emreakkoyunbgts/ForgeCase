@@ -1,17 +1,25 @@
-# 1 · READER — Çağrı (API: Kaan, CF-81)
+# 1 · READER — Çağrı (API: Kaan, CF-81 / CF-82)
 
 **Document (PDF or scan) → `engagement_record.json`**
 
 You build the front door. Everything downstream depends on your output.
 
-## Run it as a service (CF-81 — Week 5 "expose")
+## Run it as a service (CF-81 expose, CF-82 wire)
 ```bash
 python -m reader.api            # http://127.0.0.1:8001 — docs at /docs
 ```
 
 - `POST /extract` — upload a PDF (multipart field `document`), get the record.
   Bad input (empty / corrupt / blank scan) → **422** with a clear message.
-- `GET /health` — `ok` + whether the OCR fallback is available on this machine.
+  By default the record is also POSTed to the Vault (`VAULT_URL`, default
+  `http://127.0.0.1:8000`). If the Vault is down the extraction still
+  succeeds — look at `X-Vault-Stored` / `X-Vault-Detail`. `?store=false`
+  skips the write. There is no retry: POST is not idempotent.
+- `GET /health` — `ok` + OCR availability + which Vault URL this Reader
+  is pointed at. It does **not** call the Vault's `/health`.
+
+If `CASEFORGE_TOKEN` is set, the Reader forwards it as
+`Authorization: Bearer <token>` so CF-85's lock does not bounce us.
 
 Extraction logic is unchanged — `reader/api.py` is only a thin HTTP layer
 over the functions below (the migration plan: "logic unchanged, just callable").
