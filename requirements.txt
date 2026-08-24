@@ -40,3 +40,4 @@ streamlit>=1.39.0
 
 # everyone
 pytest>=8.0.0
+circuitbreaker>=2.1.3
