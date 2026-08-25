@@ -5,6 +5,9 @@ PUBLISHER SERVICE — exposes publisher.py over HTTP (FastAPI version).
 
 POST /publish   {"record_id": "eng-01"}  -> branded document path
 GET  /health    -> {"status": "ok"}
+
+CF-91: before publishing, calls Verifier's /verify. If it returns BLOCK,
+publishing is refused and the reasons are returned to the caller.
 """
 import sys
 from pathlib import Path
@@ -15,7 +18,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from common.contract import load_corpus
-from common.services import VAULT_URL, call_service
+from common.services import VAULT_URL, GENERATOR_URL, VERIFIER_URL, call_service
 from publisher.publisher import render_docx, TEMPLATE
 
 app = FastAPI()
@@ -43,10 +46,9 @@ def publish(req: PublishRequest):
         if record is None:
             raise HTTPException(status_code=404, detail=f"no such record: {record_id}")
 
-        case_study = {
+    case_study = {
         "engagement_id": record_id,
         "title": record.get("id", "[MISSING]"),
-        
         "sections": {
             "context": record.get("client", "[MISSING]") if record.get("may_be_named") else "[REDACTED]",
             "challenge": record.get("challenge", "[MISSING]"),
@@ -55,6 +57,34 @@ def publish(req: PublishRequest):
             "outcomes": str(record.get("outcomes", "[MISSING]")),
         },
     }
+
+    # CF-91: the Verifier gate — call it over HTTP before publishing.
+    try:
+        mcs_response = call_service(
+            "POST", f"{GENERATOR_URL}/generator/mcs",
+            json=record,
+        )
+        mcs = mcs_response.json()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"generator unreachable: {e}")
+
+    try:
+        verify_response = call_service(
+            "POST", f"{VERIFIER_URL}/verify/{record_id}",
+            json={"record": record, "mcs": mcs},
+        )
+        verdict = verify_response.json()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"verifier unreachable: {e}")
+
+    if verdict["verdict"] == "BLOCK":
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "publish refused — verifier blocked this draft",
+                "problems": verdict["problems"],
+            },
+        )
 
     out_path = f"out/{record_id}.docx"
     written = render_docx(case_study, TEMPLATE, out_path)
