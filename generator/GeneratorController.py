@@ -11,7 +11,8 @@ import logging
 
 from common.contract import load_seed, load_corpus
 from generator.GeneratorService import get_record_from_vault, call_librarian_for_matching
-from generator.exeption.VaultServiceError import VaulServiceError
+from generator.exeption.RetryExeption import RetryException
+from generator.exeption.VaultServiceError import VaultServiceError
 from generator.generator import generate_multi_source, get_five_sections_with_llm, get_llm_output_german, \
     get_llm_output_turkish
 
@@ -184,6 +185,10 @@ async def create_mcs_with_query(query: str , request: Request , response: Respon
     except httpx.HTTPStatusError as e:
         status_code=e.response.status_code
         logger.error(f"HTTP status error while calling librarian for matching: {e}")
+    except RetryException as e:
+        logger.error(f"Retry exception while calling librarian for matching: {e.message}")
+        raise HTTPException(status_code=503,
+                            detail=f"Retry exception while calling librarian for matching: {e.message}")
 
         if 400<= status_code<500:
             raise HTTPException(status_code=status_code,
@@ -211,10 +216,14 @@ async def create_mcs_with_query(query: str , request: Request , response: Respon
         logger.error(f"Connection error while loading seed record for ID {record_id}: {e}")
         raise HTTPException(status_code=503,
                             detail=f"Connection error while loading seed record for ID {record_id}: {e}")
-    except VaulServiceError as e:
+    except VaultServiceError as e:
         logger.error(f"Vault service error while loading seed record for ID {record_id}: {e}")
         raise HTTPException(status_code=503,
                             detail=f"Vault service error while loading seed record for ID {record_id}: {e}")
+    except RetryException as e :
+        logger.error(f"Retry exception while loading seed record for ID {record_id}: {e}")
+        raise HTTPException(status_code=503,
+                            detail=f"Retry exception while loading seed record for ID {record_id}: {e}")
     mcs = generate_multi_source([record])
 
     response.headers["X-Correlation-ID"] = correlation_id

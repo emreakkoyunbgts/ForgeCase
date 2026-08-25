@@ -1,4 +1,7 @@
 
-class VaulServiceError(Exception):
-    """Custom exception for Vault service errors."""
+
+
+class VaultServiceError(Exception):
+    """Custom exception to indicate an error occurred while interacting with the Vault service."""
+
     pass
