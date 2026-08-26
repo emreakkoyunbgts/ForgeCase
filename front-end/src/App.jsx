@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import AddRecord from './AddRecord';
 import UploadRecord from './UploadRecord';
 import Engagments from "./Engagements.jsx";
 import EngagementDetail from "./EngagementDetail.jsx";
@@ -23,7 +22,6 @@ function App() {
       <div className="main-content">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/add-record" element={<AddRecord />} />
           <Route path="/upload-record" element={<UploadRecord />} />
           <Route path="/engagments" element={<Engagments/>} />
           <Route path="/engagements" element={<Engagments/>} />
