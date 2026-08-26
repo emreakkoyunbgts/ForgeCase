@@ -376,32 +376,54 @@ def _validate_record(record):
         raise HTTPException(status_code=422, detail="; ".join(problems))
 
 
+def _normalize_etag(value):
+    """Strip quotes and an optional W/ prefix so clients can send either form."""
+    text = value.strip()
+    if text[:2].upper() == "W/":
+        text = text[2:].strip()
+    return text.strip('"')
+
+
 def _check_if_match(record, if_match):
     """
-    ETag concurrency gate (CF-62).
+    Optimistic concurrency gate (CF-62, hardened CF-86).
 
     - no If-Match header  -> 428 Precondition Required
-    - wrong ETag          -> 412 Precondition Failed
+    - If-Match: *         -> ok (any current version)
+    - wrong ETag          -> 412 Precondition Failed + current ETag
+                             so the caller can retry without another GET
     - matching ETag       -> ok, proceed
+
+    412, not 409: 409 is "this id already exists" on POST. A stale
+    If-Match is a failed precondition (RFC 9110).
     """
     from fastapi import HTTPException
 
     current = etag_for(record)
-    if if_match is None:
+    if if_match is None or not str(if_match).strip():
         raise HTTPException(
             status_code=428,
             detail="If-Match header required for this operation",
         )
-    # Clients may send the tag quoted: "abc..." — strip quotes.
-    offered = if_match.strip().strip('"')
-    if offered != current:
+    offered = _normalize_etag(if_match)
+    if offered == "*":
+        return
+    if not secrets.compare_digest(offered, current):
         raise HTTPException(
             status_code=412,
             detail="ETag mismatch — record was changed by someone else",
+            headers={"ETag": f'"{current}"'},
         )
 
 
 TOKEN_ENV_VAR = "CASEFORGE_TOKEN"
+
+# Shown on PUT/DELETE in /docs so callers see If-Match without reading the README.
+IF_MATCH_DESCRIPTION = (
+    "Required. ETag from GET, quoted. Missing → 428. Stale → 412 "
+    "(not 409 — that is POST when the id already exists). "
+    "`*` matches any current version."
+)
 
 
 def expected_token():
@@ -426,6 +448,8 @@ def create_app():
         PUT    /engagements/{id}         -> replace (200 / 404 / 412 / 428)
         DELETE /engagements/{id}         -> remove current (history kept)
 
+    Writes are optimistic: If-Match must be the current ETag (CF-86).
+    POST of an existing id is 409. A stale If-Match is 412.
     Every call above must present `Authorization: Bearer <token>` when
     CASEFORGE_TOKEN is set. /health and the docs stay open, otherwise the
     mesh dashboard could never poll us.
@@ -445,9 +469,10 @@ def create_app():
             "Stores Engagement Records and serves them over HTTP. "
             "L4: full REST, status codes, pagination, ETag concurrency. "
             "L5 (CF-63): record versioning with as-of reads. "
-            "CF-85: service-to-service auth via a bearer token."
+            "CF-85: service-to-service auth via a bearer token. "
+            "CF-86: optimistic concurrency — If-Match on PUT/DELETE."
         ),
-        version="0.7.0",
+        version="0.8.0",
     )
 
     # HTTPBearer (not a raw Header) is what makes /docs show the padlock
@@ -618,7 +643,9 @@ def create_app():
         engagement_id: str,
         record: dict,
         response: Response,
-        if_match: Optional[str] = Header(None, alias="If-Match"),
+        if_match: Optional[str] = Header(
+            None, alias="If-Match", description=IF_MATCH_DESCRIPTION
+        ),
     ):
         """
         Replace an existing record. Requires If-Match with the current ETag
@@ -653,7 +680,9 @@ def create_app():
                 dependencies=guarded)
     def delete_engagement(
         engagement_id: str,
-        if_match: Optional[str] = Header(None, alias="If-Match"),
+        if_match: Optional[str] = Header(
+            None, alias="If-Match", description=IF_MATCH_DESCRIPTION
+        ),
     ):
         """Delete current row. Version history is kept for as-of reads."""
         current = get(engagement_id)
