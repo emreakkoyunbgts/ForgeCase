@@ -3,7 +3,6 @@ SERVICES — shared config for calling other prototypes over HTTP.
 Base URLs are read from environment variables so each teammate can
 run their service on their own port without editing code.
 """
-
 import os
 import uuid
 import requests
@@ -35,7 +34,6 @@ def call_service(method, url, timeout=10, **kwargs):
     correlation_id = str(uuid.uuid4())
     headers = kwargs.pop("headers", {})
     headers["X-Correlation-ID"] = correlation_id
-
     try:
         response = requests.request(
             method, url, timeout=timeout, headers=headers, **kwargs

@@ -1,17 +1,13 @@
 """
 PUBLISHER SERVICE — exposes publisher.py over HTTP (FastAPI version).
-
     uvicorn publisher.service:app --port 8005
-
 POST /publish   {"record_id": "eng-01"}  -> branded document path
 GET  /health    -> {"status": "ok"}
-
 CF-91: before publishing, calls Verifier's /verify. If it returns BLOCK,
 publishing is refused and the reasons are returned to the caller.
 """
 import sys
 from pathlib import Path
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from fastapi import FastAPI, HTTPException
@@ -36,7 +32,6 @@ def health():
 @app.post("/publish")
 def publish(req: PublishRequest):
     record_id = req.record_id
-
     try:
         response = call_service("GET", f"{VAULT_URL}/records/{record_id}")
         record = response.json()
@@ -88,5 +83,4 @@ def publish(req: PublishRequest):
 
     out_path = f"out/{record_id}.docx"
     written = render_docx(case_study, TEMPLATE, out_path)
-
     return {"path": str(written)}

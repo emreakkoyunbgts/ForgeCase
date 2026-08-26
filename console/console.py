@@ -15,11 +15,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
-
 from common.contract import load_corpus, client_label, has_outcomes
 from generator.generator import generate
 from verifier.verifier import verify
 from common.services import ALL_SERVICES, call_service
+
 st.set_page_config(page_title="CaseForge", page_icon="📄", layout="wide")
 
 import json
@@ -43,21 +43,13 @@ st.caption("Turn a finished engagement into a case study — without inventing a
 
 corpus = load_corpus()
 
-# ---------------------------------------------------------------------------
-# TODO(Serhat) L2: add search + filters here.
-#   domain = st.selectbox("Domain", ["All"] + sorted({r["domain"] for r in corpus}))
-#   then filter `corpus` before showing it.
-# ---------------------------------------------------------------------------
-
 st.subheader(f"{len(corpus)} engagements")
 
-# --- the list -------------------------------------------------------------
 labels = [f"{r['id']} — {client_label(r)} ({r['domain']}, {r['region']})"
           for r in corpus]
 choice = st.selectbox("Pick an engagement", labels)
 record = corpus[labels.index(choice)]
 
-# --- the detail -----------------------------------------------------------
 left, right = st.columns([2, 1])
 
 with left:
@@ -72,11 +64,9 @@ with left:
             st.markdown(f"- {o['metric']}  \n  <sub>source: {o['source_ref']}</sub>",
                         unsafe_allow_html=True)
     else:
-        # TODO(Serhat): eng-12 lands here. Make this look deliberate, not broken.
         st.warning("No measurable outcome was recorded for this engagement.")
 
 with right:
-    # CONFIDENTIALITY BADGE — this is your L2 ticket
     if record["may_be_named"]:
         st.success("✓ Client may be named")
     else:
@@ -85,7 +75,6 @@ with right:
     st.metric("Region", record["region"])
     st.metric("Domain", record["domain"])
 
-# --- generate -------------------------------------------------------------
 st.divider()
 
 engagement_id = record["id"]
@@ -95,7 +84,7 @@ saved = state.get(engagement_id)
 case_study = None
 if saved is not None and "case_study" in saved:
     case_study = saved["case_study"]
-    
+
 elif st.button("Generate case study", type="primary"):
     with st.spinner("Generating..."):
         case_study = generate(record)
@@ -115,12 +104,12 @@ if case_study is not None:
         save_review_state(state)
         st.success("Kaydedildi.")
         st.rerun()
-        st.divider()
+
     st.subheader("Grounding check")
     report = verify(case_study, record)
     verdict_ok = report["verdict"] == "PASS"
     if verdict_ok:
-        st.success("PASS - grounded")   
+        st.success("PASS - grounded")
     if not verdict_ok:
         st.error(f"BLOCK - {len(report['problems'])} problem(s) found")
         for p in report["problems"]:
@@ -143,7 +132,8 @@ if approved:
 else:
     st.warning("Draft — pending approval.")
     st.button("Download PDF", disabled=True, help="Approve first to unlock download.")
-    st.divider()
+
+st.divider()
 st.header("🩺 System Health Dashboard")
 
 cols = st.columns(len(ALL_SERVICES))
@@ -238,112 +228,3 @@ if uploaded_file is not None:
                     st.success(f"Document ready: {doc_path}")
             except Exception as e:
                 st.error(f"Publisher failed: {e}")
-    
-
-    
-
-
-
-
-
-    
-
-    
-        
-        
-            
-                
-                
-                
-                
-                
-        
-            
-
-        
-            
-                
-                    
-                        
-                        
-                    
-                    
-                    
-                    
-            
-                
-                    
-            
-            
-                
-                    
-                        
-                        
-                    
-                    
-                    
-                    
-            
-                
-
-            
-                
-                    
-                        
-                        
-                            
-                            
-                        
-                        
-                        
-                    
-                            
-                    
-                            
-                            
-                                
-                
-                    
-    
-
-
-
-
-
-    
-
-    
-                
-            
-            
-                
-                
-                
-                
-            
-                
-                                
-                    
-                        
-                        
-                    
-                    
-                    
-                
-
-
-
-
-
-    
-    
-    
-
-
-
-    
-    
-    
-    
-    
-    
