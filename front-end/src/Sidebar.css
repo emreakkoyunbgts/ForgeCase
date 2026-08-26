@@ -1,0 +1,186 @@
+/* =========================================
+   SIDEBAR
+========================================= */
+
+.sidebar {
+  position: fixed;
+
+  left: 0;
+  top: 0;
+  bottom: 0;
+
+  width: 220px;
+
+  padding: 28px 18px;
+
+  background: #ffffff;
+
+  border-right: 1px solid var(--border);
+
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.03);
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: stretch;
+
+  z-index: 1000;
+}
+
+
+/* =========================================
+   LOGO / TITLE
+========================================= */
+
+.sidebar h2 {
+  margin: 0 8px 35px;
+
+  font-size: 24px;
+  font-weight: 800;
+
+  color: var(--accent);
+
+  text-align: left;
+
+  letter-spacing: -0.5px;
+}
+
+
+/* =========================================
+   NAVIGATION
+========================================= */
+
+.sidebar ul {
+  list-style: none;
+
+  padding: 0;
+  margin: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+.sidebar ul li {
+  margin: 0;
+
+  padding: 0;
+
+  width: 100%;
+
+  background: transparent;
+
+  border-radius: 8px;
+
+  box-shadow: none;
+}
+
+
+/* =========================================
+   LINKS
+========================================= */
+
+.sidebar ul li a {
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  text-decoration: none;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  color: var(--text-muted);
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.sidebar ul li a:hover {
+  background: var(--accent-bg);
+
+  color: var(--accent);
+
+  transform: translateX(2px);
+}
+
+
+/* =========================================
+   MOBILE SIDEBAR
+========================================= */
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: relative;
+
+    width: 100%;
+    height: auto;
+
+    padding: 16px;
+
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+
+    box-shadow: none;
+  }
+
+  .sidebar h2 {
+    margin: 0 0 15px;
+    text-align: center;
+  }
+
+  .sidebar ul {
+    flex-direction: row;
+    justify-content: center;
+
+    flex-wrap: wrap;
+  }
+
+  .sidebar ul li {
+    width: auto;
+  }
+
+  .sidebar ul li a {
+    width: auto;
+  }
+}
+
+
+/* =========================================
+   RADIO GROUP
+========================================= */
+
+.radio-group {
+  display: flex;
+
+  gap: 18px;
+
+  align-items: center;
+
+  margin-top: 12px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  font-size: 14px;
+
+  color: var(--text);
+}
+
+.radio-group input {
+  margin: 0;
+
+  accent-color: var(--accent);
+}
