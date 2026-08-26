@@ -1,0 +1,19 @@
+{
+    "id": "eng-16",
+    "client": "FastCargo Express",
+    "client_type": "Courier service provider",
+    "may_be_named": true,
+    "domain": "logistics",
+    "region": "TR",
+    "challenge": "Manual sorting at hub centers led to misrouted parcels and delivery delays during holiday sales.",
+    "solution": "Proof of concept automated sorting system using computer vision barcode and label scanning.",
+    "technologies": [
+      "Python",
+      "OpenCV",
+      "C++",
+      "MQTT"
+    ],
+    "team_size": 3,
+    "duration_months": 2,
+    "outcomes": []
+  }

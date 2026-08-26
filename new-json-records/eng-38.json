@@ -1,0 +1,17 @@
+{
+    "id": "eng-38",
+    "client": "CloudSync SaaS",
+    "client_type": "B2B SaaS startup",
+    "may_be_named": true,
+    "domain": "SaaS / authentication",
+    "region": "EU",
+    "challenge": "Enterprise clients required SAML/SSO integration before closing contracts.",
+    "solution": "Integrated Keycloak identity provider supporting SAML 2.0 and OIDC single sign-on.",
+    "technologies": [
+      "Keycloak",
+      "Docker"
+    ],
+    "team_size": 2,
+    "duration_months": 1,
+    "outcomes": []
+  }

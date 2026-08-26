@@ -1,0 +1,19 @@
+{
+    "id": "eng-29",
+    "client": "Valora Capital",
+    "client_type": "Asset management firm",
+    "may_be_named": false,
+    "domain": "fintech / fraud detection",
+    "region": "NL",
+    "challenge": "Legacy rule-based fraud detection system resulted in high false-positive rates, blocking legitimate high-value transactions.",
+    "solution": "Introduced an anomaly detection ML model running alongside traditional rules engine.",
+    "technologies": [
+      "Python",
+      "Scikit-learn",
+      "PostgreSQL",
+      "FastAPI"
+    ],
+    "team_size": 5,
+    "duration_months": 4,
+    "outcomes": []
+  }

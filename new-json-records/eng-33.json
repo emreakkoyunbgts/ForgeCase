@@ -1,0 +1,23 @@
+{
+    "id": "eng-33",
+    "client": "Vortex Telecom",
+    "client_type": "ISP & fiber network provider",
+    "may_be_named": false,
+    "domain": "telecom / network ops",
+    "region": "DE",
+    "challenge": "Fiber outage detection relied on customer complaints rather than proactive telemetry.",
+    "solution": "Developed an automated network ping mesh monitoring service with real-time alerting.",
+    "technologies": [
+      "Go",
+      "Prometheus",
+      "Grafana"
+    ],
+    "team_size": 4,
+    "duration_months": 3,
+    "outcomes": [
+      {
+        "metric": "",
+        "source_ref": "postmortem.pdf#page=2"
+      }
+    ]
+  }

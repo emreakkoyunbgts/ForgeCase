@@ -3,11 +3,12 @@ SERVICES — shared config for calling other prototypes over HTTP.
 Base URLs are read from environment variables so each teammate can
 run their service on their own port without editing code.
 """
-
 import os
+import uuid
+import requests
 
 READER_URL = os.environ.get("READER_URL", "http://localhost:8001")
-VAULT_URL = os.environ.get("VAULT_URL", "http://localhost:8002")
+VAULT_URL = os.environ.get("VAULT_URL", "http://localhost:8000")
 GENERATOR_URL = os.environ.get("GENERATOR_URL", "http://localhost:8003")
 VERIFIER_URL = os.environ.get("VERIFIER_URL", "http://localhost:8004")
 PUBLISHER_URL = os.environ.get("PUBLISHER_URL", "http://localhost:8005")
@@ -23,9 +24,6 @@ ALL_SERVICES = {
     "librarian": LIBRARIAN_URL,
     "analyst": ANALYST_URL,
 }
-import time
-import uuid
-import requests
 
 
 class ServiceError(Exception):
@@ -36,7 +34,6 @@ def call_service(method, url, timeout=10, **kwargs):
     correlation_id = str(uuid.uuid4())
     headers = kwargs.pop("headers", {})
     headers["X-Correlation-ID"] = correlation_id
-
     try:
         response = requests.request(
             method, url, timeout=timeout, headers=headers, **kwargs
@@ -49,31 +46,3 @@ def call_service(method, url, timeout=10, **kwargs):
         raise ServiceError(f"{url} is unreachable (correlation_id={correlation_id})")
     except requests.exceptions.HTTPError as e:
         raise ServiceError(f"{url} returned {response.status_code}: {e} (correlation_id={correlation_id})")
-
-    
-    
-
-
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-
-        
-            
-        
-        
-        
-    
-        
-    
-        
-    
-        

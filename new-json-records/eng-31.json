@@ -1,0 +1,24 @@
+{
+    "id": "eng-31",
+    "client": "CuraNet Health",
+    "client_type": "Telemedicine provider",
+    "may_be_named": false,
+    "domain": "healthcare / telehealth",
+    "region": "GCC",
+    "challenge": "Doctors faced high administrative burden writing manual consultation notes during video calls.",
+    "solution": "Built a WebRTC-integrated speech-to-text transcript generator with automated medical summary drafting.",
+    "technologies": [
+      "TypeScript",
+      "WebRTC",
+      "Whisper API",
+      "Node.js"
+    ],
+    "team_size": 6,
+    "duration_months": 5,
+    "outcomes": [
+      {
+        "metric": "average consultation wrap-up time decreased by 5 minutes",
+        "source_ref": null
+      }
+    ]
+  }

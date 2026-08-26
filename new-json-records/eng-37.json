@@ -1,0 +1,23 @@
+{
+    "id": "eng-37",
+    "client": "StreamVibe",
+    "client_type": "OTT Streaming service",
+    "may_be_named": false,
+    "domain": "media & streaming",
+    "region": "",
+    "challenge": "High CDN bandwidth costs for 4K video distribution across overseas regional markets.",
+    "solution": "Implemented multi-CDN dynamic switching and AV1 codec encoding pipeline to optimize bitrate efficiency.",
+    "technologies": [
+      "Go",
+      "AWS Elemental",
+      "Cloudflare Workers"
+    ],
+    "team_size": 6,
+    "duration_months": 6,
+    "outcomes": [
+      {
+        "metric": "bandwidth costs reduced by 28%",
+        "source_ref": "cost_audit.pdf#page=3"
+      }
+    ]
+  }

@@ -1,0 +1,14 @@
+{
+    "id": "eng-34",
+    "client": "Apex Wealth Management",
+    "client_type": "Private wealth advisory",
+    "may_be_named": false,
+    "domain": "fintech / wealth",
+    "region": "UK",
+    "challenge": "Portfolio rebalancing calculations were executed manually in spreadsheets.",
+    "solution": "Consulting assessment and technical architecture design for an automated rebalancing engine.",
+    "technologies": [],
+    "team_size": 2,
+    "duration_months": 1,
+    "outcomes": []
+  }

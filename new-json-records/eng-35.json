@@ -1,0 +1,22 @@
+{
+    "id": "eng-35",
+    "client": "MartExpress",
+    "client_type": "",
+    "may_be_named": true,
+    "domain": "e-commerce / loyalty",
+    "region": "TR",
+    "challenge": "Old loyalty rewards engine could not issue real-time instant coupons upon checkout.",
+    "solution": "Replaced legacy batch processor with a lightweight microservice.",
+    "technologies": [
+      "Java",
+      "Spring Boot"
+    ],
+    "team_size": 0,
+    "duration_months": 3,
+    "outcomes": [
+      {
+        "metric": "coupon issuance latency dropped under 1 second",
+        "source_ref": "project_notes.txt"
+      }
+    ]
+  }

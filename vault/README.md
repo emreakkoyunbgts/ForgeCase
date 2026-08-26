@@ -2,29 +2,62 @@
 
 **Store the Engagement Records. Serve them over a REST API.**
 
-You have 15 days. This is deliberately bounded so you can **finish it**.
-Finishing cleanly and handing over to Ömer IS your success criterion.
-Do not start stretch goals.
-
 ## Run it
 ```bash
 python -m vault.vault store records/eng-01.json
 python -m vault.vault get eng-01
-python -m vault.vault serve          # starts the API on :8000
+python -m vault.vault load-all
+python -m vault.vault serve          # API on :8000 — docs at /docs
 ```
 
-## Your levels
+## Levels
 - **L1** — E-R model, SQLite schema. Save a record, read it back *identically*.
-- **L2** — FastAPI: `POST /engagements`, `GET /engagements/{id}`,
-  `GET /engagements`. Two tests: one happy, one 404.
-- **L3** — Filter by domain/region. A tiny HTML list page.
+- **L2** — FastAPI: `POST`, `GET /{id}`, `GET` list. Happy path + 404 tests.
+- **L4** — Full REST + ETag concurrency:
+  - `POST /engagements` → 201 create, **409** if id exists
+  - `PUT /engagements/{id}` → replace (needs `If-Match` ETag)
+  - `DELETE /engagements/{id}` → 204 (needs `If-Match`)
+  - `GET /engagements?domain=&region=&limit=&offset=` → filter + pagination
+  - Stale ETag → **412**; missing `If-Match` → **428**
+- **L5 (stretch)** — Record versioning (as-of):
+  - Every `store` / create / update appends an immutable snapshot to `engagement_versions`
+  - `GET /engagements/{id}?as_of=ISO8601` → newest snapshot with `recorded_at <= as_of`
+  - `GET /engagements/{id}/versions` → version list (`version`, `recorded_at`, `etag`)
+  - DELETE removes the current row but keeps history (as-of still works)
+- **Validation** — POST/PUT check content against the contract (valid region,
+  non-empty `client_type` / `metric` / `source_ref`, boolean `may_be_named`).
+  Bad data gets a **422** that names the problem, never an opaque 500.
+- **CF-84 (service APIs)** — `GET /health` for the mesh: reports `ok` +
+  record count when the database answers, **503** when it does not.
+- **CF-85 (auth)** — every data endpoint needs
+  `Authorization: Bearer <CASEFORGE_TOKEN>`; missing or wrong → **401** with
+  `WWW-Authenticate: Bearer`. `/health` and `/docs` stay open so the mesh can
+  still poll us. In `/docs`, use the **Authorize** padlock (top right) — paste
+  the token only, Swagger adds `Bearer` itself.
 
-## Your test data
-| File | Why |
-|---|---|
-| `records/corpus.json` | all 12 records — load them all |
-| `records/seed/eng-01.json` | round-trip test: save, reload, compare |
+## Calling Vault from another service
 
-**Watch out:** `eng-12` has an **empty** `outcomes` list — your schema must
-handle that. And `eng-02` is the only record with `may_be_named: true` — do
-not lose that flag.
+```bash
+# leave CASEFORGE_TOKEN unset and Vault serves everyone (it warns at startup)
+$env:CASEFORGE_TOKEN = "dev-token"        # PowerShell
+python -m vault.vault serve
+```
+
+```python
+requests.get(
+    "http://127.0.0.1:8000/engagements/eng-01",
+    headers={"Authorization": f"Bearer {os.environ['CASEFORGE_TOKEN']}"},
+    timeout=5,
+)
+```
+
+The token comes from the environment — never from code, never from git.
+Auth is rolled out in stages on purpose: with `CASEFORGE_TOKEN` unset nothing
+breaks, so no prototype is blocked mid-migration. Set the variable everywhere
+and the door is locked.
+
+## Watch out
+- `eng-12` has an empty `outcomes` list — schema must handle it.
+- `eng-02` is the only record with `may_be_named: true` — do not lose that flag.
+- If you change the schema, delete `vault/engagements.db` and run `load-all` again
+  (old stub DBs cause "no column named client" errors).
