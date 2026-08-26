@@ -19,6 +19,13 @@ python -m vault.vault serve          # API on :8000 — docs at /docs
   - `DELETE /engagements/{id}` → 204 (needs `If-Match`)
   - `GET /engagements?domain=&region=&limit=&offset=` → filter + pagination
   - Stale ETag → **412**; missing `If-Match` → **428**
+- **CF-86 (harden)** — optimistic concurrency, same gate, stricter contract:
+  - **409** = POST of an id that already exists (create conflict)
+  - **412** = PUT/DELETE with a stale If-Match (lost the race; response
+    carries the current `ETag` so you can retry)
+  - **428** = If-Match missing
+  - `If-Match: *` = any current version (record must still exist)
+  - `/docs` documents the If-Match header on PUT and DELETE
 - **L5 (stretch)** — Record versioning (as-of):
   - Every `store` / create / update appends an immutable snapshot to `engagement_versions`
   - `GET /engagements/{id}?as_of=ISO8601` → newest snapshot with `recorded_at <= as_of`
