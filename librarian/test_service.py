@@ -37,6 +37,16 @@ def test_health():
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
+@pytest.fixture(autouse=True)
+def reset_search_cache():
+    service.SEARCH_CACHE.invalidate()
+    service._LAST_CORPUS_FINGERPRINT = None
+
+    yield
+
+    service.SEARCH_CACHE.invalidate()
+    service._LAST_CORPUS_FINGERPRINT = None
+
 
 def test_search_returns_matches(monkeypatch):
     """
@@ -485,3 +495,265 @@ def test_match_uses_vault_records(
 
     assert response.status_code == 200
     assert seen["corpus"] == records
+
+def test_repeated_search_uses_cache(
+    monkeypatch,
+):
+    records = [
+        {
+            "id": "eng-01",
+            "domain": "payments",
+        }
+    ]
+
+    monkeypatch.setattr(
+        service,
+        "fetch_all_records_from_vault",
+        lambda: records,
+    )
+
+    search_calls = []
+
+    def fake_search(
+        query,
+        corpus,
+        top_k,
+        strategy,
+    ):
+        search_calls.append(query)
+
+        return [
+            {
+                "engagement_id": "eng-01",
+                "score": 0.91,
+                "why": "payments evidence",
+            }
+        ]
+
+    monkeypatch.setattr(
+        service,
+        "librarian_search",
+        fake_search,
+    )
+
+    first = client.get(
+        "/search",
+        params={
+            "q": "payments",
+            "top": 3,
+            "strategy": "hybrid",
+        },
+    )
+
+    second = client.get(
+        "/search",
+        params={
+            "q": "payments",
+            "top": 3,
+            "strategy": "hybrid",
+        },
+    )
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+
+    assert first.json() == second.json()
+
+    # Expensive Librarian search ran only once.
+    assert search_calls == [
+        "payments",
+    ]
+
+def test_different_query_is_cache_miss(
+    monkeypatch,
+):
+    records = [
+        {"id": "eng-01"},
+    ]
+
+    monkeypatch.setattr(
+        service,
+        "fetch_all_records_from_vault",
+        lambda: records,
+    )
+
+    search_calls = []
+
+    def fake_search(
+        query,
+        corpus,
+        top_k,
+        strategy,
+    ):
+        search_calls.append(query)
+
+        return []
+
+    monkeypatch.setattr(
+        service,
+        "librarian_search",
+        fake_search,
+    )
+
+    client.get(
+        "/search",
+        params={"q": "payments"},
+    )
+
+    client.get(
+        "/search",
+        params={"q": "reporting"},
+    )
+
+    assert search_calls == [
+        "payments",
+        "reporting",
+    ]
+
+def test_different_search_parameters_are_not_shared(
+    monkeypatch,
+):
+    records = [
+        {"id": "eng-01"},
+    ]
+
+    monkeypatch.setattr(
+        service,
+        "fetch_all_records_from_vault",
+        lambda: records,
+    )
+
+    search_calls = []
+
+    def fake_search(
+        query,
+        corpus,
+        top_k,
+        strategy,
+    ):
+        search_calls.append(
+            (
+                query,
+                top_k,
+                strategy,
+            )
+        )
+
+        return []
+
+    monkeypatch.setattr(
+        service,
+        "librarian_search",
+        fake_search,
+    )
+
+    client.get(
+        "/search",
+        params={
+            "q": "payments",
+            "top": 3,
+            "strategy": "hybrid",
+        },
+    )
+
+    client.get(
+        "/search",
+        params={
+            "q": "payments",
+            "top": 5,
+            "strategy": "hybrid",
+        },
+    )
+
+    assert len(search_calls) == 2
+
+def test_corpus_change_invalidates_cache(
+    monkeypatch,
+):
+    corpus_versions = [
+        [
+            {
+                "id": "eng-01",
+                "domain": "payments",
+            }
+        ],
+        [
+            {
+                "id": "eng-01",
+                "domain": "payments",
+            },
+            {
+                "id": "eng-02",
+                "domain": "reporting",
+            },
+        ],
+    ]
+
+    current_version = [0]
+
+    def fake_fetch():
+        return corpus_versions[
+            current_version[0]
+        ]
+
+    monkeypatch.setattr(
+        service,
+        "fetch_all_records_from_vault",
+        fake_fetch,
+    )
+
+    search_calls = []
+
+    def fake_search(
+        query,
+        corpus,
+        top_k,
+        strategy,
+    ):
+        search_calls.append(
+            len(corpus)
+        )
+
+        return [
+            {
+                "engagement_id": (
+                    corpus[0]["id"]
+                ),
+                "score": 0.9,
+                "why": "test",
+            }
+        ]
+
+    monkeypatch.setattr(
+        service,
+        "librarian_search",
+        fake_search,
+    )
+
+    # First request -> MISS
+    client.get(
+        "/search",
+        params={"q": "payments"},
+    )
+
+    # Same corpus -> HIT
+    client.get(
+        "/search",
+        params={"q": "payments"},
+    )
+
+    assert search_calls == [1]
+
+    # Vault corpus changes.
+    current_version[0] = 1
+
+    # Must invalidate old cached result.
+    client.get(
+        "/search",
+        params={"q": "payments"},
+    )
+
+    assert search_calls == [
+        1,
+        2,
+    ]
