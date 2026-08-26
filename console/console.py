@@ -136,6 +136,9 @@ else:
 st.divider()
 st.header("🩺 System Health Dashboard")
 
+if "last_errors" not in st.session_state:
+    st.session_state.last_errors = {}
+
 cols = st.columns(len(ALL_SERVICES))
 for col, (name, url) in zip(cols, ALL_SERVICES.items()):
     with col:
@@ -148,9 +151,29 @@ for col, (name, url) in zip(cols, ALL_SERVICES.items()):
             else:
                 st.markdown(f"🟡 **{name}**")
                 st.caption(f"slow ({elapsed:.1f}s)")
-        except Exception:
+            st.caption(f"latency: {elapsed * 1000:.0f} ms")
+        except Exception as e:
+            st.session_state.last_errors[name] = str(e)
             st.markdown(f"🔴 **{name}**")
             st.caption("unreachable")
+
+        last_err = st.session_state.last_errors.get(name)
+        if last_err:
+            st.caption(f"⚠️ last error: {last_err[:60]}")
+
+    
+        
+            
+            
+            
+                
+                
+            
+                
+                
+        
+            
+            
 
 st.divider()
 st.header("Upload a document (full pipeline via HTTP)")
