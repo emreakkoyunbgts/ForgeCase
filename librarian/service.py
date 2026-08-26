@@ -8,6 +8,11 @@ from pydantic import BaseModel, Field
 from librarian.librarian import search as librarian_search
 from librarian.multi_requirement import evaluate_rfp_requirements
 
+import threading
+from librarian.cache import (
+    TTLCache,
+    corpus_fingerprint,
+)
 
 VAULT_URL = os.getenv(
     "VAULT_URL",
@@ -17,6 +22,20 @@ VAULT_URL = os.getenv(
 VAULT_PAGE_SIZE = 50
 VAULT_MAX_RETRIES = 2
 VAULT_TIMEOUT_SECONDS = 5
+
+SEARCH_CACHE_TTL_SECONDS = float(
+    os.getenv(
+        "LIBRARIAN_SEARCH_CACHE_TTL_SECONDS",
+        "60",
+    )
+)
+
+SEARCH_CACHE = TTLCache(
+    ttl_seconds=SEARCH_CACHE_TTL_SECONDS,
+)
+
+_CACHE_STATE_LOCK = threading.Lock()
+_LAST_CORPUS_FINGERPRINT = None
 
 
 class MatchRequest(BaseModel):
@@ -187,6 +206,35 @@ def fetch_all_records_from_vault():
 
     return records
 
+def sync_search_cache_with_corpus(
+    corpus: list[dict],
+) -> str:
+    """
+    Invalidate cached search results when the Vault
+    corpus changes.
+
+    Returns the current corpus fingerprint.
+    """
+
+    global _LAST_CORPUS_FINGERPRINT
+
+    fingerprint = corpus_fingerprint(corpus)
+
+    with _CACHE_STATE_LOCK:
+        if _LAST_CORPUS_FINGERPRINT is None:
+            _LAST_CORPUS_FINGERPRINT = fingerprint
+
+        elif (
+            fingerprint
+            != _LAST_CORPUS_FINGERPRINT
+        ):
+            SEARCH_CACHE.invalidate()
+
+            _LAST_CORPUS_FINGERPRINT = (
+                fingerprint
+            )
+
+    return fingerprint
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -209,12 +257,38 @@ def create_app() -> FastAPI:
     ):
         corpus = fetch_all_records_from_vault()
 
-        matches = librarian_search(
-            q,
-            corpus,
-            top_k=top,
-            strategy=strategy,
+        fingerprint = (
+            sync_search_cache_with_corpus(
+                corpus
+            )
         )
+
+        cache_key = (
+            q,
+            top,
+            strategy,
+            fingerprint,
+        )
+
+        cached_matches = SEARCH_CACHE.get(
+            cache_key
+        )
+
+        if cached_matches is not None:
+            matches = cached_matches
+
+        else:
+            matches = librarian_search(
+                q,
+                corpus,
+                top_k=top,
+                strategy=strategy,
+            )
+
+            SEARCH_CACHE.set(
+                cache_key,
+                matches,
+            )
 
         return {
             "query": q,
