@@ -162,6 +162,175 @@ for col, (name, url) in zip(cols, ALL_SERVICES.items()):
             st.markdown(f"🔴 **{name}**")
             st.caption("unreachable")
 
+st.divider()
+st.header("Upload a document (full pipeline via HTTP)")
+
+uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"], key="cf97_upload")
+
+if uploaded_file is not None:
+    st.write(f"Uploaded: {uploaded_file.name}")
+
+    if st.button("Run pipeline (HTTP)"):
+        pipeline_record = None
+        try:
+            with st.spinner("Calling Reader..."):
+                files = {"document": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
+                reader_response = call_service("POST", ALL_SERVICES["reader"] + "/extract", files=files)
+                pipeline_record = reader_response.json()
+                st.success(f"Reader extracted: {pipeline_record['id']}")
+                st.json(pipeline_record)
+        except Exception as e:
+            st.error(f"Reader failed: {e}")
+
+        if pipeline_record is not None:
+            try:
+                with st.spinner("Storing in Vault..."):
+                    vault_response = call_service(
+                        "POST", ALL_SERVICES["vault"] + "/engagements",
+                        json=pipeline_record,
+                    )
+                    st.success(f"Stored in Vault: {pipeline_record['id']}")
+            except Exception as e:
+                st.warning(f"Vault storage skipped: {e}")
+
+        mcs = None
+        if pipeline_record is not None:
+            try:
+                with st.spinner("Calling Generator..."):
+                    mcs_payload = call_service(
+                        "POST", ALL_SERVICES["generator"] + "/generator/mcs",
+                        json=pipeline_record,
+                    )
+                    mcs = mcs_payload.json()
+                    st.success("Generator produced multi-source content")
+                    st.json(mcs)
+            except Exception as e:
+                st.error(f"Generator failed: {e}")
+
+        verdict = None
+        if mcs is not None:
+            try:
+                with st.spinner("Calling Verifier..."):
+                    verify_payload = {"record": pipeline_record, "mcs": mcs}
+                    verify_response = call_service(
+                        "POST",
+                        ALL_SERVICES["verifier"] + f"/verify/{pipeline_record['id']}",
+                        json=verify_payload,
+                    )
+                    verdict = verify_response.json()
+                    if verdict["verdict"] == "PASS":
+                        st.success("Verifier: PASS — every claim is grounded")
+                    else:
+                        st.error(f"Verifier: BLOCK — {len(verdict['problems'])} problem(s)")
+                        for p in verdict["problems"]:
+                            st.write(str(p))
+            except Exception as e:
+                st.error(f"Verifier failed: {e}")
+
+        if verdict is not None and verdict.get("verdict") == "PASS":
+            try:
+                with st.spinner("Calling Publisher..."):
+                    pub_response = call_service(
+                        "POST", ALL_SERVICES["publisher"] + "/publish",
+                        json={"record_id": pipeline_record["id"]},
+                    )
+                    doc_path = pub_response.json()["path"]
+                    st.success(f"Document ready: {doc_path}")
+            except Exception as e:
+                st.error(f"Publisher failed: {e}")
+    
+
+    
+
+
+
+
+
+    
+
+    
+        
+        
+            
+                
+                
+                
+                
+                
+        
+            
+
+        
+            
+                
+                    
+                        
+                        
+                    
+                    
+                    
+                    
+            
+                
+                    
+            
+            
+                
+                    
+                        
+                        
+                    
+                    
+                    
+                    
+            
+                
+
+            
+                
+                    
+                        
+                        
+                            
+                            
+                        
+                        
+                        
+                    
+                            
+                    
+                            
+                            
+                                
+                
+                    
+    
+
+
+
+
+
+    
+
+    
+                
+            
+            
+                
+                
+                
+                
+            
+                
+                                
+                    
+                        
+                        
+                    
+                    
+                    
+                
+
 
 
 
