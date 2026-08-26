@@ -220,6 +220,29 @@ if uploaded_file is not None:
                     st.success(f"Document ready: {doc_path}")
             except Exception as e:
                 st.error(f"Publisher failed: {e}")
+
+st.divider()
+st.header("🩺 System Health Dashboard")
+            
+                
+                
+
+
+cols = st.columns(len(ALL_SERVICES))
+for col, (name, url) in zip(cols, ALL_SERVICES.items()):
+    with col:
+        try:
+            response = call_service("GET", url + "/health", timeout=3)
+            elapsed = response.elapsed.total_seconds()
+            if elapsed < 2:
+                st.markdown(f"🟢 **{name}**")
+                st.caption("healthy")
+            else:
+                st.markdown(f"🟡 **{name}**")
+                st.caption(f"slow ({elapsed:.1f}s)")
+        except Exception:
+            st.markdown(f"🔴 **{name}**")
+            st.caption("unreachable")
     
 
     
