@@ -145,6 +145,55 @@ def test_api_put_without_if_match_returns_428():
     assert response.status_code == 428
 
 
+def test_second_writer_loses_with_stale_etag():
+    """CF-86: A reads, B writes, A retries with the old tag — A is rejected
+    and the current ETag is on the 412 so A can retry without another GET."""
+    client = TestClient(create_app())
+    original = load_seed("eng-01")
+    _clear("eng-01")
+    client.post("/engagements", json=original)
+    tag_a = client.get("/engagements/eng-01").headers["ETag"]
+
+    from_b = dict(original)
+    from_b["challenge"] = "writer B won"
+    assert client.put(
+        "/engagements/eng-01", json=from_b, headers={"If-Match": tag_a}
+    ).status_code == 200
+
+    from_a = dict(original)
+    from_a["challenge"] = "writer A stale"
+    lost = client.put(
+        "/engagements/eng-01", json=from_a, headers={"If-Match": tag_a}
+    )
+    assert lost.status_code == 412
+    assert lost.headers.get("ETag")
+    assert client.get("/engagements/eng-01").json()["challenge"] == "writer B won"
+
+
+def test_if_match_star_allows_update_when_record_exists():
+    """If-Match: * means 'any current version' — useful when the caller
+    does not have a cached tag but knows the resource exists."""
+    client = TestClient(create_app())
+    original = load_seed("eng-01")
+    _clear("eng-01")
+    client.post("/engagements", json=original)
+    updated = dict(original)
+    updated["challenge"] = "star match"
+    response = client.put(
+        "/engagements/eng-01", json=updated, headers={"If-Match": "*"}
+    )
+    assert response.status_code == 200
+    assert response.json()["challenge"] == "star match"
+
+
+def test_openapi_documents_if_match_on_put():
+    """PUT must advertise If-Match in /docs (CF-86)."""
+    spec = TestClient(create_app()).get("/openapi.json").json()
+    params = spec["paths"]["/engagements/{engagement_id}"]["put"]["parameters"]
+    names = {p.get("name") for p in params}
+    assert "If-Match" in names
+
+
 def test_api_delete_with_etag():
     """DELETE with matching ETag removes the record (204)."""
     client = TestClient(create_app())
