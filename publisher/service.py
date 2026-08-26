@@ -56,7 +56,7 @@ def publish(req: PublishRequest):
     # CF-91: the Verifier gate — call it over HTTP before publishing.
     try:
         mcs_response = call_service(
-            "POST", f"{GENERATOR_URL}/generator/mcs",
+            "POST", f"{GENERATOR_URL}/generator/mcs/eng",
             json=record,
         )
         mcs = mcs_response.json()

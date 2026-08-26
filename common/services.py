@@ -30,8 +30,10 @@ class ServiceError(Exception):
     pass
 
 
-def call_service(method, url, timeout=10, **kwargs):
-    correlation_id = str(uuid.uuid4())
+def call_service(method, url, timeout=10, correlation_id=None, **kwargs):
+    if correlation_id is None:
+        correlation_id = str(uuid.uuid4())
+    
     headers = kwargs.pop("headers", {})
     headers["X-Correlation-ID"] = correlation_id
     try:

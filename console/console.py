@@ -10,6 +10,7 @@ returns a value — that is the whole model.
 """
 import sys
 from pathlib import Path
+import uuid
 
 # so we can import `common` when Streamlit runs this file directly
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -136,6 +137,9 @@ else:
 st.divider()
 st.header("🩺 System Health Dashboard")
 
+if "last_errors" not in st.session_state:
+    st.session_state.last_errors = {}
+
 cols = st.columns(len(ALL_SERVICES))
 for col, (name, url) in zip(cols, ALL_SERVICES.items()):
     with col:
@@ -148,9 +152,15 @@ for col, (name, url) in zip(cols, ALL_SERVICES.items()):
             else:
                 st.markdown(f"🟡 **{name}**")
                 st.caption(f"slow ({elapsed:.1f}s)")
-        except Exception:
+            st.caption(f"latency: {elapsed * 1000:.0f} ms")
+        except Exception as e:
+            st.session_state.last_errors[name] = str(e)
             st.markdown(f"🔴 **{name}**")
             st.caption("unreachable")
+
+        last_err = st.session_state.last_errors.get(name)
+        if last_err:
+            st.caption(f"⚠️ last error: {last_err[:60]}")
 
 st.divider()
 st.header("Upload a document (full pipeline via HTTP)")
@@ -162,10 +172,12 @@ if uploaded_file is not None:
 
     if st.button("Run pipeline (HTTP)"):
         pipeline_record = None
+        run_correlation_id = str(uuid.uuid4())
+        st.info(f"🔗 Correlation ID for this run: `{run_correlation_id}`")
         try:
             with st.spinner("Calling Reader..."):
                 files = {"document": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
-                reader_response = call_service("POST", ALL_SERVICES["reader"] + "/extract", files=files)
+                reader_response = call_service("POST", ALL_SERVICES["reader"] + "/extract", files=files, correlation_id=run_correlation_id)
                 pipeline_record = reader_response.json()
                 st.success(f"Reader extracted: {pipeline_record['id']}")
                 st.json(pipeline_record)
@@ -178,6 +190,7 @@ if uploaded_file is not None:
                     vault_response = call_service(
                         "POST", ALL_SERVICES["vault"] + "/engagements",
                         json=pipeline_record,
+                        correlation_id=run_correlation_id,
                     )
                     st.success(f"Stored in Vault: {pipeline_record['id']}")
             except Exception as e:
@@ -188,8 +201,9 @@ if uploaded_file is not None:
             try:
                 with st.spinner("Calling Generator..."):
                     mcs_payload = call_service(
-                        "POST", ALL_SERVICES["generator"] + "/generator/mcs",
+                        "POST", ALL_SERVICES["generator"] + "/generator/mcs/eng",
                         json=pipeline_record,
+                        correlation_id=run_correlation_id,
                     )
                     mcs = mcs_payload.json()
                     st.success("Generator produced multi-source content")
@@ -206,6 +220,7 @@ if uploaded_file is not None:
                         "POST",
                         ALL_SERVICES["verifier"] + f"/verify/{pipeline_record['id']}",
                         json=verify_payload,
+                        correlation_id=run_correlation_id,
                     )
                     verdict = verify_response.json()
                     if verdict["verdict"] == "PASS":
@@ -223,6 +238,7 @@ if uploaded_file is not None:
                     pub_response = call_service(
                         "POST", ALL_SERVICES["publisher"] + "/publish",
                         json={"record_id": pipeline_record["id"]},
+                        correlation_id=run_correlation_id,
                     )
                     doc_path = pub_response.json()["path"]
                     st.success(f"Document ready: {doc_path}")
