@@ -17,7 +17,7 @@ logger=logging.getLogger(__name__)
 app=FastAPI()
 
 
-@app.post("generator/mcs")
+@app.post("/generator/mcs")
 async def get_mcs(record: dict, request: Request , response: Response):
     """
     Get the multi-source content for a given record ID.
