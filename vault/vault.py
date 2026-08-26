@@ -12,6 +12,8 @@ See the Project Specification, sections 3 and 5.
 import argparse
 import hashlib
 import json
+import os
+import secrets
 import sqlite3
 import sys
 from datetime import datetime, timezone
@@ -399,9 +401,23 @@ def _check_if_match(record, if_match):
         )
 
 
+TOKEN_ENV_VAR = "CASEFORGE_TOKEN"
+
+
+def expected_token():
+    """
+    The shared service token, read from the environment (CF-85).
+
+    Never from code or git — the secret lives only in the environment.
+    Returns None when the variable is unset, which means "auth is not
+    configured on this instance".
+    """
+    return os.environ.get(TOKEN_ENV_VAR) or None
+
+
 def create_app():
     """
-    The REST API (L2 + L4 + L5).
+    The REST API (L2 + L4 + L5), guarded by a service token (CF-85).
 
         POST   /engagements              -> create (201 / 409 / 422)
         GET    /engagements              -> list (+ filter / pagination)
@@ -410,21 +426,72 @@ def create_app():
         PUT    /engagements/{id}         -> replace (200 / 404 / 412 / 428)
         DELETE /engagements/{id}         -> remove current (history kept)
 
+    Every call above must present `Authorization: Bearer <token>` when
+    CASEFORGE_TOKEN is set. /health and the docs stay open, otherwise the
+    mesh dashboard could never poll us.
+
     OpenAPI docs: http://127.0.0.1:8000/docs
     """
     from typing import Optional
 
-    from fastapi import FastAPI, Header, HTTPException, Query, Response
+    from fastapi import (
+        Depends, FastAPI, Header, HTTPException, Query, Response,
+    )
+    from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
     app = FastAPI(
         title="Vault — Engagement Record store",
         description=(
             "Stores Engagement Records and serves them over HTTP. "
             "L4: full REST, status codes, pagination, ETag concurrency. "
-            "L5 (CF-63): record versioning with as-of reads."
+            "L5 (CF-63): record versioning with as-of reads. "
+            "CF-85: service-to-service auth via a bearer token."
         ),
-        version="0.6.0",
+        version="0.7.0",
     )
+
+    # HTTPBearer (not a raw Header) is what makes /docs show the padlock
+    # and the Authorize button. auto_error=False: we return 401 ourselves
+    # so the message matches the rest of the API, and so an unset
+    # CASEFORGE_TOKEN can still let everyone through.
+    bearer_scheme = HTTPBearer(auto_error=False)
+
+    def require_token(
+        creds: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    ):
+        """
+        Service-to-service authentication (CF-85).
+
+        Staged rollout, on purpose: with CASEFORGE_TOKEN unset the Vault
+        serves everyone and says so at startup. That keeps the migration
+        additive — nobody's prototype breaks the moment this merges. Set
+        the variable and the door is locked for every data endpoint.
+
+        401 (not 403) because the caller is unidentified rather than
+        forbidden; we have no roles yet, so 403 would be a lie.
+        """
+        expected = expected_token()
+        if expected is None:
+            return
+        unauthenticated = HTTPException(
+            status_code=401,
+            detail="a valid 'Authorization: Bearer <token>' header is "
+                   "required — the token comes from CASEFORGE_TOKEN",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        if creds is None or not creds.credentials.strip():
+            raise unauthenticated
+        # Constant-time comparison: a plain != leaks how many characters
+        # matched through timing, which lets a caller guess the token.
+        if not secrets.compare_digest(creds.credentials.strip(), expected):
+            raise unauthenticated
+
+    guarded = [Depends(require_token)]
+
+    if expected_token() is None:
+        print(f"[vault] WARNING: {TOKEN_ENV_VAR} is not set — serving "
+              f"unauthenticated. Set it to require a bearer token.",
+              file=sys.stderr)
 
     @app.get("/health")
     def health(response: Response):
@@ -453,7 +520,7 @@ def create_app():
             "records": count,
         }
 
-    @app.post("/engagements", status_code=201)
+    @app.post("/engagements", status_code=201, dependencies=guarded)
     def create_engagement(record: dict, response: Response):
         """Create a new record. Fails with 409 if the id already exists."""
         _require_fields(record)
@@ -478,7 +545,7 @@ def create_app():
         response.headers["Location"] = f"/engagements/{record['id']}"
         return record
 
-    @app.get("/engagements")
+    @app.get("/engagements", dependencies=guarded)
     def list_engagements(
         domain: Optional[str] = Query(None, description="Filter by domain"),
         region: Optional[str] = Query(
@@ -500,7 +567,7 @@ def create_app():
             "offset": offset,
         }
 
-    @app.get("/engagements/{engagement_id}/versions")
+    @app.get("/engagements/{engagement_id}/versions", dependencies=guarded)
     def get_engagement_versions(engagement_id: str):
         """
         List immutable version snapshots for this id (CF-63).
@@ -514,7 +581,7 @@ def create_app():
             )
         return {"id": engagement_id, "versions": versions}
 
-    @app.get("/engagements/{engagement_id}")
+    @app.get("/engagements/{engagement_id}", dependencies=guarded)
     def get_engagement(
         engagement_id: str,
         response: Response,
@@ -546,7 +613,7 @@ def create_app():
         response.headers["ETag"] = f'"{tag}"'
         return record
 
-    @app.put("/engagements/{engagement_id}")
+    @app.put("/engagements/{engagement_id}", dependencies=guarded)
     def put_engagement(
         engagement_id: str,
         record: dict,
@@ -582,7 +649,8 @@ def create_app():
         response.headers["ETag"] = f'"{tag}"'
         return record
 
-    @app.delete("/engagements/{engagement_id}", status_code=204)
+    @app.delete("/engagements/{engagement_id}", status_code=204,
+                dependencies=guarded)
     def delete_engagement(
         engagement_id: str,
         if_match: Optional[str] = Header(None, alias="If-Match"),

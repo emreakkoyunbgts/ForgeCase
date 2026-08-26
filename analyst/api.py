@@ -13,18 +13,26 @@ app = FastAPI(
 
 VAULT_URL = os.getenv(
     "VAULT_URL",
-    "http://127.0.0.1:8001",
+    "http://127.0.0.1:8000",
 )
 
 
 def fetch_records():
     """
-    Fetch all engagement records from the Vault service.
+    Fetch engagement records from the Vault service.
     """
+
+    headers = {}
+
+    vault_token = os.getenv("CASEFORGE_TOKEN")
+
+    if vault_token:
+        headers["Authorization"] = f"Bearer {vault_token}"
 
     try:
         response = requests.get(
-            f"{VAULT_URL}/records",
+            f"{VAULT_URL}/engagements",
+            headers=headers,
             timeout=5,
         )
 
@@ -49,7 +57,7 @@ def fetch_records():
         )
 
     try:
-        records = response.json()
+        data = response.json()
 
     except ValueError:
         raise HTTPException(
@@ -60,12 +68,23 @@ def fetch_records():
             },
         )
 
+    if not isinstance(data, dict):
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "invalid_vault_response",
+                "message": "Vault response must be an object.",
+            },
+        )
+
+    records = data.get("items")
+
     if not isinstance(records, list):
         raise HTTPException(
             status_code=502,
             detail={
                 "error": "invalid_vault_response",
-                "message": "Vault response must be a list of records.",
+                "message": "Vault response must contain an items list.",
             },
         )
 
