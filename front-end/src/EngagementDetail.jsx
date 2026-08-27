@@ -10,6 +10,7 @@ function EngagementDetail() {
     const [engagement, setEngagement] = useState(null);
     const [loading, setLoading] = useState(true);
     const [creatingCaseStudy, setCreatingCaseStudy] = useState(null);
+    const [creatingEnglishAiResponse, setCreatingEnglishAiResponse] = useState(false);
     const [error, setError] = useState(null);
     const [caseStudy, setCaseStudy] = useState(null);
 
@@ -71,6 +72,37 @@ function EngagementDetail() {
             }
         } finally {
             setCreatingCaseStudy(null);
+        }
+    };
+
+    const createEnglishAiResponse = async () => {
+        if (!engagement) {
+            return;
+        }
+
+        setCreatingEnglishAiResponse(true);
+        setError(null);
+        setCaseStudy(null);
+
+        try {
+            const response = await axios.post(
+                "http://localhost:8001/generator/ai/eng",
+                engagement
+            );
+
+            setCaseStudy({ language: "English AI Response", content: response.data });
+        } catch (error) {
+            console.error("Error creating English AI response:", error);
+
+            if (error.response) {
+                setError(
+                    `Failed to create English AI response. Status: ${error.response.status}`
+                );
+            } else {
+                setError("Failed to connect to the server.");
+            }
+        } finally {
+            setCreatingEnglishAiResponse(false);
         }
     };
 
@@ -171,34 +203,46 @@ function EngagementDetail() {
 
                 <div className="case-study-action">
                     <button
-                        className="create-case-study-button"
+                        className="create-case-study-button create-detail-study-button"
                         onClick={() => createCaseStudy("English")}
-                        disabled={Boolean(creatingCaseStudy)}
+                        disabled={Boolean(creatingCaseStudy) || creatingEnglishAiResponse}
                     >
                         {creatingCaseStudy === "English"
                             ? "Creating Case Study..."
-                            : "Create Case Study"}
+                            : "Create Detail Study"}
                     </button>
 
-                    <button
-                        className="create-case-study-button"
-                        onClick={() => createCaseStudy("German")}
-                        disabled={Boolean(creatingCaseStudy)}
-                    >
-                        {creatingCaseStudy === "German"
-                            ? "Generating German MCS..."
-                            : "Generate German MCS"}
-                    </button>
+                    <div className="case-study-secondary-actions">
+                        <button
+                            className="create-case-study-button"
+                            onClick={createEnglishAiResponse}
+                            disabled={Boolean(creatingCaseStudy) || creatingEnglishAiResponse}
+                        >
+                            {creatingEnglishAiResponse
+                                ? "Generating English AI Response..."
+                                : "Generate English AI Response"}
+                        </button>
 
-                    <button
-                        className="create-case-study-button"
-                        onClick={() => createCaseStudy("Turkish")}
-                        disabled={Boolean(creatingCaseStudy)}
-                    >
-                        {creatingCaseStudy === "Turkish"
-                            ? "Generating Turkish MCS..."
-                            : "Generate Turkish MCS"}
-                    </button>
+                        <button
+                            className="create-case-study-button"
+                            onClick={() => createCaseStudy("German")}
+                            disabled={Boolean(creatingCaseStudy) || creatingEnglishAiResponse}
+                        >
+                            {creatingCaseStudy === "German"
+                                ? "Generating German MCS..."
+                                : "Generate German MCS"}
+                        </button>
+
+                        <button
+                            className="create-case-study-button"
+                            onClick={() => createCaseStudy("Turkish")}
+                            disabled={Boolean(creatingCaseStudy) || creatingEnglishAiResponse}
+                        >
+                            {creatingCaseStudy === "Turkish"
+                                ? "Generating Turkish MCS..."
+                                : "Generate Turkish MCS"}
+                        </button>
+                    </div>
                 </div>
 
                 {error && (

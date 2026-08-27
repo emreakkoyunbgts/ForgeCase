@@ -170,7 +170,8 @@
 
 .case-study-action {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
   gap: 12px;
 
@@ -178,6 +179,13 @@
   padding-top: 24px;
 
   border-top: 1px solid #444;
+}
+
+.case-study-secondary-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .create-case-study-button {

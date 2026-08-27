@@ -14,7 +14,7 @@ from generator.GeneratorService import get_record_from_vault, call_librarian_for
 from generator.exeption.RetryExeption import RetryException
 from generator.exeption.VaultServiceError import VaultServiceError
 from generator.generator import generate_multi_source, get_five_sections_with_llm, get_llm_output_german, \
-    get_llm_output_turkish
+    get_llm_output_turkish, generate_single_stream
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -31,6 +31,35 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+
+@app.post("/generator/ai/eng")
+async def create_with_ai(record: dict, request: Request, response: Response):
+    """
+    Create a multi-source content for a given record.
+    """
+    if record is None:
+        logger.error("Record is None")
+        raise HTTPException(status_code=400, detail="Record is required")
+
+    correlation_id = request.headers.get("X-Correlation-ID", None)
+    if correlation_id is None:
+        logger.warning(f"Correlation ID: {correlation_id}")
+        correlation_id = str(uuid.uuid4())
+        logger.info(f"Generated new Correlation ID: {correlation_id}")
+
+    headers = {"X-Correlation-ID": correlation_id, }
+
+    authorization = request.headers.get("Authorization", None)
+    if authorization:
+        headers["Authorization"] = authorization
+    else:
+        logger.warning("Authorization header is missing")
+
+    ai_res = generate_single_stream([record])
+
+    response.headers["X-Correlation-ID"] = correlation_id
+
+    return ai_res
 
 @app.post("/generator/mcs/eng")
 async def get_mcs(record: dict, request: Request , response: Response):

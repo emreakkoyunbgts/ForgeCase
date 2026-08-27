@@ -5,6 +5,7 @@ import UploadRecord from './UploadRecord';
 import Engagments from "./Engagements.jsx";
 import EngagementDetail from "./EngagementDetail.jsx";
 import Query from "./Query.jsx";
+import Analyze from "./Analyze.jsx";
 import './App.css';
 
 function Home() {
@@ -28,6 +29,7 @@ function App() {
           <Route path="/engagements/:id" element={<EngagementDetail/>} />
           <Route path="/blank" element={<BlankPage />} />
           <Route path="/query" element={<Query />} />
+          <Route path="/analyze" element={<Analyze />} />
 
         </Routes>
       </div>

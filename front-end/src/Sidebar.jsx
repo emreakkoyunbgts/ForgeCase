@@ -11,6 +11,7 @@ function Sidebar() {
             <li><Link to="/upload-record">Upload Record</Link></li>
             <li><Link to={"/engagments"}>Engagments</Link></li>
             <li><Link to="/query">Query</Link></li>
+            <li><Link to="/analyze">Analyze</Link></li>
             <li><Link to="/blank">Blank Page</Link></li>
         </ul>
     </div>
