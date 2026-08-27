@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "./EngagementDetail.css";
-
+import PublishButton from "./PublishButton";
 function EngagementDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -200,7 +200,7 @@ function EngagementDetail() {
                             : "Generate Turkish MCS"}
                     </button>
                 </div>
-
+                <PublishButton recordId={engagement.id} />
                 {error && (
                     <div className="case-study-error">
                         {error}
