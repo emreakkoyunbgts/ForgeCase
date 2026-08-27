@@ -1,0 +1,11 @@
+{
+  "as_of_date": "2026-08-26",
+  "completed_at": null,
+  "content_hash": "94ff01a292ddf6ce598c1f0e954864e78166396edc6facf0f73da68e8e1eea15",
+  "freshness_reason": "DATE_MISSING",
+  "freshness_status": "UNKNOWN",
+  "source_records": [
+    "eng-01"
+  ],
+  "source_references": []
+}

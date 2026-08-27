@@ -1,0 +1,11 @@
+REQUEST FOR PROPOSAL — Core Banking Modernisation
+
+The Authority seeks a delivery partner to modernise its core banking platform to
+support real-time payments. The successful bidder must demonstrate prior experience of:
+
+  - migrating a legacy core banking system without prolonged downtime
+  - event-driven architecture, ideally using Kafka
+  - delivery in the GCC region for a Tier-1 retail bank
+  - reducing end-of-day batch processing windows
+
+Bidders should provide evidence of comparable engagements, including measurable outcomes.

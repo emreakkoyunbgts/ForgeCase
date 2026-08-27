@@ -1,0 +1,28 @@
+{
+  "id": "eng-03",
+  "client": "Meridian Insurance",
+  "client_type": "UK specialist insurer",
+  "may_be_named": false,
+  "domain": "document intelligence",
+  "region": "UK",
+  "challenge": "Claims handlers spent hours manually keying data from scanned claim forms and supporting documents.",
+  "solution": "An OCR and extraction pipeline that reads scanned claims, extracts structured fields, and routes low-confidence cases to human review.",
+  "technologies": [
+    "Python",
+    "Tesseract",
+    "FastAPI",
+    "React"
+  ],
+  "team_size": 6,
+  "duration_months": 5,
+  "outcomes": [
+    {
+      "metric": "manual keying time reduced 62%",
+      "source_ref": "closeout.pdf#page=3"
+    },
+    {
+      "metric": "straight-through processing rate increased to 71%",
+      "source_ref": "closeout.pdf#page=3"
+    }
+  ]
+}

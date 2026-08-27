@@ -1,0 +1,28 @@
+{
+  "id": "eng-02",
+  "client": "Nordbank Deutschland",
+  "client_type": "German commercial bank",
+  "may_be_named": true,
+  "domain": "regulatory reporting",
+  "region": "DE",
+  "challenge": "Manual regulatory reporting to BaFin consumed 3 weeks per quarter and was prone to reconciliation errors.",
+  "solution": "An automated reporting pipeline with lineage tracking and a reconciliation engine, replacing spreadsheet-based assembly.",
+  "technologies": [
+    "Python",
+    "Airflow",
+    "PostgreSQL",
+    "dbt"
+  ],
+  "team_size": 8,
+  "duration_months": 7,
+  "outcomes": [
+    {
+      "metric": "reporting cycle cut from 15 days to 3 days",
+      "source_ref": "closeout.pdf#page=4"
+    },
+    {
+      "metric": "reconciliation errors reduced 80%",
+      "source_ref": "closeout.pdf#page=4"
+    }
+  ]
+}

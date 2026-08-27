@@ -1,0 +1,36 @@
+{
+  "file": "case_studies/eng-01_POISONED.json",
+  "source_record": "records/seed/eng-01.json",
+  "must_flag": [
+    {
+      "type": "ungrounded_number",
+      "value": "42%",
+      "why": "no cost reduction figure exists in the source record"
+    },
+    {
+      "type": "ungrounded_number",
+      "value": "300%",
+      "why": "no customer-satisfaction figure exists in the source"
+    },
+    {
+      "type": "ungrounded_number",
+      "value": "3 months",
+      "why": "source says 11 months, not 3"
+    },
+    {
+      "type": "ungrounded_number",
+      "value": "2019",
+      "why": "not present in the source record"
+    },
+    {
+      "type": "client_named_without_consent",
+      "value": "Gulf Union Bank",
+      "why": "may_be_named is false for eng-01"
+    }
+  ],
+  "must_not_flag": [
+    "45%",
+    "6 hours",
+    "90 minutes"
+  ]
+}

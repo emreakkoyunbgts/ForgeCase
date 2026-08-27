@@ -1,0 +1,32 @@
+{
+  "id": "eng-01",
+  "client": "Gulf Union Bank",
+  "client_type": "Tier-1 GCC retail bank",
+  "may_be_named": false,
+  "domain": "core banking",
+  "region": "GCC",
+  "challenge": "The legacy core banking platform could not support real-time payments, and end-of-day batch windows were overrunning into business hours.",
+  "solution": "A phased migration from the legacy core to a modern event-driven platform, run as a shadow migration so the old and new systems processed in parallel until cutover.",
+  "technologies": [
+    "Java",
+    "Spring Boot",
+    "Kafka",
+    "PostgreSQL"
+  ],
+  "team_size": 14,
+  "duration_months": 11,
+  "outcomes": [
+    {
+      "metric": "payment latency reduced 45%",
+      "source_ref": "closeout.pdf#page=5"
+    },
+    {
+      "metric": "batch window shortened from 6 hours to 90 minutes",
+      "source_ref": "closeout.pdf#page=5"
+    },
+    {
+      "metric": "zero unplanned downtime during cutover",
+      "source_ref": "closeout.pdf#page=6"
+    }
+  ]
+}

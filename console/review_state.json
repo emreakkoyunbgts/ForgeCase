@@ -1,0 +1,275 @@
+{
+  "eng-01": {
+    "case_study": {
+      "engagement_id": "eng-01",
+      "title": "core banking for Tier-1 GCC retail bank",
+      "sections": {
+        "context": "Tier-1 GCC retail bank in GCC.",
+        "challenge": "The legacy core banking platform could not support real-time payments, and end-of-day batch windows were overrunning into business hours.\n",
+        "approach": "A phased migration from the legacy core to a modern event-driven platform, run as a shadow migration so the old and new systems processed in parallel until cutover.serhat",
+        "technology": "Java, Spring Boot, Kafka, PostgreSQL",
+        "outcomes": "payment latency reduced 45%; batch window shortened from 6 hours to 90 minutes; zero unplanned downtime during cutover"
+      },
+      "citations": [
+        {
+          "claim": "payment latency reduced 45%",
+          "source_ref": "closeout.pdf#page=5"
+        },
+        {
+          "claim": "batch window shortened from 6 hours to 90 minutes",
+          "source_ref": "closeout.pdf#page=5"
+        },
+        {
+          "claim": "zero unplanned downtime during cutover",
+          "source_ref": "closeout.pdf#page=6"
+        }
+      ],
+      "client_named": false
+    },
+    "approved": true
+  },
+  "eng-02": {
+    "case_study": {
+      "engagement_id": "eng-02",
+      "title": "regulatory reporting for Nordbank Deutschland",
+      "sections": {
+        "context": "Nordbank Deutschland in DE.",
+        "challenge": "Manual regulatory reporting to BaFin consumed 3 weeks per quarter and was prone to reconciliation errors.",
+        "approach": "An automated reporting pipeline with lineage tracking and a reconciliation engine, replacing spreadsheet-based assembly.",
+        "technology": "Python, Airflow, PostgreSQL, dbt ",
+        "outcomes": "reporting cycle cut from 15 days to 3 days; reconciliation errors reduced 80%"
+      },
+      "citations": [
+        {
+          "claim": "reporting cycle cut from 15 days to 3 days",
+          "source_ref": "closeout.pdf#page=4"
+        },
+        {
+          "claim": "reconciliation errors reduced 80%",
+          "source_ref": "closeout.pdf#page=4"
+        }
+      ],
+      "client_named": true
+    }
+  },
+  "eng-06": {
+    "case_study": {
+      "engagement_id": "eng-06",
+      "title": "data platform for UK wealth manager",
+      "sections": {
+        "context": "UK wealth manager in UK.",
+        "challenge": "Client reporting data was scattered across four systems with no single source of truth.",
+        "approach": "A consolidated data platform with a governed semantic layer and automated data-quality checks.",
+        "technology": "Python, Snowflake, dbt, Airflow",
+        "outcomes": "client report generation time cut from 4 days to 6 hours"
+      },
+      "citations": [
+        {
+          "claim": "client report generation time cut from 4 days to 6 hours",
+          "source_ref": "closeout.pdf#page=5"
+        }
+      ],
+      "client_named": false
+    }
+  },
+  "eng-03": {
+    "case_study": {
+      "engagement_id": "eng-03",
+      "title": "document intelligence for UK specialist insurer",
+      "sections": {
+        "context": "UK specialist insurer in UK.",
+        "challenge": "Claims handlers spent hours manually keying data from scanned claim forms and supporting documents.",
+        "approach": "An OCR and extraction pipeline that reads scanned claims, extracts structured fields, and routes low-confidence cases to human review.",
+        "technology": "Python, Tesseract, FastAPI, React",
+        "outcomes": "manual keying time reduced 62%; straight-through processing rate increased to 71%"
+      },
+      "citations": [
+        {
+          "claim": "manual keying time reduced 62%",
+          "source_ref": "closeout.pdf#page=3"
+        },
+        {
+          "claim": "straight-through processing rate increased to 71%",
+          "source_ref": "closeout.pdf#page=3"
+        }
+      ],
+      "client_named": false
+    }
+  },
+  "eng-04": {
+    "case_study": {
+      "engagement_id": "eng-04",
+      "title": "core banking for Turkish participation bank",
+      "sections": {
+        "context": "Turkish participation bank in TR.",
+        "challenge": "A FlexCube-based core needed migration to a modern platform without disrupting branch operations.",
+        "approach": "A migration readiness assessment followed by a phased data and contract migration, with a mock environment for parallel testing.",
+        "technology": "Java, Oracle, Kafka",
+        "outcomes": "migration delivered 2 months ahead of schedule; branch downtime limited to a single weekend"
+      },
+      "citations": [
+        {
+          "claim": "migration delivered 2 months ahead of schedule",
+          "source_ref": "closeout.pdf#page=7"
+        },
+        {
+          "claim": "branch downtime limited to a single weekend",
+          "source_ref": "closeout.pdf#page=7"
+        }
+      ],
+      "client_named": false
+    }
+  },
+  "eng-12": {
+    "case_study": {
+      "engagement_id": "eng-12",
+      "title": "data platform for UK building society",
+      "sections": {
+        "context": "UK building society in UK.",
+        "challenge": "Reporting was slow and the society wanted to modernise its analytics stack.",
+        "approach": "An assessment and roadmap for a modern analytics platform, followed by a proof of concept.",
+        "technology": "Python, Snowflake",
+        "outcomes": "[MISSING: no measurable outcome was recorded for this engagement]"
+      },
+      "citations": [],
+      "client_named": false
+    },
+    "approved": false
+  },
+  "eng-10": {
+    "case_study": {
+      "engagement_id": "eng-10",
+      "title": "core banking for Netherlands private bank",
+      "sections": {
+        "context": "Netherlands private bank in NL.",
+        "challenge": "A legacy reservation and account platform lacked API access, blocking digital channel development.",
+        "approach": "A hexagonal ports-and-adapters wrapper exposing governed APIs over the legacy core, allowing incremental replacement.",
+        "technology": "Java, Spring Boot, Kafka",
+        "outcomes": "first digital channel launched in 4 months"
+      },
+      "citations": [
+        {
+          "claim": "first digital channel launched in 4 months",
+          "source_ref": "closeout.pdf#page=6"
+        }
+      ],
+      "client_named": false
+    }
+  },
+  "eng-11": {
+    "case_study": {
+      "engagement_id": "eng-11",
+      "title": "cloud & observability for Turkish investment firm",
+      "sections": {
+        "context": "Turkish investment firm in TR.",
+        "challenge": "Deployments were manual and error-prone, with releases taking a full weekend of engineering time.",
+        "approach": "A CI/CD pipeline with automated testing and blue-green deployment.",
+        "technology": "Kubernetes, Terraform, Go",
+        "outcomes": "deployment time reduced from 2 days to 25 minutes; failed releases reduced 90%"
+      },
+      "citations": [
+        {
+          "claim": "deployment time reduced from 2 days to 25 minutes",
+          "source_ref": "closeout.pdf#page=2"
+        },
+        {
+          "claim": "failed releases reduced 90%",
+          "source_ref": "closeout.pdf#page=2"
+        }
+      ],
+      "client_named": false
+    }
+  },
+  "eng-05": {
+    "case_study": {
+      "engagement_id": "eng-05",
+      "title": "cloud & observability for Netherlands payments provider",
+      "sections": {
+        "context": "Netherlands payments provider in NL.",
+        "challenge": "An underused observability platform cost significant licence spend while incidents still took hours to diagnose.",
+        "approach": "An observability maturity assessment, followed by instrumentation of critical payment paths and consolidation of dashboards and alerting.",
+        "technology": "Datadog, Kubernetes, Go, Terraform",
+        "outcomes": "mean time to detect reduced 55%; licence spend reduced by 30% through consolidation"
+      },
+      "citations": [
+        {
+          "claim": "mean time to detect reduced 55%",
+          "source_ref": "closeout.pdf#page=2"
+        },
+        {
+          "claim": "licence spend reduced by 30% through consolidation",
+          "source_ref": "closeout.pdf#page=2"
+        }
+      ],
+      "client_named": false
+    }
+  },
+  "eng-07": {
+    "case_study": {
+      "engagement_id": "eng-07",
+      "title": "regulatory reporting for German mid-market lender",
+      "sections": {
+        "context": "German mid-market lender in DE.",
+        "challenge": "New DORA operational-resilience requirements demanded evidence of ICT risk controls the bank could not readily produce.",
+        "approach": "A control-evidence platform mapping ICT risks to controls, with automated evidence collection and an auditor-facing view.",
+        "technology": "Java, Spring Boot, PostgreSQL, React",
+        "outcomes": "evidence collection effort reduced 70%; audit findings closed 40% faster"
+      },
+      "citations": [
+        {
+          "claim": "evidence collection effort reduced 70%",
+          "source_ref": "closeout.pdf#page=3"
+        },
+        {
+          "claim": "audit findings closed 40% faster",
+          "source_ref": "closeout.pdf#page=4"
+        }
+      ],
+      "client_named": false
+    }
+  },
+  "eng-08": {
+    "case_study": {
+      "engagement_id": "eng-08",
+      "title": "document intelligence for Turkish insurer",
+      "sections": {
+        "context": "Turkish insurer in TR.",
+        "challenge": "Policy documents arrived in inconsistent formats, making automated underwriting checks impossible.",
+        "approach": "A document normalisation and extraction service producing a consistent structured policy record.",
+        "technology": "Python, FastAPI, PostgreSQL",
+        "outcomes": "underwriting review time reduced 38%"
+      },
+      "citations": [
+        {
+          "claim": "underwriting review time reduced 38%",
+          "source_ref": "closeout.pdf#page=2"
+        }
+      ],
+      "client_named": false
+    }
+  },
+  "eng-09": {
+    "case_study": {
+      "engagement_id": "eng-09",
+      "title": "data platform for GCC corporate bank",
+      "sections": {
+        "context": "GCC corporate bank in GCC.",
+        "challenge": "Corporate onboarding required manually assembling entity profiles from dozens of scattered documents.",
+        "approach": "An entity-profile extraction pipeline consolidating corporate documents into a single verified profile.",
+        "technology": "Python, React, PostgreSQL",
+        "outcomes": "onboarding time reduced from 12 days to 4 days; data entry errors reduced 65%"
+      },
+      "citations": [
+        {
+          "claim": "onboarding time reduced from 12 days to 4 days",
+          "source_ref": "closeout.pdf#page=3"
+        },
+        {
+          "claim": "data entry errors reduced 65%",
+          "source_ref": "closeout.pdf#page=3"
+        }
+      ],
+      "client_named": false
+    }
+  }
+}
