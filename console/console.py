@@ -106,7 +106,7 @@ if case_study is not None:
         st.success("Kaydedildi.")
         st.rerun()
 
-    st.subheader("Grounding check")
+        st.subheader("Grounding check")
     report = verify(case_study, record)
     verdict_ok = report["verdict"] == "PASS"
     if verdict_ok:
@@ -115,7 +115,50 @@ if case_study is not None:
         st.error(f"BLOCK - {len(report['problems'])} problem(s) found")
         for p in report["problems"]:
             st.write(str(p))
+
+    st.subheader("📊 Case Study Signals")
+    sig_cols = st.columns(4)
+
+    with sig_cols[0]:
+        st.markdown("**Extraction confidence**")
+        st.info("N/A")
+        with st.expander("Details"):
+            st.write("Waiting on Çağrı's extraction-confidence field from Reader.")
+
+    with sig_cols[1]:
+        st.markdown("**Verifier verdict**")
+        if verdict_ok:
+            st.success("PASS")
+        else:
+            st.error("BLOCK")
+        with st.expander("Details"):
+            if verdict_ok:
+                st.write("Every claim is grounded in the source record.")
+            else:
+                for p in report["problems"]:
+                    st.write(str(p))
+
+    with sig_cols[2]:
+        st.markdown("**Freshness**")
+        st.info("N/A")
+        with st.expander("Details"):
+            st.write("Waiting on Ahmet's F1 (data-freshness) feature.")
+
+    with sig_cols[3]:
+        st.markdown("**Coverage gaps**")
+        st.info("N/A")
+        with st.expander("Details"):
+            st.write("Waiting on Elif's F2 (coverage-gap) feature.")
 st.divider()
+    
+    
+    
+        
+    
+        
+        
+            
+
 
 current_status = state.get(engagement_id, {}).get("approved", False)
 approved = st.checkbox("Approve — ready to publish", value=current_status)
