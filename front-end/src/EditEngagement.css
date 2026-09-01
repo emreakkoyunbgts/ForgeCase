@@ -1,0 +1,23 @@
+.edit-engagement-container { max-width: 1000px; margin: 0 auto; }
+.edit-engagement-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 24px; }
+.edit-engagement-header p { margin: 8px 0 0; }
+.edit-engagement-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 28px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); }
+.edit-engagement-form label { display: flex; flex-direction: column; gap: 6px; color: var(--text); font-weight: 600; }
+.edit-engagement-form input, .edit-engagement-form textarea, .edit-engagement-form select { width: 100%; padding: 10px 12px; border: 1px solid var(--border-hover); border-radius: 7px; color: var(--text); background: white; font-weight: 400; }
+.edit-engagement-form input:disabled { background: var(--surface-soft); color: var(--text-muted); }
+.edit-engagement-form textarea { resize: vertical; }
+.edit-engagement-form label span { color: var(--text-muted); font-size: 0.8rem; font-weight: 400; }
+.full-width { grid-column: 1 / -1; }
+.checkbox-label { flex-direction: row !important; align-items: center; align-self: end; padding-bottom: 10px; }
+.checkbox-label input { width: auto; }
+.outcomes-editor { border-top: 1px solid var(--border); padding-top: 22px; }
+.outcomes-editor-header, .edit-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.outcomes-editor-header h2 { margin: 0; }
+.outcome-editor { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 12px; margin-top: 14px; padding: 14px; background: var(--surface-soft); border-radius: 8px; }
+.save-button, .cancel-button, .secondary-button, .remove-outcome-button { border: none; border-radius: 8px; padding: 11px 18px; font-weight: 600; }
+.save-button { background: var(--accent); color: white; }
+.cancel-button, .secondary-button { background: var(--surface-soft); color: var(--text); border: 1px solid var(--border); }
+.remove-outcome-button { background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border); }
+.save-button:disabled, .cancel-button:disabled, .secondary-button:disabled, .remove-outcome-button:disabled { opacity: .6; cursor: not-allowed; }
+.edit-error { grid-column: 1 / -1; padding: 12px; border: 1px solid var(--danger-border); color: var(--danger-text); background: var(--danger-bg); border-radius: 8px; }
+@media (max-width: 700px) { .edit-engagement-header, .edit-actions { flex-direction: column; align-items: stretch; } .edit-engagement-form { grid-template-columns: 1fr; padding: 18px; } .outcome-editor { grid-template-columns: 1fr; } }
