@@ -49,6 +49,45 @@
   transform: translateY(-1px);
 }
 
+.engagement-detail-header .delete-button {
+  border: none;
+  background-color: #b42318;
+  color: white;
+  padding: 11px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.engagement-detail-header .edit-button {
+  border: none;
+  background-color: var(--accent);
+  color: white;
+  padding: 11px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.engagement-detail-header .edit-button:hover:not(:disabled) {
+  background-color: var(--accent-border);
+  transform: translateY(-1px);
+}
+
+.engagement-detail-header .delete-button:hover:not(:disabled) {
+  background-color: #8f1d14;
+  transform: translateY(-1px);
+}
+
+.engagement-detail-header button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ================================
    Main Card
 ================================ */
@@ -170,7 +209,8 @@
 
 .case-study-action {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
   gap: 12px;
 
@@ -178,6 +218,13 @@
   padding-top: 24px;
 
   border-top: 1px solid #444;
+}
+
+.case-study-secondary-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .create-case-study-button {
@@ -290,6 +337,14 @@
     width: 100%;
     text-align: center;
     box-sizing: border-box;
+  }
+
+  .engagement-detail-header .delete-button {
+    width: 100%;
+  }
+
+  .engagement-detail-header .edit-button {
+    width: 100%;
   }
 
   .engagement-detail-content {

@@ -1,6 +1,9 @@
 import sys
 import uuid
 
+import httpx
+from circuitbreaker import CircuitBreakerError
+
 from fastapi import FastAPI, HTTPException , Response , Request
 from fastapi.middleware.cors import CORSMiddleware
 import logging
@@ -8,9 +11,10 @@ import logging
 
 from common.contract import load_seed, load_corpus
 from generator.GeneratorService import get_record_from_vault, call_librarian_for_matching
+from generator.exeption.RetryExeption import RetryException
+from generator.exeption.VaultServiceError import VaultServiceError
 from generator.generator import generate_multi_source, get_five_sections_with_llm, get_llm_output_german, \
-    get_llm_output_turkish
-from librarian.multi_requirement import evaluate_rfp_requirements
+    get_llm_output_turkish, generate_single_stream, get_llm_punchy
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -26,6 +30,66 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+
+@app.post("/generator/ai/eng")
+async def create_with_ai(record: dict, request: Request, response: Response):
+    """
+    Create a multi-source content for a given record.
+    """
+    if record is None:
+        logger.error("Record is None")
+        raise HTTPException(status_code=400, detail="Record is required")
+
+    correlation_id = request.headers.get("X-Correlation-ID", None)
+    if correlation_id is None:
+        logger.warning(f"Correlation ID: {correlation_id}")
+        correlation_id = str(uuid.uuid4())
+        logger.info(f"Generated new Correlation ID: {correlation_id}")
+
+    headers = {"X-Correlation-ID": correlation_id, }
+
+    authorization = request.headers.get("Authorization", None)
+    if authorization:
+        headers["Authorization"] = authorization
+    else:
+        logger.warning("Authorization header is missing")
+
+    ai_res = generate_single_stream([record])
+
+    response.headers["X-Correlation-ID"] = correlation_id
+
+    return ai_res
+
+@app.post("/generator/ai/eng/punchy")
+async def create_with_ai_punchy(record: dict, request: Request, response: Response):
+    """
+    Create a multi-source content for a given record.
+    """
+    if record is None:
+        logger.error("Record is None")
+        raise HTTPException(status_code=400, detail="Record is required")
+
+    correlation_id = request.headers.get("X-Correlation-ID", None)
+    if correlation_id is None:
+        logger.warning(f"Correlation ID: {correlation_id}")
+        correlation_id = str(uuid.uuid4())
+        logger.info(f"Generated new Correlation ID: {correlation_id}")
+
+    headers = {"X-Correlation-ID": correlation_id, }
+
+    authorization = request.headers.get("Authorization", None)
+    if authorization:
+        headers["Authorization"] = authorization
+    else:
+        logger.warning("Authorization header is missing")
+
+    mcs = generate_multi_source([record])
+    ai_res=get_llm_punchy(mcs)
+
+    response.headers["X-Correlation-ID"] = correlation_id
+
+    return ai_res
 
 
 @app.post("/generator/mcs/eng")
@@ -166,9 +230,32 @@ async def create_mcs_with_query(query: str , request: Request , response: Respon
         # Implement the logic when api is exposed
         #librerian_response = evaluate_rfp_requirements(query ,load_corpus(), top_k=1)
         librerian_response = await call_librarian_for_matching(query, headers=headers)
-    except Exception as e:
-        logger.error(f"Error loading seed record for query {query}: {e}")
-        raise HTTPException(status_code=404, detail=f"Record with query {query} not found")
+    except CircuitBreakerError as e:
+        logger.error(f"Circuit breaker error while calling librarian for matching: {e}")
+        raise HTTPException(status_code=503,
+                            detail=f"Circuit breaker error while calling librarian for matching: {e}")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout error while calling librarian for matching: {e}")
+        raise HTTPException(status_code=504,
+                            detail=f"Timeout error while calling librarian for matching: {e}")
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error while calling librarian for matching: {e}")
+        raise HTTPException(status_code=503,
+                            detail=f"Connection error while calling librarian for matching: {e}")
+    except httpx.HTTPStatusError as e:
+        status_code=e.response.status_code
+        logger.error(f"HTTP status error while calling librarian for matching: {e}")
+    except RetryException as e:
+        logger.error(f"Retry exception while calling librarian for matching: {e.message}")
+        raise HTTPException(status_code=503,
+                            detail=f"Retry exception while calling librarian for matching: {e.message}")
+
+        if 400<= status_code<500:
+            raise HTTPException(status_code=status_code,
+                                detail=f"Client error while calling librarian for matching: {e}")
+
+        raise HTTPException(status_code=503,
+                            detail=f"Server error while calling librarian for matching: {e}")
 
 
     logger.info(f"Succesfully loaded respose : {librerian_response}")
@@ -177,10 +264,26 @@ async def create_mcs_with_query(query: str , request: Request , response: Respon
     try:
         record = await get_record_from_vault(record_id, headers=headers)
         logger.info(f"Successfully loaded seed record for ID {record_id}")
-    except Exception as e:
-        logger.error(f"Error loading seed record for ID {record_id}: {e}")
-        raise HTTPException(status_code=404, detail=f"Record with ID {record_id} not found")
-
+    except CircuitBreakerError as e:
+        logger.error(f"Circuit breaker error while loading seed record for ID {record_id}: {e}")
+        raise HTTPException(status_code=503,
+                            detail=f"Circuit breaker error while loading seed record for ID {record_id}: {e}")
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout error while loading seed record for ID {record_id}: {e}")
+        raise HTTPException(status_code=504,
+                            detail=f"Timeout error while loading seed record for ID {record_id}: {e}")
+    except httpx.ConnectError as e:
+        logger.error(f"Connection error while loading seed record for ID {record_id}: {e}")
+        raise HTTPException(status_code=503,
+                            detail=f"Connection error while loading seed record for ID {record_id}: {e}")
+    except VaultServiceError as e:
+        logger.error(f"Vault service error while loading seed record for ID {record_id}: {e}")
+        raise HTTPException(status_code=503,
+                            detail=f"Vault service error while loading seed record for ID {record_id}: {e}")
+    except RetryException as e :
+        logger.error(f"Retry exception while loading seed record for ID {record_id}: {e}")
+        raise HTTPException(status_code=503,
+                            detail=f"Retry exception while loading seed record for ID {record_id}: {e}")
     mcs = generate_multi_source([record])
 
     response.headers["X-Correlation-ID"] = correlation_id

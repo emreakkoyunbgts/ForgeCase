@@ -1,6 +1,8 @@
 import uuid
 
 from fastapi import FastAPI, HTTPException , Request ,Response
+from fastapi.middleware.cors import CORSMiddleware
+
 import logging
 import sys
 
@@ -15,8 +17,13 @@ logger=logging.getLogger(__name__)
 from generator.GeneratorService import get_record_from_vault
 
 app=FastAPI()
+app.add_middleware(CORSMiddleware,
+    allow_origins=["http://localhost:5173",],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"])
 
-@app.post("/verify/{id}")
+@app.post("/verify")
 async def verify_record_id(record: dict , mcs: dict , request: Request , response: Response):
 
     if id is None:

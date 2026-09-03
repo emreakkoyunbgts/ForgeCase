@@ -8,11 +8,10 @@ function Sidebar() {
       <h2>Menu</h2> {/* Changed 'Navigation' to 'Menu' */}
         <ul>
             <li><Link to="/">Home</Link></li>
-            <li><Link to="/add-record">Add Record</Link></li>
             <li><Link to="/upload-record">Upload Record</Link></li>
             <li><Link to={"/engagments"}>Engagments</Link></li>
             <li><Link to="/query">Query</Link></li>
-            <li><Link to="/blank">Blank Page</Link></li>
+            <li><Link to="/analyze">Analyze</Link></li>
         </ul>
     </div>
   );

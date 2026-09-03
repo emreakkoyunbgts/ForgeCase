@@ -3,6 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "./EngagementDetail.css";
 
+const ENGAGEMENTS_API_BASE_URL = "http://localhost:8000";
+
+function getErrorMessage(error, fallback) {
+    if (error.response?.data?.detail) return error.response.data.detail;
+    return error.request ? "Could not connect to the backend." : fallback;
+}
+
 function EngagementDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -10,6 +17,9 @@ function EngagementDetail() {
     const [engagement, setEngagement] = useState(null);
     const [loading, setLoading] = useState(true);
     const [creatingCaseStudy, setCreatingCaseStudy] = useState(null);
+    const [creatingEnglishAiResponse, setCreatingEnglishAiResponse] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [etag, setEtag] = useState(null);
     const [error, setError] = useState(null);
     const [caseStudy, setCaseStudy] = useState(null);
 
@@ -17,10 +27,11 @@ function EngagementDetail() {
         const getEngagement = async () => {
             try {
                 const response = await axios.get(
-                    `http://localhost:8000/engagements/${id}`
+                    `${ENGAGEMENTS_API_BASE_URL}/engagements/${id}`
                 );
 
                 setEngagement(response.data);
+                setEtag(response.headers.etag || null);
             } catch (error) {
                 console.error("Error fetching engagement:", error);
                 setError("Failed to load engagement.");
@@ -31,6 +42,31 @@ function EngagementDetail() {
 
         getEngagement();
     }, [id]);
+
+    const deleteEngagement = async () => {
+        if (!engagement || deleting) return;
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete engagement "${engagement.id}"? This action cannot be undone.`
+        );
+
+        if (!confirmed) return;
+
+        setDeleting(true);
+        setError(null);
+
+        try {
+            await axios.delete(`${ENGAGEMENTS_API_BASE_URL}/engagements/${id}`, {
+                headers: etag ? { "If-Match": etag } : undefined,
+            });
+            navigate("/engagements");
+        } catch (error) {
+            console.error("Error deleting engagement:", error);
+            setError(getErrorMessage(error, "The engagement could not be deleted."));
+        } finally {
+            setDeleting(false);
+        }
+    };
 
     const createCaseStudy = async (language = "English") => {
         if (!engagement) {
@@ -74,6 +110,37 @@ function EngagementDetail() {
         }
     };
 
+    const createEnglishAiResponse = async () => {
+        if (!engagement) {
+            return;
+        }
+
+        setCreatingEnglishAiResponse(true);
+        setError(null);
+        setCaseStudy(null);
+
+        try {
+            const response = await axios.post(
+                "http://localhost:8001/generator/ai/eng",
+                engagement
+            );
+
+            setCaseStudy({ language: "English AI Response", content: response.data });
+        } catch (error) {
+            console.error("Error creating English AI response:", error);
+
+            if (error.response) {
+                setError(
+                    `Failed to create English AI response. Status: ${error.response.status}`
+                );
+            } else {
+                setError("Failed to connect to the server.");
+            }
+        } finally {
+            setCreatingEnglishAiResponse(false);
+        }
+    };
+
     if (loading) {
         return <div>Loading...</div>;
     }
@@ -95,8 +162,25 @@ function EngagementDetail() {
                 <button
                     className="back-button"
                     onClick={() => navigate("/engagements")}
+                    disabled={deleting}
                 >
                     Back to Engagements
+                </button>
+
+                <button
+                    className="edit-button"
+                    onClick={() => navigate(`/engagements/${id}/edit`)}
+                    disabled={deleting}
+                >
+                    Edit Engagement
+                </button>
+
+                <button
+                    className="delete-button"
+                    onClick={deleteEngagement}
+                    disabled={deleting}
+                >
+                    {deleting ? "Deleting..." : "Delete Engagement"}
                 </button>
             </div>
 
@@ -171,34 +255,46 @@ function EngagementDetail() {
 
                 <div className="case-study-action">
                     <button
-                        className="create-case-study-button"
+                        className="create-case-study-button create-detail-study-button"
                         onClick={() => createCaseStudy("English")}
-                        disabled={Boolean(creatingCaseStudy)}
+                        disabled={Boolean(creatingCaseStudy) || creatingEnglishAiResponse || deleting}
                     >
                         {creatingCaseStudy === "English"
                             ? "Creating Case Study..."
-                            : "Create Case Study"}
+                            : "Create Detail Study"}
                     </button>
 
-                    <button
-                        className="create-case-study-button"
-                        onClick={() => createCaseStudy("German")}
-                        disabled={Boolean(creatingCaseStudy)}
-                    >
-                        {creatingCaseStudy === "German"
-                            ? "Generating German MCS..."
-                            : "Generate German MCS"}
-                    </button>
+                    <div className="case-study-secondary-actions">
+                        <button
+                            className="create-case-study-button"
+                            onClick={createEnglishAiResponse}
+                            disabled={Boolean(creatingCaseStudy) || creatingEnglishAiResponse || deleting}
+                        >
+                            {creatingEnglishAiResponse
+                                ? "Generating English AI Response..."
+                                : "Generate English AI Response"}
+                        </button>
 
-                    <button
-                        className="create-case-study-button"
-                        onClick={() => createCaseStudy("Turkish")}
-                        disabled={Boolean(creatingCaseStudy)}
-                    >
-                        {creatingCaseStudy === "Turkish"
-                            ? "Generating Turkish MCS..."
-                            : "Generate Turkish MCS"}
-                    </button>
+                        <button
+                            className="create-case-study-button"
+                            onClick={() => createCaseStudy("German")}
+                            disabled={Boolean(creatingCaseStudy) || creatingEnglishAiResponse || deleting}
+                        >
+                            {creatingCaseStudy === "German"
+                                ? "Generating German MCS..."
+                                : "Generate German MCS"}
+                        </button>
+
+                        <button
+                            className="create-case-study-button"
+                            onClick={() => createCaseStudy("Turkish")}
+                            disabled={Boolean(creatingCaseStudy) || creatingEnglishAiResponse || deleting}
+                        >
+                            {creatingCaseStudy === "Turkish"
+                                ? "Generating Turkish MCS..."
+                                : "Generate Turkish MCS"}
+                        </button>
+                    </div>
                 </div>
 
                 {error && (

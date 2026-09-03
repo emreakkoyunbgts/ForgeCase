@@ -1,17 +1,22 @@
 /* UploadRecord.css */
 .upload-record {
-  padding: 20px;
+  padding: 24px;
   background-color: #f9f9f9;
   border-radius: 8px;
-  max-width: 500px;
+  max-width: 760px;
   margin: 0 auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .upload-record h1 {
   font-size: 24px;
-  margin-bottom: 20px;
-    color: #1f2028;
+  margin: 0 0 8px;
+  color: #1f2028;
+}
+
+.upload-description {
+  margin: 0 0 20px;
+  color: #5c6470;
 }
 
 .upload-record .form-group {
@@ -27,13 +32,15 @@
 .upload-record input[type="file"] {
   display: block;
   width: 100%;
+  box-sizing: border-box;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
 .upload-record .submit-button,
-.upload-record .home-button {
+.upload-record .home-button,
+.upload-record .save-button {
   padding: 10px 20px;
   margin-right: 10px;
   border: none;
@@ -48,7 +55,66 @@
   background-color: #0056b3;
 }
 
-.upload-record .error {
-  color: red;
+.upload-record .save-button {
+  margin: 0;
+  background-color: #198754;
+}
+
+.upload-record .save-button:hover {
+  background-color: #146c43;
+}
+
+.upload-record button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.upload-record .error,
+.upload-record .success {
   margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.upload-record .error {
+  color: #8b1e24;
+  background: #fbe9ea;
+}
+
+.upload-record .success {
+  color: #146c43;
+  background: #e7f5ec;
+}
+
+.record-preview {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.record-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.record-preview h2 {
+  margin: 0;
+  color: #1f2028;
+  font-size: 20px;
+}
+
+.record-preview pre {
+  max-height: 420px;
+  margin: 15px 0 0;
+  padding: 16px;
+  overflow: auto;
+  border-radius: 6px;
+  background: #1f2937;
+  color: #e5e7eb;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
