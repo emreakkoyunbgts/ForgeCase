@@ -8,6 +8,7 @@ python -m vault.vault store records/eng-01.json
 python -m vault.vault get eng-01
 python -m vault.vault load-all
 python -m vault.vault serve          # API on :8000 — docs at /docs
+python -m vault.vault smoke          # CF-114: corpus reachable over HTTP
 ```
 
 ## Levels
@@ -36,6 +37,12 @@ python -m vault.vault serve          # API on :8000 — docs at /docs
   Bad data gets a **422** that names the problem, never an opaque 500.
 - **CF-84 (service APIs)** — `GET /health` for the mesh: reports `ok` +
   record count when the database answers, **503** when it does not.
+- **CF-114 (cutover)** — Vault is the only live engagement store.
+  `caseforge-testdata/` stays as seed/fixtures. After `load-all` or
+  `smoke`, other services read and write through
+  `http://127.0.0.1:8000/engagements`. `python -m vault.vault smoke`
+  POSTs the 12 records (or accepts 409 if they are already there), then
+  checks `/health`, the list, every id, and a duplicate POST → 409.
 - **CF-85 (auth)** — every data endpoint needs
   `Authorization: Bearer <CASEFORGE_TOKEN>`; missing or wrong → **401** with
   `WWW-Authenticate: Bearer`. `/health` and `/docs` stay open so the mesh can
