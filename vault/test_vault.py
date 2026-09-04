@@ -486,3 +486,45 @@ def test_openapi_advertises_bearer_auth():
     schemes = spec["components"]["securitySchemes"]
     assert any(s.get("scheme") == "bearer" for s in schemes.values())
     assert spec["paths"]["/engagements"]["get"].get("security")
+
+
+# ---------------------------------------------------------------------------
+# CF-114 — cutover: Vault is the only store
+# ---------------------------------------------------------------------------
+
+def test_cutover_corpus_is_served_only_over_http():
+    """Seed the 12 records through POST, then every read is HTTP.
+
+    Files under caseforge-testdata/ are fixtures. After this check the
+    live store is /engagements, not corpus.json.
+    """
+    from vault.smoke import run_smoke
+
+    client = TestClient(create_app())
+    corpus = load_corpus()
+    for record in corpus:
+        _clear(record["id"])
+
+    result = run_smoke(client)
+    assert result["records"] == 12
+    assert result["created"] == 12
+    assert result["already_stored"] == 0
+
+    one = client.get("/engagements/eng-01")
+    assert one.status_code == 200
+    assert "ETag" in one.headers
+    assert client.get("/engagements/eng-12").json()["outcomes"] == []
+    assert client.get("/engagements/eng-02").json()["may_be_named"] is True
+
+
+def test_cutover_duplicate_post_is_409_not_a_second_store():
+    """A second POST does not write a parallel copy — Vault already has it."""
+    from vault.smoke import assert_store_over_http, seed_via_http
+
+    client = TestClient(create_app())
+    corpus = load_corpus()
+    for record in corpus:
+        _clear(record["id"])
+    seed_via_http(client, corpus)
+    seed_via_http(client, corpus)
+    assert_store_over_http(client, corpus)
