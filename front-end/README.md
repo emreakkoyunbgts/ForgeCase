@@ -1,16 +1,41 @@
-# React + Vite
+# Project Overview
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This project consists of a modern frontend client communicating via Axios with multiple modular FastAPI microservices.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Services & Ports
 
-## React Compiler
+| Service           | Technology   | Port   | Description                            |
+| :---------------- | :----------- | :----- | :------------------------------------- |
+| **Frontend**      | Vite / React | `5173` | User interface (configured with Axios) |
+| **Vault API**     | FastAPI      | `8000` | Secure storage & credentials service   |
+| **Generator API** | FastAPI      | `8001` | Content / data generation engine       |
+| **Librarian API** | FastAPI      | `8002` | Indexing & resource management         |
+| **Reader API**    | FastAPI      | `8004` | Document parsing & ingestion service   |
+| **Analyst API**   | FastAPI      | `8006` | Data processing & analytics engine     |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### 1. Backend Microservices (FastAPI)
+
+Run each service in its respective directory or virtual environment using `uvicorn`.
+
+```bash
+# Terminal 1 - Vault API
+python -m vault.vault serve
+
+# Terminal 2 - Generator API
+uvicorn generator.GeneratorController:app --host 0.0.0.0 --port 8001 --reload
+
+# Terminal 3 - Librarian API
+uvicorn librarian.service:app --host 0.0.0.0 --port 8002 --reload
+
+# Terminal 4 - Reader API
+python -m reader.api serve
+
+# Terminal 5 - Analyst API
+uvicorn analyst.api:app --host 0.0.0.0 --port 8006 --reload
+```
