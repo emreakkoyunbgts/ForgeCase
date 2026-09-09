@@ -280,34 +280,19 @@ def extract_grounded_tokens(text: str) -> set:
     return tokens
 
 def main():
-    parser = argparse.ArgumentParser(description="Catch invented facts")
-    parser.add_argument("case_study", help="the generated case study")
-    parser.add_argument("record", help="the source record it must be grounded in")
+    from common.services import VERIFIER_URL, call_service, ServiceError
+    parser = argparse.ArgumentParser(description="Verify a stdin JSON draft against Vault over HTTP")
+    parser.add_argument("record_id")
+    parser.add_argument("--language", choices=["en", "de", "tr"], default="en")
     args = parser.parse_args()
-
     try:
-        with open(args.case_study, encoding="utf-8") as f:
-            case_study = json.load(f)
-    except FileNotFoundError:
-        die(f"no such file: {args.case_study}")
-    except json.JSONDecodeError as e:
-        die(f"{args.case_study} is not valid JSON: {e}")
-
-    record = load_record(args.record)
-    report = verify(case_study, record)
-
-    json.dump(report, sys.stdout, indent=2, ensure_ascii=False)
-    print()
-
-    if report["verdict"] == "BLOCK":
-        print(f"\n[verifier] BLOCKED — {len(report['problems'])} problem(s) found",
-              file=sys.stderr)
-        for p in report["problems"]:
-            print(f"    {p['type']}: {p['value']} — {p['why']}", file=sys.stderr)
-        sys.exit(REJECTED)
-
-    print("[verifier] PASS — every claim is grounded", file=sys.stderr)
-    sys.exit(SUCCESS)
+        draft = json.load(sys.stdin)
+        report = call_service("POST", VERIFIER_URL + "/verify", timeout=80,
+            json={"record_id": args.record_id, "draft": draft, "language": args.language}).json()
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        raise SystemExit(0 if report["verdict"] == "PASS" else 1)
+    except (ServiceError, ValueError) as exc:
+        parser.exit(2, str(exc) + "\n")
 
 
 if __name__ == "__main__":

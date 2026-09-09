@@ -463,13 +463,10 @@ def main() -> None:
         die(f"could not read {path}: {error}")
 
     try:
-        result = evaluate_rfp_requirements(
-            rfp_text=rfp_text,
-            corpus=load_corpus(),
-            top_k=args.top,
-            strategy=args.strategy,
-            min_dense_score=args.min_dense_score,
-        )
+        from common.services import ALL_SERVICES, call_service, response_json
+        result = response_json(call_service('POST', ALL_SERVICES['librarian'] + '/match', timeout=60,
+            json={'rfp_text': rfp_text, 'top_k': args.top, 'strategy': args.strategy,
+                  'min_dense_score': args.min_dense_score}))
     except (ValueError, RuntimeError) as error:
         die(str(error))
 

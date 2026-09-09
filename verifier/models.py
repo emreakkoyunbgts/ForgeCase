@@ -3,6 +3,7 @@
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from common.drafts import Language, normalize_draft
 
 SECTION_NAMES = {"context", "challenge", "approach", "technology", "outcomes"}
 METADATA_NAMES = {"page", "id", "engagement_id", "engagement_ids", "source_ref"}
@@ -73,6 +74,7 @@ class VerifyRequest(BaseModel):
 
     record_id: str = Field(min_length=1)
     draft: dict[str, Any]
+    language: Language = "en"
 
     _record_id = field_validator("record_id")(validate_record_id)
     _draft = field_validator("draft")(validate_draft)
@@ -80,6 +82,7 @@ class VerifyRequest(BaseModel):
     @model_validator(mode="after")
     def check_identity(self):
         validate_draft_identity(self.draft, self.record_id)
+        self.draft = normalize_draft(self.draft, self.record_id, self.language)
         return self
 
 
