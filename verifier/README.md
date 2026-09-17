@@ -49,5 +49,10 @@ python -m pytest -q verifier/test_api.py verifier/test_vault_contract.py tests/t
 
 The HTTP regression tests inject a synthetic semantic provider to stay offline.
 They demonstrate contracts and failure behavior, not real-model accuracy. Older
-archive-based Verifier experiments are outside the default suite. See the
-[runbook](../docs/CF-105-runbook.md) for real-provider and release gates.
+archive-based Verifier experiments are outside the default suite.
+
+Accepted draft shapes, `problems` entries, error statuses and headers are documented
+in [`docs/openapi/verifier.json`](../docs/openapi/verifier.json) and served live at
+`/docs`. Setup, dependencies, timeouts, runnable PASS/BLOCK examples and
+troubleshooting are in the [CF-123 runbook](../docs/CF-123-runbook.md); real-provider
+and release gates remain in the [CF-105 runbook](../docs/CF-105-runbook.md).

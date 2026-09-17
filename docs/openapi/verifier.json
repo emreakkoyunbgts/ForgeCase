@@ -2,19 +2,98 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CaseForge Verifier",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "Verifier compares a submitted final draft against its original Vault record and\nanswers `PASS` or `BLOCK`. It never trusts source facts supplied in the request: the\nrecord is always read from `GET {VAULT_URL}/engagements/{record_id}`.\n\n`BLOCK` is a normal result and is returned with HTTP 200 and a populated `problems`\nlist. An HTTP error is not a verdict and can never authorise publication.\n\nDeterministic checks (quantities, naming consent, citation references) can BLOCK on\ntheir own, but they cannot produce a PASS. Every PASS additionally requires the\nindependent semantic gate to assess every visible span against the source, so\n`OPENAI_API_KEY` must be configured for any PASS in any language.\n\n`GET /health` reports liveness only and contacts no dependency. See\n`docs/CF-123-runbook.md` for setup, dependencies, timeouts and troubleshooting."
   },
   "paths": {
     "/verify": {
       "post": {
-        "summary": "Verify Draft",
-        "description": "Return PASS/BLOCK and problems using the requested source from Vault.",
+        "summary": "Verify a draft against its Vault record",
+        "description": "Reads the source record from Vault, normalises the submitted draft, runs the deterministic checks and, only if those find nothing, the independent semantic gate.\n\n`language` defaults to `en`. Deterministic checks can BLOCK without any model call, but a PASS always requires the semantic assessment, so the provider must be configured.\n\nA PASS is not permission to publish: Publisher verifies the final display content again through this same route.",
         "operationId": "verify_draft_verify_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/VerifyRequest"
+              },
+              "examples": {
+                "flat": {
+                  "summary": "Plain section prose",
+                  "value": {
+                    "record_id": "eng-cf123-01",
+                    "draft": {
+                      "engagement_id": "eng-cf123-01",
+                      "sections": {
+                        "context": "retail bank in TR.",
+                        "challenge": "Slow payment processing.",
+                        "approach": "Optimised payment processing.",
+                        "technology": "Python",
+                        "outcomes": "Payment latency reduced by 45%"
+                      }
+                    },
+                    "language": "en"
+                  }
+                },
+                "mcs": {
+                  "summary": "A Generator draft submitted unchanged",
+                  "value": {
+                    "record_id": "eng-cf123-01",
+                    "draft": {
+                      "engagement_ids": [
+                        "eng-cf123-01"
+                      ],
+                      "titles": [
+                        {
+                          "title": "payments for retail bank",
+                          "page": "eng-cf123-01"
+                        }
+                      ],
+                      "sections": {
+                        "context": [
+                          {
+                            "region": "retail bank in TR.",
+                            "page": "eng-cf123-01"
+                          }
+                        ],
+                        "challenge": [
+                          {
+                            "challenge": "Slow payment processing.",
+                            "page": "eng-cf123-01"
+                          }
+                        ],
+                        "approach": [
+                          {
+                            "approach": "Optimised payment processing.",
+                            "page": "eng-cf123-01"
+                          }
+                        ],
+                        "technology": [
+                          {
+                            "technologies": "Python",
+                            "page": "eng-cf123-01"
+                          }
+                        ],
+                        "outcomes": [
+                          {
+                            "outcomes": "Payment latency reduced by 45%",
+                            "page": "eng-cf123-01"
+                          }
+                        ]
+                      },
+                      "citations": [
+                        {
+                          "claim": "Payment latency reduced by 45%",
+                          "source_ref": "synthetic.pdf#page=1",
+                          "page_ref": "eng-cf123-01"
+                        }
+                      ],
+                      "client_named": false,
+                      "language": "en"
+                    },
+                    "language": "en"
+                  }
+                }
               }
             }
           },
@@ -22,32 +101,98 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "A completed verification. `BLOCK` is a normal result: it is reported here with HTTP 200 and a populated `problems` list, never as an HTTP error.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VerificationReport"
+                },
+                "examples": {
+                  "pass": {
+                    "summary": "Every visible span is supported by the source",
+                    "value": {
+                      "engagement_id": "eng-cf123-01",
+                      "verdict": "PASS",
+                      "problems": []
+                    }
+                  },
+                  "block": {
+                    "summary": "An unsupported quantity and an unknown citation reference",
+                    "value": {
+                      "engagement_id": "eng-cf123-01",
+                      "verdict": "BLOCK",
+                      "problems": [
+                        {
+                          "type": "ungrounded_number",
+                          "value": "999%",
+                          "unit": "percent",
+                          "why": "this quantity and unit are not supported by the source evidence",
+                          "span": "/sections/outcomes/0/outcomes"
+                        },
+                        {
+                          "type": "invalid_source_reference",
+                          "why": "citation reference is not present in the Vault record"
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadHeader"
+          },
+          "401": {
+            "$ref": "#/components/responses/VaultUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/VaultForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/SourceNotFound"
+          },
           "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "security": [
+          {},
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/verify/{record_id}": {
       "post": {
-        "summary": "Verify Record Id",
-        "description": "Compatibility for Console/Publisher; submitted record facts are never trusted.",
+        "summary": "Verify a draft supplied with its record body",
+        "description": "Takes `{record, mcs}`. The submitted `record` is used only to confirm that its `id` matches the path; **every fact still comes from Vault**, so editing the submitted record cannot change the verdict.\n\nDeprecated. Use `POST /verify` with `{record_id, draft, language}`.",
         "operationId": "verify_record_id_verify__record_id__post",
         "deprecated": true,
         "parameters": [
@@ -59,6 +204,12 @@
               "type": "string",
               "title": "Record Id"
             }
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
           }
         ],
         "requestBody": {
@@ -73,72 +224,143 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "A completed verification. `BLOCK` is a normal result: it is reported here with HTTP 200 and a populated `problems` list, never as an HTTP error.",
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VerificationReport"
+                },
+                "examples": {
+                  "pass": {
+                    "summary": "Every visible span is supported by the source",
+                    "value": {
+                      "engagement_id": "eng-cf123-01",
+                      "verdict": "PASS",
+                      "problems": []
+                    }
+                  },
+                  "block": {
+                    "summary": "An unsupported quantity and an unknown citation reference",
+                    "value": {
+                      "engagement_id": "eng-cf123-01",
+                      "verdict": "BLOCK",
+                      "problems": [
+                        {
+                          "type": "ungrounded_number",
+                          "value": "999%",
+                          "unit": "percent",
+                          "why": "this quantity and unit are not supported by the source evidence",
+                          "span": "/sections/outcomes/0/outcomes"
+                        },
+                        {
+                          "type": "invalid_source_reference",
+                          "why": "citation reference is not present in the Vault record"
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadHeader"
+          },
+          "401": {
+            "$ref": "#/components/responses/VaultUnauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/VaultForbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/SourceNotFound"
+          },
           "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
+            "$ref": "#/components/responses/LegacyUnprocessable"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
-        }
+        },
+        "security": [
+          {},
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/health": {
       "get": {
-        "summary": "Health Check",
-        "description": "Liveness only; source availability is checked by each verification request.",
+        "summary": "Liveness",
+        "description": "Returns a fixed body without contacting Vault or the model provider. A green health check does not mean a draft can be verified.",
         "operationId": "health_check_health_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
+            "$ref": "#/components/responses/Health"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadHeader"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ]
       }
     }
   },
   "components": {
     "schemas": {
       "HTTPValidationError": {
+        "type": "object",
+        "title": "HTTPValidationError",
+        "description": "Request-validation failures report a list of rejected fields.",
+        "required": [
+          "detail"
+        ],
         "properties": {
           "detail": {
+            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
+            }
           }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
+        }
       },
       "LegacyVerifyRequest": {
         "properties": {
           "record": {
             "additionalProperties": true,
             "type": "object",
-            "title": "Record"
+            "title": "Record",
+            "description": "The caller's copy of the record. Its contents are never trusted."
           },
           "mcs": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Mcs"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DraftInput"
+              }
+            ],
+            "description": "The draft to verify, in either accepted shape."
           }
         },
         "additionalProperties": false,
@@ -147,11 +369,22 @@
           "record",
           "mcs"
         ],
-        "title": "LegacyVerifyRequest"
+        "title": "LegacyVerifyRequest",
+        "description": "Compatibility body. `record` is only checked for a matching `id`; the authoritative facts are always re-read from Vault."
       },
       "ValidationError": {
+        "type": "object",
+        "title": "ValidationError",
+        "description": "One rejected field. The submitted value is deliberately omitted.",
+        "additionalProperties": false,
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "properties": {
           "loc": {
+            "type": "array",
             "items": {
               "anyOf": [
                 {
@@ -162,38 +395,22 @@
                 }
               ]
             },
-            "type": "array",
-            "title": "Location"
+            "description": "Path to the rejected field, e.g. `[\"body\", \"language\"]`."
           },
           "msg": {
-            "type": "string",
-            "title": "Message"
+            "type": "string"
           },
           "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
+            "type": "string"
           }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
+        }
       },
       "VerificationReport": {
         "properties": {
           "engagement_id": {
             "type": "string",
-            "title": "Engagement Id"
+            "title": "Engagement Id",
+            "description": "The record the draft was checked against; always the requested `record_id`."
           },
           "verdict": {
             "type": "string",
@@ -201,12 +418,12 @@
               "PASS",
               "BLOCK"
             ],
-            "title": "Verdict"
+            "title": "Verdict",
+            "description": "`PASS` only when every visible span is supported by the source."
           },
           "problems": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/Problem"
             },
             "type": "array",
             "title": "Problems"
@@ -218,19 +435,19 @@
           "verdict",
           "problems"
         ],
-        "title": "VerificationReport"
+        "title": "VerificationReport",
+        "description": "The verification result. `problems` is empty on PASS and populated on BLOCK; different checks report different fields, so only `type` and `why` are common."
       },
       "VerifyRequest": {
         "properties": {
           "record_id": {
             "type": "string",
             "minLength": 1,
-            "title": "Record Id"
+            "title": "Record Id",
+            "description": "Identifies one Vault record. Path separators and control characters are rejected."
           },
           "draft": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Draft"
+            "$ref": "#/components/schemas/DraftInput"
           },
           "language": {
             "type": "string",
@@ -240,7 +457,8 @@
               "tr"
             ],
             "title": "Language",
-            "default": "en"
+            "default": "en",
+            "description": "The language the draft is written in. Must match the draft's own `language` key when that is present."
           }
         },
         "additionalProperties": false,
@@ -249,7 +467,803 @@
           "record_id",
           "draft"
         ],
-        "title": "VerifyRequest"
+        "title": "VerifyRequest",
+        "description": "A draft plus the id of the record it must be grounded in."
+      },
+      "ErrorDetail": {
+        "type": "object",
+        "title": "ErrorDetail",
+        "description": "Domain and dependency failures report a single message string.",
+        "properties": {
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ]
+      },
+      "Problem": {
+        "type": "object",
+        "title": "Problem",
+        "description": "One reason a draft was blocked. Different checks report different fields, so only `type` and `why` are always present.",
+        "required": [
+          "type",
+          "why"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The check that produced the problem.",
+            "examples": [
+              "ungrounded_number",
+              "unverifiable_quantity",
+              "unsupported_claim",
+              "client_named_without_consent",
+              "invalid_source_reference",
+              "language_mismatch"
+            ]
+          },
+          "why": {
+            "type": "string",
+            "description": "Why the draft cannot be published."
+          },
+          "span": {
+            "type": "string",
+            "description": "JSON pointer into the draft, e.g. `/sections/outcomes/0/outcomes`. Absent on problems that are not scoped to one span."
+          },
+          "value": {
+            "description": "The offending value. Usually a string; some claim checks report a list."
+          },
+          "unit": {
+            "type": "string",
+            "description": "Normalised unit on quantity problems."
+          }
+        },
+        "additionalProperties": true
+      },
+      "VerifierHealth": {
+        "type": "object",
+        "title": "VerifierHealth",
+        "description": "Liveness only; no dependency is contacted to produce it.",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        }
+      },
+      "TitleEntryInput": {
+        "type": "object",
+        "title": "TitleEntryInput",
+        "additionalProperties": false,
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Case-study title prose."
+          },
+          "page": {
+            "type": "string",
+            "description": "Optional on input. When present it must equal the requested `record_id`; when absent, normalisation fills it in."
+          }
+        }
+      },
+      "ContextEntryInput": {
+        "type": "object",
+        "title": "ContextEntryInput",
+        "additionalProperties": false,
+        "required": [
+          "region"
+        ],
+        "properties": {
+          "region": {
+            "type": "string",
+            "description": "Client type and region, composed from the source record."
+          },
+          "page": {
+            "type": "string",
+            "description": "Optional on input. When present it must equal the requested `record_id`; when absent, normalisation fills it in."
+          }
+        }
+      },
+      "ChallengeEntryInput": {
+        "type": "object",
+        "title": "ChallengeEntryInput",
+        "additionalProperties": false,
+        "required": [
+          "challenge"
+        ],
+        "properties": {
+          "challenge": {
+            "type": "string",
+            "description": "The engagement problem statement."
+          },
+          "page": {
+            "type": "string",
+            "description": "Optional on input. When present it must equal the requested `record_id`; when absent, normalisation fills it in."
+          }
+        }
+      },
+      "ApproachEntryInput": {
+        "type": "object",
+        "title": "ApproachEntryInput",
+        "additionalProperties": false,
+        "required": [
+          "approach"
+        ],
+        "properties": {
+          "approach": {
+            "type": "string",
+            "description": "The solution that was delivered."
+          },
+          "page": {
+            "type": "string",
+            "description": "Optional on input. When present it must equal the requested `record_id`; when absent, normalisation fills it in."
+          }
+        }
+      },
+      "TechnologyEntryInput": {
+        "type": "object",
+        "title": "TechnologyEntryInput",
+        "additionalProperties": false,
+        "required": [
+          "technologies"
+        ],
+        "properties": {
+          "technologies": {
+            "type": "string",
+            "description": "Technologies recorded on the source, joined into one entry."
+          },
+          "page": {
+            "type": "string",
+            "description": "Optional on input. When present it must equal the requested `record_id`; when absent, normalisation fills it in."
+          }
+        }
+      },
+      "OutcomesEntryInput": {
+        "type": "object",
+        "title": "OutcomesEntryInput",
+        "additionalProperties": false,
+        "required": [
+          "outcomes"
+        ],
+        "properties": {
+          "outcomes": {
+            "type": "string",
+            "description": "Measured outcomes, or a `[MISSING: ...]` marker when the source records none."
+          },
+          "page": {
+            "type": "string",
+            "description": "Optional on input. When present it must equal the requested `record_id`; when absent, normalisation fills it in."
+          }
+        }
+      },
+      "CitationInput": {
+        "type": "object",
+        "title": "CitationInput",
+        "additionalProperties": false,
+        "required": [
+          "claim",
+          "source_ref"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string",
+            "description": "The asserted outcome text."
+          },
+          "source_ref": {
+            "type": "string",
+            "description": "Must match one of the source record's outcome `source_ref` values. Anything else becomes an `invalid_source_reference` problem."
+          },
+          "page_ref": {
+            "type": "string",
+            "description": "Optional on input. When present it must equal the requested `record_id`; when absent, normalisation fills it in."
+          }
+        }
+      },
+      "DraftInput": {
+        "type": "object",
+        "title": "DraftInput",
+        "description": "The draft to verify. Two shapes are accepted and normalised to the same canonical\ndocument before any check runs:\n\n* each section as plain prose, e.g. `\"outcomes\": \"Payment latency reduced by 45%.\"`\n* each section as a list of MCS entries, e.g.\n  `\"outcomes\": [{\"outcomes\": \"...\", \"page\": \"eng-cf123-01\"}]`\n\n`sections` is the only required key, and at least one section must contain text. Use\n`title` or `titles`, never both. `titles`, `citations` and `client_named` are filled\nin by normalisation when absent, so they are not required on input.\n\nEvery source identity in the draft must agree with the request `record_id`:\n`engagement_id`, `engagement_ids`, each entry's `page` and each citation's `page_ref`.\nA `language` key, if present, must equal the request `language`. These cross-field\nrules cannot be expressed in JSON Schema alone; a conflict returns 422.",
+        "additionalProperties": false,
+        "required": [
+          "sections"
+        ],
+        "properties": {
+          "engagement_id": {
+            "type": "string",
+            "description": "If present, must equal the request `record_id`."
+          },
+          "engagement_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 1,
+            "description": "If present, must be exactly `[record_id]`."
+          },
+          "title": {
+            "description": "Title prose. Mutually exclusive with `titles`.",
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Plain prose."
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TitleEntryInput"
+                },
+                "description": "MCS entries."
+              }
+            ]
+          },
+          "titles": {
+            "description": "Title entries. Mutually exclusive with `title`.",
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Plain prose."
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TitleEntryInput"
+                },
+                "description": "MCS entries."
+              }
+            ]
+          },
+          "sections": {
+            "type": "object",
+            "description": "The standard case-study sections. Absent sections normalise to an empty list, but at least one must contain text.",
+            "additionalProperties": false,
+            "properties": {
+              "context": {
+                "description": "Client type and region, composed from the source record.",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "description": "Plain prose."
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ContextEntryInput"
+                    },
+                    "description": "MCS entries."
+                  }
+                ]
+              },
+              "challenge": {
+                "description": "The engagement problem statement.",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "description": "Plain prose."
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ChallengeEntryInput"
+                    },
+                    "description": "MCS entries."
+                  }
+                ]
+              },
+              "approach": {
+                "description": "The solution that was delivered.",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "description": "Plain prose."
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ApproachEntryInput"
+                    },
+                    "description": "MCS entries."
+                  }
+                ]
+              },
+              "technology": {
+                "description": "Technologies recorded on the source, joined into one entry.",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "description": "Plain prose."
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/TechnologyEntryInput"
+                    },
+                    "description": "MCS entries."
+                  }
+                ]
+              },
+              "outcomes": {
+                "description": "Measured outcomes, or a `[MISSING: ...]` marker when the source records none.",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "description": "Plain prose."
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/OutcomesEntryInput"
+                    },
+                    "description": "MCS entries."
+                  }
+                ]
+              }
+            }
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CitationInput"
+            },
+            "description": "Defaults to an empty list."
+          },
+          "client_named": {
+            "type": "boolean",
+            "description": "Defaults to false. Setting it true when the source record does not set `may_be_named` does not grant consent; the naming checks still compare against the record."
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "de",
+              "tr"
+            ],
+            "description": "If present, must equal the request `language`."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Optional service-to-service credential. This API never enforces a bearer token on its own endpoints. An incoming `Authorization` header is forwarded to Vault unchanged; when it is absent the configured `CASEFORGE_TOKEN` is sent instead. A rejected credential therefore surfaces as Vault's own 401 or 403, not as a local authentication failure."
+      }
+    },
+    "parameters": {
+      "CorrelationId": {
+        "name": "X-Correlation-ID",
+        "in": "header",
+        "required": false,
+        "description": "Trace forwarded to every dependency and returned on handled responses. Any printable-ASCII value of at most 4096 characters is accepted; it does not have to be a UUID. Omit it to have one generated.",
+        "schema": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "description": "Validated under the same printable-ASCII and 4096-character rule as the other shared headers. This API neither deduplicates on it nor forwards it to Vault, so sending it guarantees no persistent deduplication.",
+        "schema": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      }
+    },
+    "responses": {
+      "BadHeader": {
+        "description": "A shared HTTP header was rejected before the route ran; the response still carries a generated trace. The limit is 4096 characters of printable ASCII (code points 32-126) on `X-Correlation-ID`, `Authorization` and `Idempotency-Key`.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "examples": {
+              "header": {
+                "summary": "Rejected shared header",
+                "value": {
+                  "detail": "Invalid HTTP tracing or authorization header"
+                }
+              }
+            }
+          }
+        }
+      },
+      "VaultUnauthorized": {
+        "description": "Vault refused the credential used to read the source record. This API applies no authentication of its own; the status is propagated from Vault. A `WWW-Authenticate: Bearer` challenge is returned.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "examples": {
+              "vault": {
+                "summary": "Vault denied the source read",
+                "value": {
+                  "detail": "Vault denied access to the source record"
+                }
+              }
+            }
+          }
+        }
+      },
+      "VaultForbidden": {
+        "description": "Vault refused the credential used to read the source record. This API applies no authentication of its own; the status is propagated from Vault.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "examples": {
+              "vault": {
+                "summary": "Vault denied the source read",
+                "value": {
+                  "detail": "Vault denied access to the source record"
+                }
+              }
+            }
+          }
+        }
+      },
+      "SourceNotFound": {
+        "description": "Vault holds no record under this id, so there is nothing to verify against. No verdict is produced.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "examples": {
+              "record": {
+                "summary": "Unknown record id",
+                "value": {
+                  "detail": "Source record was not found in Vault"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "The request failed validation. Draft identity and language conflicts are reported here because normalisation runs inside the request model.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                },
+                {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              ],
+              "description": "Request validation returns a list of rejected fields; the domain and content-limit rules return a single message string."
+            },
+            "examples": {
+              "validation": {
+                "summary": "Draft identity conflicts with record_id",
+                "value": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body"
+                      ],
+                      "msg": "Value error, draft engagement_id must match record_id",
+                      "type": "value_error"
+                    }
+                  ]
+                }
+              },
+              "provider_input": {
+                "summary": "Serialised model input exceeded 80000 characters",
+                "value": {
+                  "detail": "Content exceeds the language model input limit"
+                }
+              }
+            }
+          }
+        }
+      },
+      "LegacyUnprocessable": {
+        "description": "The request failed validation, or an identity rule was violated. This route reports its own identity checks as a single message string.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                },
+                {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              ],
+              "description": "Request validation returns a list of rejected fields; the domain and content-limit rules return a single message string."
+            },
+            "examples": {
+              "validation": {
+                "summary": "Rejected request field",
+                "value": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "mcs"
+                      ],
+                      "msg": "Value error, draft.sections must contain case-study text",
+                      "type": "value_error"
+                    }
+                  ]
+                }
+              },
+              "record_id": {
+                "summary": "Path record id is not a single Vault path segment",
+                "value": {
+                  "detail": "record_id must identify one Vault record"
+                }
+              },
+              "record_mismatch": {
+                "summary": "Submitted `record.id` differs from the path",
+                "value": {
+                  "detail": "record.id must match the path record_id"
+                }
+              },
+              "draft_identity": {
+                "summary": "Submitted draft is bound to a different source",
+                "value": {
+                  "detail": "draft engagement_id must match record_id"
+                }
+              },
+              "draft_page": {
+                "summary": "A section or title entry cites a different source",
+                "value": {
+                  "detail": "draft page source must match record_id"
+                }
+              },
+              "provider_input": {
+                "summary": "Serialised model input exceeded 80000 characters",
+                "value": {
+                  "detail": "Content exceeds the language model input limit"
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Vault or the model provider answered with something this route may not use. An unusable semantic assessment fails closed; it never becomes a PASS.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "examples": {
+              "vault_unsuccessful": {
+                "summary": "Vault answered with an unexpected status, including a refused redirect",
+                "value": {
+                  "detail": "Vault returned an unsuccessful response"
+                }
+              },
+              "vault_json": {
+                "summary": "Vault answered with a body that is not JSON",
+                "value": {
+                  "detail": "Vault returned invalid JSON"
+                }
+              },
+              "vault_record": {
+                "summary": "Vault answered with a record that fails the source contract",
+                "value": {
+                  "detail": "Vault returned an invalid source record"
+                }
+              },
+              "provider_incomplete": {
+                "summary": "Provider answered without a usable result",
+                "value": {
+                  "detail": "Language model returned an incomplete assessment"
+                }
+              },
+              "provider_unsuccessful": {
+                "summary": "Provider answered with an error status",
+                "value": {
+                  "detail": "Language model returned an unsuccessful response"
+                }
+              },
+              "provider_invalid": {
+                "summary": "Provider answered with something other than the expected object",
+                "value": {
+                  "detail": "Language model returned an invalid assessment"
+                }
+              },
+              "semantic_coverage": {
+                "summary": "Model did not assess every span exactly once",
+                "value": {
+                  "detail": "Semantic assessment did not cover the complete draft"
+                }
+              },
+              "semantic_evidence": {
+                "summary": "Model cited a source pointer or quotation that is not in the record",
+                "value": {
+                  "detail": "Semantic assessment returned invalid source evidence"
+                }
+              },
+              "semantic_missing_evidence": {
+                "summary": "Model marked a factual span entailed without citing evidence",
+                "value": {
+                  "detail": "Semantic assessment omitted source evidence"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "Vault or the model provider could not be reached or is not configured. Without the semantic gate no PASS can be issued.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "examples": {
+              "vault_unavailable": {
+                "summary": "Vault could not be reached",
+                "value": {
+                  "detail": "Vault is unavailable"
+                }
+              },
+              "vault_token": {
+                "summary": "CASEFORGE_TOKEN holds characters that cannot be sent as a header",
+                "value": {
+                  "detail": "Vault authentication is not configured correctly"
+                }
+              },
+              "provider_unconfigured": {
+                "summary": "OPENAI_API_KEY is unset or empty",
+                "value": {
+                  "detail": "Language model service is not configured"
+                }
+              },
+              "provider_unavailable": {
+                "summary": "Provider connection, authentication or rate-limit failure. Authentication and rate-limit errors are mapped here, not to 502.",
+                "value": {
+                  "detail": "Language model service is unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "GatewayTimeout": {
+        "description": "Vault or the model provider exceeded its deadline. Nothing is retried automatically and no backoff is applied.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "examples": {
+              "vault_timeout": {
+                "summary": "Vault exceeded the 5-second timeout",
+                "value": {
+                  "detail": "Vault request timed out"
+                }
+              },
+              "provider_timeout": {
+                "summary": "Provider exceeded the 60-second deadline",
+                "value": {
+                  "detail": "Language model request timed out"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Health": {
+        "description": "The process is running. This says nothing about Vault or the model provider.",
+        "headers": {
+          "X-Correlation-ID": {
+            "description": "The trace used for this request. A submitted value is preserved; a missing or empty one is replaced by a generated UUID. Requests the HTTP server rejects before the application sees them, and unhandled server errors, carry no trace.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/VerifierHealth"
+            },
+            "examples": {
+              "ok": {
+                "summary": "Liveness",
+                "value": {
+                  "status": "ok"
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

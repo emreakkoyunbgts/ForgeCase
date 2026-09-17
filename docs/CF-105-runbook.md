@@ -200,6 +200,10 @@ verdict; it does not invent a date.
 Deprecated Generator/Verifier HTTP adapters also fetch facts from Vault, ignoring
 submitted source content. They do not restore file-based runtime inputs.
 
+Generator and Verifier are documented per route in the
+[CF-123 runbook](CF-123-runbook.md): accepted draft shapes, every error status, header
+and timeout, runnable synthetic examples and troubleshooting.
+
 ## Verification and publication boundary
 
 Verifier checks titles, nested section text and visible citation claims. Numeric

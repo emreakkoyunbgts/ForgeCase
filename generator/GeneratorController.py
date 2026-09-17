@@ -7,9 +7,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from common.drafts import Language, validate_record_id
+from common.openapi import install_openapi
 from common.services import install_http_middleware, request_headers
 from generator.GeneratorService import get_record_from_vault, get_vault_client, call_librarian_for_matching
 from generator.core import generate_mcs
+from generator.openapi import describe_generator
 from generator.translation import get_translator
 
 app = FastAPI(title="CaseForge Generator", version="1.1.0")
@@ -94,3 +96,6 @@ async def query_generate(query: str, request: Request, language: Language = "en"
     return await generate_for(GenerateRequest(record_id=record_id, language=language),
                               request, client, translator)
 
+
+# Documentation only, and only once every route above is registered.
+install_openapi(app, describe_generator)
