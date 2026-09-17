@@ -132,7 +132,9 @@ with st.expander("Service availability"):
     if st.button("Check services"):
         for name, base_url in ALL_SERVICES.items():
             try:
-                call_service("GET", base_url + "/health", timeout=3, headers=workflow.headers())
+                # A probe answers "is it up right now"; retrying would blur that.
+                call_service("GET", base_url + "/health", timeout=3, retries=0,
+                             headers=workflow.headers())
                 st.write(f"{name}: available")
             except Exception:
                 st.write(f"{name}: unavailable")
