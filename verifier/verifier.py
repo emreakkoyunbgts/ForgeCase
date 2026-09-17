@@ -26,6 +26,66 @@ from verifier.entailment_checker import EntailmentChecker
 
 # Matches 45, 45%, 45.5, 2019 ...
 NUMBER = re.compile(r"\d+(?:\.\d+)?%?")
+WORD = re.compile(r"[^\W\d_]+", re.UNICODE)
+
+# Words that connect source facts without adding a new factual assertion.
+GROUNDING_GLUE = {
+    "a", "an", "and", "are", "as", "at", "be", "been", "being", "by",
+    "case", "client", "did", "does", "for", "from", "had", "has", "have",
+    "in", "into", "is", "it", "its", "of", "on", "or", "project", "study",
+    "that", "the", "their", "this", "to", "was", "were", "with", "work",
+}
+
+
+def _word_root(word):
+    """Apply a small deterministic normalization for common English forms."""
+    word = word.casefold()
+    for suffix in ("ingly", "ation", "ments", "ment", "ing", "ied", "ed", "es", "s"):
+        if suffix == "s" and word.endswith("ss"):
+            continue
+        if word.endswith(suffix) and len(word) > len(suffix) + 3:
+            return word[:-len(suffix)]
+    return word
+
+
+def _content_words(value):
+    if isinstance(value, str):
+        # A missing marker explicitly makes no factual claim.
+        value = re.sub(r"\[MISSING:[^\]]*\]", "", value, flags=re.IGNORECASE)
+        return {
+            _word_root(word) for word in WORD.findall(value)
+            if len(word) > 1 and word.casefold() not in GROUNDING_GLUE
+        }
+    if isinstance(value, list):
+        return set().union(*(_content_words(item) for item in value), set())
+    if isinstance(value, dict):
+        return set().union(
+            *(
+                _content_words(item)
+                for key, item in value.items()
+                if key not in {"page", "page_ref", "source_ref"}
+            ),
+            set(),
+        )
+    return set()
+
+
+def find_unsupported_vocabulary(case_study, record):
+    """Reject nonnumeric factual vocabulary absent from the source record."""
+    draft_words = _content_words({
+        "title": case_study.get("title"),
+        "titles": case_study.get("titles"),
+        "sections": case_study.get("sections"),
+    })
+    source_words = _content_words(record)
+    if record.get("supports_qualitative_claims") is True:
+        source_words.update({"huge", "success", "dramatic", "unprecedented"})
+    unsupported = sorted(draft_words - source_words)
+    return [{
+        "type": "unsupported_vocabulary",
+        "value": word,
+        "why": "this factual term does not appear in the source record",
+    } for word in unsupported]
 
 
 def find_ungrounded_numbers(case_study, record):
@@ -39,7 +99,9 @@ def find_ungrounded_numbers(case_study, record):
       - it will falsely flag "6 hours" if the source writes it differently
       - L3: fuzzy match, so "45 percent" and "45%" are the same claim
     """
-    text = json.dumps(case_study.get("sections", {}), ensure_ascii=False)
+    # Titles and other draft fields are published text too. Restricting this
+    # check to sections allowed invented numbers in titles to receive PASS.
+    text = json.dumps(case_study, ensure_ascii=False)
     in_output = set(NUMBER.findall(text))
     in_source = set(NUMBER.findall(all_source_facts(record)))
 
@@ -171,6 +233,7 @@ def verify(case_study, record):
     problems = []
     problems += find_ungrounded_numbers(case_study, record)
     problems += find_consent_breaches(case_study, record)
+    problems += find_unsupported_vocabulary(case_study, record)
     # 3. CF-58 & CF-59 Claim Parsing and Entailment Control
     problems += find_unsupported_claims(case_study, record)
 
@@ -217,34 +280,19 @@ def extract_grounded_tokens(text: str) -> set:
     return tokens
 
 def main():
-    parser = argparse.ArgumentParser(description="Catch invented facts")
-    parser.add_argument("case_study", help="the generated case study")
-    parser.add_argument("record", help="the source record it must be grounded in")
+    from common.services import VERIFIER_URL, call_service, ServiceError
+    parser = argparse.ArgumentParser(description="Verify a stdin JSON draft against Vault over HTTP")
+    parser.add_argument("record_id")
+    parser.add_argument("--language", choices=["en", "de", "tr"], default="en")
     args = parser.parse_args()
-
     try:
-        with open(args.case_study, encoding="utf-8") as f:
-            case_study = json.load(f)
-    except FileNotFoundError:
-        die(f"no such file: {args.case_study}")
-    except json.JSONDecodeError as e:
-        die(f"{args.case_study} is not valid JSON: {e}")
-
-    record = load_record(args.record)
-    report = verify(case_study, record)
-
-    json.dump(report, sys.stdout, indent=2, ensure_ascii=False)
-    print()
-
-    if report["verdict"] == "BLOCK":
-        print(f"\n[verifier] BLOCKED — {len(report['problems'])} problem(s) found",
-              file=sys.stderr)
-        for p in report["problems"]:
-            print(f"    {p['type']}: {p['value']} — {p['why']}", file=sys.stderr)
-        sys.exit(REJECTED)
-
-    print("[verifier] PASS — every claim is grounded", file=sys.stderr)
-    sys.exit(SUCCESS)
+        draft = json.load(sys.stdin)
+        report = call_service("POST", VERIFIER_URL + "/verify", timeout=80,
+            json={"record_id": args.record_id, "draft": draft, "language": args.language}).json()
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        raise SystemExit(0 if report["verdict"] == "PASS" else 1)
+    except (ServiceError, ValueError) as exc:
+        parser.exit(2, str(exc) + "\n")
 
 
 if __name__ == "__main__":

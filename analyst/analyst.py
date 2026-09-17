@@ -224,30 +224,18 @@ def generate_action_list(corpus):
     }
 
 def main():
-    parser = argparse.ArgumentParser(description="Coverage & gap analysis")
+    from common.services import ANALYST_URL, call_service, ServiceError
+    parser = argparse.ArgumentParser(description="Read coverage and gaps over HTTP")
     parser.add_argument("--coverage", action="store_true")
     parser.add_argument("--recommend", action="store_true")
     args = parser.parse_args()
+    try:
+        endpoint = "/gaps" if args.recommend else "/coverage"
+        result = call_service("GET", ANALYST_URL + endpoint)
+        print(json.dumps(result.json(), ensure_ascii=False, indent=2))
+    except ServiceError as exc:
+        parser.exit(2, str(exc) + "\n")
 
-    corpus = load_corpus()
-    result = profile(corpus)
-
-    if args.coverage:
-        result["gaps"] = coverage_gaps(corpus)
-        print(f"[analyst] found {len(result['gaps'])} gaps in BGTS's proof points",
-              file=sys.stderr)
-
-    if args.recommend:
-        recommendations = generate_action_list(corpus)
-        with open("recommendations.json", "w", encoding="utf-8") as f:
-            json.dump(recommendations, f, indent=4, ensure_ascii=False)
-        print(f"[analyst] found {len(recommendations['ranked_gap_list'])} gaps, "
-              f"{len(recommendations['chase_list'])} engagements missing outcomes — "
-              f"written to recommendations.json", file=sys.stderr)
-
-
-    json.dump(result, sys.stdout, indent=2, ensure_ascii=False)
-    print()
 
 if __name__ == "__main__":
     main()

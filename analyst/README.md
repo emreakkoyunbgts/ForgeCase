@@ -1,32 +1,27 @@
-# 6 · ANALYST — Elif
+# Analyst
 
-**What can BGTS actually prove — and where are the holes?**
+Analyst summarizes engagement coverage and gaps using Vault HTTP records.
+The supported dashboard also loads Vault; users do not supply a corpus filename.
 
-A question the sales team genuinely cannot answer today.
-
-## Run it
-```bash
-python -m analyst.analyst --coverage
+```powershell
+python -m uvicorn analyst.api:app --host 127.0.0.1 --port 8007
 ```
 
-## Your levels
-- **L1** — Load all 12 records into a DataFrame. Count by domain, region,
-  technology, client type. Print a clean summary.
-- **L2** — A coverage / gap map: which `domain × region` combinations have
-  proof, and which are **empty**? Chart it. Flag engagements with no outcome.
-- **L3** — A Streamlit dashboard. Cluster the engagements.
+`GET /coverage` returns the profile of stored engagements. `GET /gaps` returns
+`{total_gaps, gaps}`. Vault pagination is followed until all source records are
+read. Missing outcomes remain missing evidence instead of invented proof points.
 
-## Your test data
-| File | Why |
-|---|---|
-| `records/corpus.json` | 12 records, deliberately uneven |
-| `expected/analyst_expected.json` | the answer key — look **after** you've done your own analysis |
+```powershell
+python -m analyst.analyst --coverage
+python -m analyst.analyst --recommend
+python -m streamlit run analyst/app.py --server.port 8502
+```
 
-**You should find:** 15 `domain × region` combinations with no proof point at
-all, and that `eng-12` is the only engagement with no measurable outcome.
+Set `VAULT_URL` and `ANALYST_URL` in the root `.env`; service calls preserve
+correlation and applicable authorization. Empty or unavailable Vault data is
+reported by the interface. There is no supported runtime corpus-file fallback.
 
-**Success:** show your gap map to someone in sales. If they learn something
-they didn't know, you've succeeded.
-
-# Local environment setup completed and first PR created.
-
+Default `analyst/test_api.py` fixtures use Vault's actual
+`items/total/limit/offset` response contract. Offline research/report scripts and
+external archive experiments are not live mesh evidence. See the
+[CF-105 runbook](../docs/CF-105-runbook.md) for full setup and acceptance.

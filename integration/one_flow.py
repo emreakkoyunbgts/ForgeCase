@@ -1,57 +1,57 @@
+"""The supported end-to-end pipeline: HTTP only, with explicit human approval."""
+import argparse
+import json
+from pathlib import Path
+
+from console.workflow import Workflow
+from common.services import ServiceError
 
 
-import logging
-
-from common.contract import load_corpus
-from generator.generator import generate_one_source_single_stream_case_study
-from librarian.librarian import search
-from publisher.publisher import render_docx
-from reader.reader import extract_record
-from vault.vault import store
-from verifier.verifier import verify
-
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler("one_flow_log",encoding="utf-8"),
-                              logging.StreamHandler()])
-
-logger=logging.getLogger(__name__)
-
+def run_pipeline(record_id=None, document=None, language="en", publish=False, format="docx", layout="full-case-study"):
+    workflow = Workflow(language=language)
+    if document:
+        path = Path(document)
+        workflow.extract(path.name, path.read_bytes())
+    elif record_id:
+        workflow.select(record_id, language)
+    else:
+        raise ValueError("Provide a document or a Vault record ID")
+    workflow.generate()
+    workflow.verify()
+    if workflow.verified and publish:
+        workflow.approve(True)
+        workflow.publish(format, layout)
+    return workflow
 
 
-def do_research():
-    logger.info("Starting research...")
-    #İLETİŞİME GEÇİNCE EKLENECEK
-    #search("stub_query", load_corpus(), top_k=3)
-    return "Research completed successfully."
-
-def do_analysis():
-    logger.info("Starting analysis...")
-    #generate_action_list()
-    return "Analysis completed successfully."
-
-
-def one_flow_stub():
-    """
-    This function represents a single flow of operations.
-    It can be expanded to include more complex logic as needed.
-    """
-    print("Executing one flow of operations...")
-    logger.info("Starting one flow of operations.")
-
-    one_source_record=extract_record("stub_text", "stub_source")
-    logger.info(f"Extracted record: {one_source_record}")
-    store(one_source_record)
-    logger.info("Record stored successfully.")
-    case_study=generate_one_source_single_stream_case_study(one_source_record)
-    logger.info(f"Generated case study: {case_study}")
-    out_put=verify(case_study, one_source_record)
-    logger.info(f"Verification result: {out_put}")
-
-    render=render_docx(case_study,"caseforge-testdata/templates/case_study_template.docx" ,"output.docx")
-    logger.info("Rendered case study to output.docx successfully. path: "+str(render))
+def main():
+    parser = argparse.ArgumentParser(description="Run the CaseForge HTTP pipeline")
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--record-id")
+    source.add_argument("--document")
+    parser.add_argument("--language", choices=["en", "de", "tr"], default="en")
+    parser.add_argument("--format", choices=["docx", "pdf"], default="docx")
+    parser.add_argument("--layout", choices=["full-case-study", "one-pager", "single-slide"], default="full-case-study")
+    parser.add_argument("--approve", action="store_true", help="Explicitly approve publication after PASS")
+    parser.add_argument("--out", help="Save the HTTP download to this user-selected output path")
+    args = parser.parse_args()
+    if args.out and not args.approve:
+        parser.error("--out requires --approve")
+    try:
+        workflow = run_pipeline(args.record_id, args.document, args.language, args.approve, args.format, args.layout)
+        output = {"correlation_id": workflow.trace, "draft": workflow.draft,
+                  "report": workflow.report, "artifact": workflow.artifact}
+        if workflow.artifact and args.out:
+            target = Path(args.out)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(workflow.download())
+        print(json.dumps(output, ensure_ascii=False, indent=2))
+        if not workflow.verified:
+            raise SystemExit(1)
+    except (ServiceError, ValueError, OSError) as exc:
+        parser.exit(2, f"Pipeline failed: {exc}\n")
 
 
-    result = "Flow completed successfully."
-    return result
+if __name__ == "__main__":
+    main()
 

@@ -21,8 +21,9 @@ from pathlib import Path
 
 from common.contract import REQUIRED_FIELDS, load_record, load_corpus
 from common.errors import die
+from common.services import install_http_middleware
 
-DB_PATH = "vault/engagements.db"
+DB_PATH = os.getenv("CASEFORGE_VAULT_DB", "vault/engagements.db")
 
 
 def etag_for(record):
@@ -462,6 +463,7 @@ def create_app():
         Depends, FastAPI, Header, HTTPException, Query, Response,
     )
     from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+    from common.services import install_http_middleware
 
     app = FastAPI(
         title="Vault — Engagement Record store",
@@ -476,6 +478,7 @@ def create_app():
         ),
         version="0.9.0",
     )
+    install_http_middleware(app)
 
     # HTTPBearer (not a raw Header) is what makes /docs show the padlock
     # and the Authorize button. auto_error=False: we return 401 ourselves
@@ -708,17 +711,15 @@ def serve():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Engagement Record store")
+    from common.services import VAULT_URL, call_service, ServiceError
+    from urllib.parse import quote
+    parser = argparse.ArgumentParser(description="Vault HTTP administration")
     sub = parser.add_subparsers(dest="command", required=True)
-
-    p_store = sub.add_parser("store")
-    p_store.add_argument("record", help="path to a record.json")
-
-    p_get = sub.add_parser("get")
-    p_get.add_argument("id", help="engagement id, e.g. eng-01")
-
     sub.add_parser("serve")
-    sub.add_parser("load-all", help="load all 12 records from the corpus")
+    sub.add_parser("list")
+    sub.add_parser("store", help="POST a record JSON object from stdin")
+    sub.add_parser("get").add_argument("id")
+    sub.add_parser("load-all", help="seed the store from the corpus fixtures")
     sub.add_parser(
         "smoke",
         help="CF-114: prove the corpus is reachable only via HTTP",
@@ -726,18 +727,11 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "store":
-        store(load_record(args.record))
-    elif args.command == "get":
-        record = get(args.id)
-        if record is None:
-            die(f"no engagement with id '{args.id}'")
-        json.dump(record, sys.stdout, indent=2, ensure_ascii=False)
-        print()
-    elif args.command == "load-all":
+    if args.command == "load-all":
         for record in load_corpus():
             store(record)
-    elif args.command == "smoke":
+        return
+    if args.command == "smoke":
         from fastapi.testclient import TestClient
 
         from vault.smoke import SmokeFailed, run_smoke
@@ -753,8 +747,20 @@ def main():
             f"{result['already_stored']} already stored)",
             file=sys.stderr,
         )
-    elif args.command == "serve":
+        return
+    if args.command == "serve":
         serve()
+        return
+    try:
+        if args.command == "store":
+            result = call_service("POST", VAULT_URL + "/engagements", json=json.load(sys.stdin))
+        elif args.command == "get":
+            result = call_service("GET", VAULT_URL + "/engagements/" + quote(args.id, safe=""))
+        else:
+            result = call_service("GET", VAULT_URL + "/engagements")
+        print(json.dumps(result.json(), ensure_ascii=False, indent=2))
+    except (ServiceError, ValueError) as exc:
+        parser.exit(2, str(exc) + "\n")
 
 
 if __name__ == "__main__":
