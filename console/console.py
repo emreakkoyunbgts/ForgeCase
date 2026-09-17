@@ -1,246 +1,148 @@
-"""
-CONSOLE — Serhat
-
-The web app over the whole pipeline.
-
-    streamlit run console/console.py
-
-Streamlit lets you build a real web app in pure Python. Every widget you add
-returns a value — that is the whole model.
-"""
+"""CaseForge Console: every business operation crosses an HTTP boundary."""
 import sys
 from pathlib import Path
-import uuid
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-# so we can import `common` when Streamlit runs this file directly
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
+from copy import deepcopy
 import streamlit as st
-from common.contract import load_corpus, client_label, has_outcomes
-from generator.generator import generate
-from verifier.verifier import verify
+from common.drafts import SECTION_FIELDS
 from common.services import ALL_SERVICES, call_service
+from console.workflow import Workflow
 
 st.set_page_config(page_title="CaseForge", page_icon="📄", layout="wide")
-
-import json
-from datetime import datetime, timezone
-
-REVIEW_STATE_PATH = Path(__file__).resolve().parent / "review_state.json"
-
-
-def load_review_state() -> dict:
-    if not REVIEW_STATE_PATH.exists():
-        return {}
-    with open(REVIEW_STATE_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def save_review_state(state: dict) -> None:
-    with open(REVIEW_STATE_PATH, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
 st.title("CaseForge")
-st.caption("Turn a finished engagement into a case study — without inventing anything.")
+st.caption("Choose a source, review a grounded draft and publish after verification.")
 
-corpus = load_corpus()
+if "workflow" not in st.session_state:
+    st.session_state.workflow = Workflow()
+    st.session_state.generation = 0
+workflow = st.session_state.workflow
 
-st.subheader(f"{len(corpus)} engagements")
+def clear_ui_approval():
+    st.session_state.approval = False
+    st.session_state.pop("document_bytes", None)
+    st.session_state.pop("provenance_bytes", None)
 
-labels = [f"{r['id']} — {client_label(r)} ({r['domain']}, {r['region']})"
-          for r in corpus]
-choice = st.selectbox("Pick an engagement", labels)
-record = corpus[labels.index(choice)]
+def act(label, action):
+    try:
+        with st.spinner(label):
+            return action()
+    except Exception as exc:
+        st.error(str(exc))
+        return None
 
-left, right = st.columns([2, 1])
+st.header("1. Source")
+records = act("Loading Vault records…", workflow.list_records)
+records = records or []
+record_map = {record["id"]: record for record in records}
+choices = ["", *record_map]
+if workflow.record_id and workflow.record_id not in choices:
+    choices.append(workflow.record_id)
+selected = st.selectbox("Engagement in Vault", choices, index=choices.index(workflow.record_id),
+    format_func=lambda value: "Choose an engagement" if not value else
+    f"{value} — {record_map.get(value, {}).get('client_type', '')}")
+if selected != workflow.record_id:
+    workflow.select(selected)
+    clear_ui_approval()
 
-with left:
-    st.markdown(f"### {client_label(record)}")
-    st.markdown(f"**Challenge**\n\n{record['challenge']}")
-    st.markdown(f"**What we did**\n\n{record['solution']}")
-    st.markdown(f"**Technology:** {', '.join(record['technologies'])}")
-
-    st.markdown("**Outcomes**")
-    if has_outcomes(record):
-        for o in record["outcomes"]:
-            st.markdown(f"- {o['metric']}  \n  <sub>source: {o['source_ref']}</sub>",
-                        unsafe_allow_html=True)
-    else:
-        st.warning("No measurable outcome was recorded for this engagement.")
-
-with right:
-    if record["may_be_named"]:
-        st.success("✓ Client may be named")
-    else:
-        st.info("🔒 Anonymised — the real client name must not be used")
-
-    st.metric("Region", record["region"])
-    st.metric("Domain", record["domain"])
-
-st.divider()
-
-engagement_id = record["id"]
-state = load_review_state()
-saved = state.get(engagement_id)
-
-case_study = None
-if saved is not None and "case_study" in saved:
-    case_study = saved["case_study"]
-
-elif st.button("Generate case study", type="primary"):
-    with st.spinner("Generating..."):
-        case_study = generate(record)
-        state[engagement_id] = {"case_study": case_study}
-        save_review_state(state)
-
-if case_study is not None:
-    st.subheader(case_study["title"])
-
-    edited = {}
-    for name, text in case_study["sections"].items():
-        edited[name] = st.text_area(name.title(), value=text)
-
-    if st.button("Save edits"):
-        case_study["sections"] = edited
-        state[engagement_id] = {"case_study": case_study}
-        save_review_state(state)
-        st.success("Kaydedildi.")
+uploaded = st.file_uploader("Or upload a structured closeout PDF", type=["pdf"])
+st.caption("Text-layer PDF with an Engagement ID, labelled fields and numbered sections.")
+if st.button("Extract and store", disabled=uploaded is None):
+    result = act("Extracting and storing…", lambda: workflow.extract(uploaded.name, uploaded.getvalue()))
+    clear_ui_approval()
+    if result:
+        st.success(f"Stored {result['id']} in Vault.")
         st.rerun()
+    elif workflow.last_extracted:
+        st.json(workflow.last_extracted)
+if workflow.record_id in record_map:
+    record = record_map[workflow.record_id]
+    st.info(f"{record['client'] if record['may_be_named'] else record['client_type']} · "
+            f"{record['domain']} · {record['region']}")
+    if not record["may_be_named"]:
+        st.caption("Anonymous client — the real name cannot appear in the document.")
 
-    st.subheader("Grounding check")
-    report = verify(case_study, record)
-    verdict_ok = report["verdict"] == "PASS"
-    if verdict_ok:
-        st.success("PASS - grounded")
-    if not verdict_ok:
-        st.error(f"BLOCK - {len(report['problems'])} problem(s) found")
-        for p in report["problems"]:
-            st.write(str(p))
-st.divider()
+st.header("2. Draft")
+language = st.selectbox("Language", ["en", "de", "tr"], index=["en","de","tr"].index(workflow.language),
+                       format_func=lambda value: {"en":"English", "de":"Deutsch", "tr":"Türkçe"}[value])
+if language != workflow.language:
+    workflow.select(workflow.record_id, language)
+    clear_ui_approval()
 
-current_status = state.get(engagement_id, {}).get("approved", False)
-approved = st.checkbox("Approve — ready to publish", value=current_status)
+if st.button("Generate draft", disabled=not workflow.record_id, type="primary"):
+    result = act("Generating…", workflow.generate)
+    clear_ui_approval()
+    if result:
+        st.session_state.generation += 1
 
-if approved != current_status:
-    if engagement_id not in state:
-        state[engagement_id] = {}
-    state[engagement_id]["approved"] = approved
-    save_review_state(state)
-    st.rerun()
+if workflow.draft is not None:
+    edited = deepcopy(workflow.draft)
+    prefix = f"{workflow.record_id}-{workflow.language}-{st.session_state.generation}"
+    for i, title in enumerate(edited["titles"]):
+        title["title"] = st.text_input("Title", value=title["title"], key=f"{prefix}-title-{i}")
+    for section, field in SECTION_FIELDS.items():
+        for i, entry in enumerate(edited["sections"][section]):
+            entry[field] = st.text_area(section.title(), value=entry[field], key=f"{prefix}-{section}-{i}")
+    if edited != workflow.draft:
+        workflow.edit(edited)
+        clear_ui_approval()
+    with st.expander("Source references"):
+        for citation in workflow.draft["citations"]:
+            st.write(citation["claim"])
+            st.caption(citation["source_ref"])
 
-if approved:
-    st.success("Approved.")
-    st.button("Download PDF", type="primary")
-else:
-    st.warning("Draft — pending approval.")
-    st.button("Download PDF", disabled=True, help="Approve first to unlock download.")
+st.header("3. Verify and approve")
+if st.button("Verify draft", disabled=workflow.draft is None):
+    clear_ui_approval()
+    act("Verifying against the Vault source…", workflow.verify)
+if workflow.report:
+    if workflow.verified:
+        st.success("PASS — every assessed claim is supported.")
+    else:
+        st.error("BLOCK — publication is unavailable.")
+        for problem in workflow.report["problems"]:
+            st.write(problem.get("why") or problem.get("detail") or problem.get("type"))
+            if problem.get("value"):
+                st.caption(str(problem["value"]))
+approval = st.checkbox("I have reviewed this draft and approve publication.",
+                       key="approval", disabled=not workflow.verified)
+workflow.approve(approval and workflow.verified)
+st.caption("Editing the draft or changing its language clears verification and approval.")
 
-st.divider()
-st.header("🩺 System Health Dashboard")
+st.header("4. Publish and download")
+format = st.selectbox("Format", ["docx", "pdf"])
+layout = st.selectbox("Layout", ["full-case-study", "one-pager", "single-slide"]) if format == "pdf" else "full-case-study"
+if st.button("Publish document", disabled=not workflow.approved):
+    st.session_state.pop("document_bytes", None)
+    st.session_state.pop("provenance_bytes", None)
+    result = act("Publisher is verifying and rendering…", lambda: workflow.publish(format, layout))
+    if result:
+        st.session_state.document_bytes = act("Downloading document…", workflow.download)
+        st.session_state.provenance_bytes = act("Downloading provenance…", lambda: workflow.download(True))
+if workflow.artifact and st.session_state.get("document_bytes") is not None:
+    st.success(f"Ready: {workflow.artifact['filename']}")
+    st.download_button("Download document", st.session_state.document_bytes,
+                       workflow.artifact["filename"], workflow.artifact["media_type"], on_click="ignore")
+    if st.session_state.get("provenance_bytes") is not None:
+        st.download_button("Download provenance", st.session_state.provenance_bytes,
+                           "provenance.json", "application/json", on_click="ignore")
 
-if "last_errors" not in st.session_state:
-    st.session_state.last_errors = {}
-
-cols = st.columns(len(ALL_SERVICES))
-for col, (name, url) in zip(cols, ALL_SERVICES.items()):
-    with col:
-        try:
-            response = call_service("GET", url + "/health", timeout=3)
-            elapsed = response.elapsed.total_seconds()
-            if elapsed < 2:
-                st.markdown(f"🟢 **{name}**")
-                st.caption("healthy")
-            else:
-                st.markdown(f"🟡 **{name}**")
-                st.caption(f"slow ({elapsed:.1f}s)")
-            st.caption(f"latency: {elapsed * 1000:.0f} ms")
-        except Exception as e:
-            st.session_state.last_errors[name] = str(e)
-            st.markdown(f"🔴 **{name}**")
-            st.caption("unreachable")
-
-        last_err = st.session_state.last_errors.get(name)
-        if last_err:
-            st.caption(f"⚠️ last error: {last_err[:60]}")
-
-st.divider()
-st.header("Upload a document (full pipeline via HTTP)")
-
-uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"], key="cf97_upload")
-
-if uploaded_file is not None:
-    st.write(f"Uploaded: {uploaded_file.name}")
-
-    if st.button("Run pipeline (HTTP)"):
-        pipeline_record = None
-        run_correlation_id = str(uuid.uuid4())
-        st.info(f"🔗 Correlation ID for this run: `{run_correlation_id}`")
-        try:
-            with st.spinner("Calling Reader..."):
-                files = {"document": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
-                reader_response = call_service("POST", ALL_SERVICES["reader"] + "/extract", files=files, correlation_id=run_correlation_id)
-                pipeline_record = reader_response.json()
-                st.success(f"Reader extracted: {pipeline_record['id']}")
-                st.json(pipeline_record)
-        except Exception as e:
-            st.error(f"Reader failed: {e}")
-
-        if pipeline_record is not None:
+st.caption(f"Correlation ID: {workflow.trace}")
+st.session_state.setdefault("last_errors", {})
+st.session_state.setdefault("service_health", {})
+with st.expander("Service availability"):
+    if st.button("Check services"):
+        for name, base_url in ALL_SERVICES.items():
             try:
-                with st.spinner("Storing in Vault..."):
-                    vault_response = call_service(
-                        "POST", ALL_SERVICES["vault"] + "/engagements",
-                        json=pipeline_record,
-                        correlation_id=run_correlation_id,
-                    )
-                    st.success(f"Stored in Vault: {pipeline_record['id']}")
-            except Exception as e:
-                st.warning(f"Vault storage skipped: {e}")
-
-        mcs = None
-        if pipeline_record is not None:
-            try:
-                with st.spinner("Calling Generator..."):
-                    mcs_payload = call_service(
-                        "POST", ALL_SERVICES["generator"] + "/generator/mcs/eng",
-                        json=pipeline_record,
-                        correlation_id=run_correlation_id,
-                    )
-                    mcs = mcs_payload.json()
-                    st.success("Generator produced multi-source content")
-                    st.json(mcs)
-            except Exception as e:
-                st.error(f"Generator failed: {e}")
-
-        verdict = None
-        if mcs is not None:
-            try:
-                with st.spinner("Calling Verifier..."):
-                    verify_payload = {"record": pipeline_record, "mcs": mcs}
-                    verify_response = call_service(
-                        "POST",
-                        ALL_SERVICES["verifier"] + f"/verify/{pipeline_record['id']}",
-                        json=verify_payload,
-                        correlation_id=run_correlation_id,
-                    )
-                    verdict = verify_response.json()
-                    if verdict["verdict"] == "PASS":
-                        st.success("Verifier: PASS — every claim is grounded")
-                    else:
-                        st.error(f"Verifier: BLOCK — {len(verdict['problems'])} problem(s)")
-                        for p in verdict["problems"]:
-                            st.write(str(p))
-            except Exception as e:
-                st.error(f"Verifier failed: {e}")
-
-        if verdict is not None and verdict.get("verdict") == "PASS":
-            try:
-                with st.spinner("Calling Publisher..."):
-                    pub_response = call_service(
-                        "POST", ALL_SERVICES["publisher"] + "/publish",
-                        json={"record_id": pipeline_record["id"]},
-                        correlation_id=run_correlation_id,
-                    )
-                    doc_path = pub_response.json()["path"]
-                    st.success(f"Document ready: {doc_path}")
-            except Exception as e:
-                st.error(f"Publisher failed: {e}")
+                response = call_service("GET", base_url + "/health", timeout=3, headers=workflow.headers())
+                elapsed = response.elapsed.total_seconds()
+                st.session_state.service_health[name] = ("slow" if elapsed >= 2 else "healthy", elapsed * 1000)
+            except Exception as exc:
+                st.session_state.last_errors[name] = str(exc)
+                st.session_state.service_health[name] = ("unavailable", None)
+    for name, (status, latency) in st.session_state.service_health.items():
+        st.write(f"{name}: {status}")
+        if latency is not None:
+            st.caption(f"latency: {latency:.0f} ms")
+        if name in st.session_state.last_errors:
+            st.caption(f"Last error: {st.session_state.last_errors[name][:200]}")
