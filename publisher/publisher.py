@@ -12,6 +12,7 @@ import argparse
 import calendar
 import hashlib
 import json
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -30,10 +31,11 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from common.contract import load_seed
+from publisher.assets import TEMPLATE, LABELS, ensure_assets
+from common.drafts import display_case_study
 from common.errors import die
 
-TEMPLATE = "caseforge-testdata/templates/case_study_template.docx"
+
 
 NAVY = HexColor("#1B2A4A")
 ORANGE = HexColor("#C45C26")
@@ -161,8 +163,10 @@ def build_provenance_metadata(case_study, published_content, as_of_date):
         as_of_date,
     )
     return {
+        "language": case_study.get("language", "en"),
         "source_records": sources["source_records"],
         "source_references": sources["source_references"],
+        "citation_claims": [item['claim'] for item in case_study.get('citations', [])],
         "completed_at": case_study.get("completed_at"),
         "as_of_date": as_of_date,
         "content_hash": compute_content_hash(published_content),
@@ -187,49 +191,27 @@ def write_provenance_sidecar(asset_path, metadata):
     return sidecar_path
 
 
-def prepare_display_values(case_study):
-    """
-    Build the safe display values used by both DOCX and PDF output.
-
-    Returns a dict with title, client_type, challenge, approach,
-    technology and outcomes. The real client name is never included.
-    """
-    sections = case_study.get("sections")
-    if not isinstance(sections, dict):
-        sections = {}
-
-    record = load_seed(case_study.get("engagement_id"))
-    client_type = record["client_type"]
-    real_client = record["client"]
-
-    sections = {
-        key: anonymise_text(
-            safe_text(sections.get(key)), real_client, client_type
-        )
-        for key in [
-            "context",
-            "challenge",
-            "approach",
-            "technology",
-            "outcomes",
-        ]
-    }
-
+def prepare_display_values(case_study, source_record):
+    """Prepare the exact final prose. Publication verification precedes rendering."""
+    if case_study.get("engagement_id") != source_record.get("id"):
+        raise ValueError("draft and source identities differ")
+    sections = case_study["sections"]
     return {
-        "title": anonymise_text(
-            safe_text(case_study.get("title")), real_client, client_type
-        ),
-        "client_type": client_type,
-        "challenge": sections["challenge"],
-        "approach": sections["approach"],
-        "technology": sections["technology"],
-        "outcomes": sections["outcomes"],
+        "title": safe_text(case_study.get("title")),
+        "client_type": safe_text(sections.get("context")),
+        **{name: safe_text(sections.get(name))
+           for name in ("challenge", "approach", "technology", "outcomes")},
     }
 
 
-def render_docx(case_study, template_path, out_path, as_of_date=None):
+def render_docx(case_study, template_path, out_path, as_of_date=None, *, source_record, prepared_display=None, language='en'):
     """Fill the template's {{PLACEHOLDERS}} from the case study."""
-    display = prepare_display_values(case_study)
+    ensure_assets()
+    labels = LABELS[language]
+    display = prepare_display_values(case_study, source_record)
+    if prepared_display is not None and display != prepared_display:
+        raise ValueError("prepared content changed after verification")
+    case_study = {**case_study, "completed_at": source_record.get("completed_at"), "language": language}
     provenance = build_provenance_metadata(
         case_study,
         display,
@@ -247,9 +229,12 @@ def render_docx(case_study, template_path, out_path, as_of_date=None):
         "{{OUTCOMES}}":   display["outcomes"],
     }
 
+    values.update({"{{LABEL_" + name.upper() + "}}": labels[name]
+                   for name in ("challenge", "approach", "technology", "outcomes")})
+    values["{{CONFIDENTIAL}}"] = labels["confidential"]
     doc = Document(template_path)
     metadata_keys = ("{{CLIENT}}", "{{DOMAIN}}", "{{REGION}}")
-    for paragraph in doc.paragraphs:
+    for paragraph in [*doc.paragraphs, *(p for s in doc.sections for p in s.footer.paragraphs)]:
         for run in paragraph.runs:
             if all(key in run.text for key in metadata_keys):
                 metadata_values = [
@@ -258,9 +243,10 @@ def render_docx(case_study, template_path, out_path, as_of_date=None):
                 run.text = " · ".join(metadata_values)
                 continue
 
-            for key, value in values.items():
-                if key in run.text:
-                    run.text = run.text.replace(key, value)
+            # Replace only template tokens present in the original run. Text
+            # supplied by the verified draft is data, never another template.
+            run.text = re.sub(r'\{\{[A-Z_]+\}\}',
+                              lambda match: values.get(match.group(0), match.group(0)), run.text)
 
     doc.add_paragraph("")
     for line in _provenance_lines(provenance):
@@ -279,28 +265,18 @@ def _resolve_as_of_date(as_of_date):
 
 
 def _provenance_lines(metadata):
-    """Return plain-text provenance lines for PDF and DOCX output."""
-    completed_at = metadata.get("completed_at")
-    if completed_at is None or (
-        isinstance(completed_at, str) and not completed_at.strip()
-    ):
-        completed_display = "UNKNOWN"
-    else:
-        completed_display = str(completed_at)
-
-    source_records = ", ".join(metadata.get("source_records") or [])
-    source_references = ", ".join(metadata.get("source_references") or [])
-
-    return [
-        "Provenance",
-        f"Source records: {source_records}",
-        f"Source references: {source_references}",
-        f"Content hash: {metadata['content_hash']}",
-        f"Freshness: {metadata['freshness_status']}",
-        f"Reason: {metadata['freshness_reason']}",
-        f"Completed at: {completed_display}",
-        f"As of date: {metadata['as_of_date']}",
+    labels = LABELS[metadata.get("language", "en")]
+    values = [
+        ("sources", ", ".join(metadata.get("source_records") or [])),
+        ("references", ", ".join(metadata.get("source_references") or [])),
+        ("hash", metadata["content_hash"]),
+        ("freshness", labels[metadata["freshness_status"]]),
+        ("reason", labels[metadata["freshness_reason"]]),
+        ("completed", metadata.get("completed_at") or labels["UNKNOWN"]),
+        ("as_of", metadata["as_of_date"]),
     ]
+    return [labels["provenance"], *metadata.get('citation_claims', []),
+            *(f"{labels[key]}: {value}" for key, value in values)]
 
 
 def _provenance_flowables(metadata, heading_style, body_style):
@@ -312,7 +288,7 @@ def _provenance_flowables(metadata, heading_style, body_style):
     ]
 
 
-def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
+def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None, *, source_record, prepared_display=None, language='en'):
     """Create a branded BGTS PDF using the selected layout."""
     if layout not in PDF_LAYOUTS:
         raise ValueError(
@@ -320,7 +296,12 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
             f"use one of: {', '.join(PDF_LAYOUTS)}"
         )
 
-    display = prepare_display_values(case_study)
+    ensure_assets()
+    labels = LABELS[language]
+    display = prepare_display_values(case_study, source_record)
+    if prepared_display is not None and display != prepared_display:
+        raise ValueError("prepared content changed after verification")
+    case_study = {**case_study, "completed_at": source_record.get("completed_at"), "language": language}
     provenance = build_provenance_metadata(
         case_study,
         display,
@@ -336,7 +317,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
     brand = ParagraphStyle(
         "Brand",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName="DejaVuSans-Bold",
         fontSize=11,
         textColor=NAVY,
         spaceAfter=12,
@@ -344,7 +325,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
     title = ParagraphStyle(
         "CaseTitle",
         parent=styles["Heading1"],
-        fontName="Helvetica-Bold",
+        fontName="DejaVuSans-Bold",
         fontSize=18,
         textColor=NAVY,
         spaceAfter=10,
@@ -352,7 +333,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
     client = ParagraphStyle(
         "ClientLine",
         parent=styles["Normal"],
-        fontName="Helvetica-Oblique",
+        fontName="DejaVuSans-Oblique",
         fontSize=11,
         textColor=ORANGE,
         spaceAfter=18,
@@ -360,7 +341,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
     heading = ParagraphStyle(
         "SectionHeading",
         parent=styles["Heading2"],
-        fontName="Helvetica-Bold",
+        fontName="DejaVuSans-Bold",
         fontSize=13,
         textColor=NAVY,
         spaceBefore=10,
@@ -369,7 +350,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
     body = ParagraphStyle(
         "BodyText",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName="DejaVuSans",
         fontSize=10,
         leading=14,
         spaceAfter=8,
@@ -377,7 +358,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
     footer = ParagraphStyle(
         "Footer",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName="DejaVuSans",
         fontSize=9,
         textColor=NAVY,
         spaceBefore=24,
@@ -385,7 +366,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
     provenance_heading = ParagraphStyle(
         "ProvenanceHeading",
         parent=styles["Heading2"],
-        fontName="Helvetica-Bold",
+        fontName="DejaVuSans-Bold",
         fontSize=11,
         textColor=NAVY,
         spaceBefore=10,
@@ -394,7 +375,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
     provenance_body = ParagraphStyle(
         "ProvenanceBody",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName="DejaVuSans",
         fontSize=8,
         leading=10,
         spaceAfter=2,
@@ -404,7 +385,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         one_brand = ParagraphStyle(
             "OneBrand",
             parent=styles["Normal"],
-            fontName="Helvetica-Bold",
+            fontName="DejaVuSans-Bold",
             fontSize=9,
             textColor=NAVY,
             spaceAfter=4,
@@ -412,7 +393,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         one_title = ParagraphStyle(
             "OneTitle",
             parent=styles["Heading1"],
-            fontName="Helvetica-Bold",
+            fontName="DejaVuSans-Bold",
             fontSize=12,
             textColor=NAVY,
             spaceAfter=4,
@@ -420,7 +401,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         one_client = ParagraphStyle(
             "OneClient",
             parent=styles["Normal"],
-            fontName="Helvetica-Oblique",
+            fontName="DejaVuSans-Oblique",
             fontSize=8,
             textColor=ORANGE,
             spaceAfter=6,
@@ -428,7 +409,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         one_heading = ParagraphStyle(
             "OneHeading",
             parent=styles["Heading2"],
-            fontName="Helvetica-Bold",
+            fontName="DejaVuSans-Bold",
             fontSize=9,
             textColor=NAVY,
             spaceBefore=4,
@@ -437,7 +418,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         one_body = ParagraphStyle(
             "OneBody",
             parent=styles["Normal"],
-            fontName="Helvetica",
+            fontName="DejaVuSans",
             fontSize=7,
             leading=9,
             spaceAfter=3,
@@ -445,7 +426,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         one_footer = ParagraphStyle(
             "OneFooter",
             parent=styles["Normal"],
-            fontName="Helvetica",
+            fontName="DejaVuSans",
             fontSize=7,
             textColor=NAVY,
             spaceBefore=6,
@@ -453,7 +434,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         one_provenance_heading = ParagraphStyle(
             "OneProvenanceHeading",
             parent=styles["Heading2"],
-            fontName="Helvetica-Bold",
+            fontName="DejaVuSans-Bold",
             fontSize=7,
             textColor=NAVY,
             spaceBefore=4,
@@ -462,7 +443,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         one_provenance_body = ParagraphStyle(
             "OneProvenanceBody",
             parent=styles["Normal"],
-            fontName="Helvetica",
+            fontName="DejaVuSans",
             fontSize=6,
             leading=7,
             spaceAfter=1,
@@ -486,13 +467,13 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
                     Paragraph(escape("BGTS INTERNATIONAL"), one_brand),
                     Paragraph(escape(display["title"]), one_title),
                     Paragraph(escape(display["client_type"]), one_client),
-                    Paragraph(escape("THE CHALLENGE"), one_heading),
+                    Paragraph(escape(labels["challenge"]), one_heading),
                     Paragraph(escape(display["challenge"]), one_body),
-                    Paragraph(escape("OUR APPROACH"), one_heading),
+                    Paragraph(escape(labels["approach"]), one_heading),
                     Paragraph(escape(display["approach"]), one_body),
-                    Paragraph(escape("TECHNOLOGY"), one_heading),
+                    Paragraph(escape(labels["technology"]), one_heading),
                     Paragraph(escape(display["technology"]), one_body),
-                    Paragraph(escape("OUTCOMES"), one_heading),
+                    Paragraph(escape(labels["outcomes"]), one_heading),
                     Paragraph(escape(display["outcomes"]), one_body),
                     *_provenance_flowables(
                         provenance,
@@ -500,7 +481,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
                         one_provenance_body,
                     ),
                     Paragraph(
-                        escape("Confidential — BGTS International"),
+                        escape(labels["confidential"] + " — BGTS International"),
                         one_footer,
                     ),
                 ],
@@ -511,7 +492,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         slide_heading = ParagraphStyle(
             "SlideHeading",
             parent=styles["Heading2"],
-            fontName="Helvetica-Bold",
+            fontName="DejaVuSans-Bold",
             fontSize=11,
             textColor=NAVY,
             spaceBefore=0,
@@ -520,7 +501,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         slide_body = ParagraphStyle(
             "SlideBody",
             parent=styles["Normal"],
-            fontName="Helvetica",
+            fontName="DejaVuSans",
             fontSize=8,
             leading=10,
             spaceAfter=0,
@@ -528,7 +509,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         slide_provenance_heading = ParagraphStyle(
             "SlideProvenanceHeading",
             parent=styles["Heading2"],
-            fontName="Helvetica-Bold",
+            fontName="DejaVuSans-Bold",
             fontSize=8,
             textColor=NAVY,
             spaceBefore=4,
@@ -537,7 +518,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         slide_provenance_body = ParagraphStyle(
             "SlideProvenanceBody",
             parent=styles["Normal"],
-            fontName="Helvetica",
+            fontName="DejaVuSans",
             fontSize=6,
             leading=8,
             spaceAfter=1,
@@ -558,12 +539,12 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
         grid = Table(
             [
                 [
-                    slide_cell("THE CHALLENGE", display["challenge"]),
-                    slide_cell("OUR APPROACH", display["approach"]),
+                    slide_cell(labels["challenge"], display["challenge"]),
+                    slide_cell(labels["approach"], display["approach"]),
                 ],
                 [
-                    slide_cell("TECHNOLOGY", display["technology"]),
-                    slide_cell("OUTCOMES", display["outcomes"]),
+                    slide_cell(labels["technology"], display["technology"]),
+                    slide_cell(labels["outcomes"], display["outcomes"]),
                 ],
             ],
             colWidths=["50%", "50%"],
@@ -604,7 +585,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
                         slide_provenance_body,
                     ),
                     Paragraph(
-                        escape("Confidential — BGTS International"),
+                        escape(labels["confidential"] + " — BGTS International"),
                         footer,
                     ),
                 ],
@@ -616,13 +597,13 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
             Paragraph(escape("BGTS INTERNATIONAL"), brand),
             Paragraph(escape(display["title"]), title),
             Paragraph(escape(display["client_type"]), client),
-            Paragraph(escape("The Challenge"), heading),
+            Paragraph(escape(labels["challenge"]), heading),
             Paragraph(escape(display["challenge"]), body),
-            Paragraph(escape("Our Approach"), heading),
+            Paragraph(escape(labels["approach"]), heading),
             Paragraph(escape(display["approach"]), body),
-            Paragraph(escape("Technology"), heading),
+            Paragraph(escape(labels["technology"]), heading),
             Paragraph(escape(display["technology"]), body),
-            Paragraph(escape("Outcomes"), heading),
+            Paragraph(escape(labels["outcomes"]), heading),
             Paragraph(escape(display["outcomes"]), body),
             Spacer(1, 12),
             *_provenance_flowables(
@@ -631,7 +612,7 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
                 provenance_body,
             ),
             Spacer(1, 18),
-            Paragraph(escape("Confidential — BGTS International"), footer),
+            Paragraph(escape(labels["confidential"] + " — BGTS International"), footer),
         ]
         document = SimpleDocTemplate(str(out_path), pagesize=page_size)
 
@@ -641,79 +622,9 @@ def render_pdf(case_study, out_path, layout="full-case-study", as_of_date=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Case study -> branded document"
-    )
-    parser.add_argument("case_study")
-    parser.add_argument(
-        "--out",
-        default="out/case_study.docx",
-    )
-    parser.add_argument(
-        "--template",
-        default=TEMPLATE,
-    )
-    parser.add_argument(
-        "--layout",
-        choices=PDF_LAYOUTS,
-        default="full-case-study",
-    )
-    parser.add_argument(
-        "--print-json",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--as-of-date",
-        default=None,
-        help=(
-            "Freshness evaluation date in YYYY-MM-DD format. "
-            "Defaults to the publication date when omitted."
-        ),
-    )
-    args = parser.parse_args()
+    from integration.one_flow import main as run_http_pipeline
+    run_http_pipeline()
 
-    try:
-        with open(args.case_study, encoding="utf-8") as f:
-            case_study = json.load(f)
-    except FileNotFoundError:
-        die(f"no such file: {args.case_study}")
-    except json.JSONDecodeError as e:
-        die(f"{args.case_study} is not valid JSON: {e}")
-
-    if args.print_json:
-        print_case_study(case_study)
-        return
-
-    out_path = Path(args.out)
-    suffix = out_path.suffix.lower()
-
-    if suffix == ".docx":
-        if args.layout != "full-case-study":
-            die(
-                "runtime layout selection is available for "
-                "PDF output only"
-            )
-
-        written = render_docx(
-            case_study,
-            args.template,
-            out_path,
-            as_of_date=args.as_of_date,
-        )
-    elif suffix == ".pdf":
-        written = render_pdf(
-            case_study,
-            out_path,
-            layout=args.layout,
-            as_of_date=args.as_of_date,
-        )
-    else:
-        die(
-            f"unsupported output type '{suffix}' "
-            "— use .docx or .pdf"
-        )
-
-    print(f"[publisher] wrote {written}", file=sys.stderr)
 
 if __name__ == "__main__":
     main()

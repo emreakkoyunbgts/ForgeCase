@@ -1,231 +1,96 @@
-import sys
-import uuid
-
-from fastapi import FastAPI, HTTPException , Response , Request
+"""Generate single-source EN/DE/TR drafts from authoritative Vault records."""
+import httpx
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-import logging
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from common.drafts import Language, validate_record_id
+from common.services import install_http_middleware, request_headers
+from generator.GeneratorService import get_record_from_vault, get_vault_client, call_librarian_for_matching
+from generator.core import generate_mcs
+from generator.translation import get_translator
 
-from common.contract import load_seed, load_corpus
-from generator.GeneratorService import get_record_from_vault, call_librarian_for_matching
-from generator.generator import generate_multi_source, get_five_sections_with_llm, get_llm_output_german, \
-    get_llm_output_turkish
-from librarian.multi_requirement import evaluate_rfp_requirements
-
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler("generator_controller.log",encoding="utf-8"),
-                              logging.StreamHandler(sys.stdout)])
-
-logger=logging.getLogger(__name__)
-app=FastAPI()
+app = FastAPI(title="CaseForge Generator", version="1.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173",],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
+    expose_headers=["X-Correlation-ID"],
 )
+install_http_middleware(app)
 
 
-@app.post("/generator/mcs/eng")
-async def get_mcs(record: dict, request: Request , response: Response):
-    """
-    Get the multi-source content for a given record ID.
-    """
-    if id is None:
-        logger.error("Record ID is None")
-        raise HTTPException(status_code=400, detail="Record ID is required")
+class GenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    record_id: str = Field(min_length=1, max_length=200)
+    language: Language = "en"
+    _record_id = field_validator("record_id")(validate_record_id)
 
 
-    correlation_id=request.headers.get("X-Correlation-ID", None)
-    if correlation_id is None:
-        logger.warning(f"Correlation ID: {correlation_id}")
-        correlation_id=str(uuid.uuid4())
-        logger.info(f"Generated new Correlation ID: {correlation_id}")
-
-    authorization=request.headers.get("Authorization", None)
-    headers={"X-Correlation-ID": correlation_id,}
-
-    if authorization:
-        headers["Authorization"]=authorization
-    else:
-        logger.warning("Authorization header is missing")
-
-    """
-    try:
-        record =await get_record_from_vault(id, headers=headers)
-    except Exception as e:
-        logger.error(f"Error loading seed record for ID {id}: {e}")
-        raise HTTPException(status_code=404, detail=f"Record with ID {id} not found")
-        
-    """
-
-    mcs=generate_multi_source([record])
-
-    response.headers["X-Correlation-ID"]=correlation_id
-
-
-    return mcs
-
-
-
-@app.post("/generator/mcs/german")
-async def create_german_translation(record: dict , request: Request , response: Response):
-    """
-    Create a German translation for a given record.
-    """
-
-    correlation_id=request.headers.get("X-Correlation-ID", None)
-    if correlation_id is None:
-        logger.warning(f"Correlation ID: {correlation_id}")
-        correlation_id=str(uuid.uuid4())
-        logger.info(f"Generated new Correlation ID: {correlation_id}")
-
-    headers={"X-Correlation-ID": correlation_id,}
-
-    authorization=request.headers.get("Authorization", None)
-    if authorization:
-        headers["Authorization"]=authorization
-    else:
-        logger.warning("Authorization header is missing")
-
-
-
-
-    if record is None:
-        logger.error("Record is None")
-        raise HTTPException(status_code=400, detail="Record is required")
-
-
-    mcs=generate_multi_source([record])
-    llm_output_ge = get_llm_output_german(mcs)
-
-    response.headers["X-Correlation-ID"]=correlation_id
-
-    return llm_output_ge
-
-
-@app.post("/generator/mcs/turkish")
-async def create_turkish_translation(record: dict, request: Request, response: Response):
-    """
-    Create a German translation for a given record.
-    """
-
-    correlation_id = request.headers.get("X-Correlation-ID", None)
-    if correlation_id is None:
-        logger.warning(f"Correlation ID: {correlation_id}")
-        correlation_id = str(uuid.uuid4())
-        logger.info(f"Generated new Correlation ID: {correlation_id}")
-
-    headers = {"X-Correlation-ID": correlation_id, }
-
-    authorization = request.headers.get("Authorization", None)
-    if authorization:
-        headers["Authorization"] = authorization
-    else:
-        logger.warning("Authorization header is missing")
-
-    if record is None:
-        logger.error("Record is None")
-        raise HTTPException(status_code=400, detail="Record is required")
-
-    mcs = generate_multi_source([record])
-    llm_output_tr = get_llm_output_turkish(mcs)
-
-    response.headers["X-Correlation-ID"] = correlation_id
-
-    return llm_output_tr
-
-
-
-@app.post("/generator/mcs/query")
-async def create_mcs_with_query(query: str , request: Request , response: Response):
-    """
-    Create a multi-source content for a given query.
-    """
-    if query is None:
-        logger.error("Query is None")
-        raise HTTPException(status_code=400, detail="Query is required")
-
-    correlation_id = request.headers.get("X-Correlation-ID", None)
-    if correlation_id is None:
-        logger.warning(f"Correlation ID: {correlation_id}")
-        correlation_id = str(uuid.uuid4())
-        logger.info(f"Generated new Correlation ID: {correlation_id}")
-
-    headers = {"X-Correlation-ID": correlation_id, }
-
-    authorization = request.headers.get("Authorization", None)
-    if authorization:
-        headers["Authorization"] = authorization
-    else:
-        logger.warning("Authorization header is missing")
-
-    try:
-        # Implement the logic when api is exposed
-        #librerian_response = evaluate_rfp_requirements(query ,load_corpus(), top_k=1)
-        librerian_response = await call_librarian_for_matching(query, headers=headers)
-    except Exception as e:
-        logger.error(f"Error loading seed record for query {query}: {e}")
-        raise HTTPException(status_code=404, detail=f"Record with query {query} not found")
-
-
-    logger.info(f"Succesfully loaded respose : {librerian_response}")
-    record_id = librerian_response["requirements"][0]["best_match"]["engagement_id"]
-
-    try:
-        record = await get_record_from_vault(record_id, headers=headers)
-        logger.info(f"Successfully loaded seed record for ID {record_id}")
-    except Exception as e:
-        logger.error(f"Error loading seed record for ID {record_id}: {e}")
-        raise HTTPException(status_code=404, detail=f"Record with ID {record_id} not found")
-
-    mcs = generate_multi_source([record])
-
-    response.headers["X-Correlation-ID"] = correlation_id
-
-    return mcs
-
-
-
-
-async def get_llm_output_from_record_id(id: str):
-    """
-    Get the LLM output for a given record ID.
-    """
-    if id is None:
-        logger.error("Record ID is None")
-        raise HTTPException(status_code=400, detail="Record ID is required")
-
-    try:
-        record = load_seed(id)
-    except Exception as e:
-        logger.error(f"Error loading seed record for ID {id}: {e}")
-        raise HTTPException(status_code=404, detail=f"Record with ID {id} not found")
-
-    mcs=generate_multi_source([record])
-    llm_output = get_five_sections_with_llm(mcs)
-
-    return llm_output
-
-async def get_llm_output(mcs:dict):
-    """
-    Get the LLM output for a given multi-source content.
-    """
-    if mcs is None:
-        logger.error("Multi-source content is None")
-        raise HTTPException(status_code=400, detail="Multi-source content is required")
-
-    llm_output = get_five_sections_with_llm(mcs)
-    return llm_output
-
+@app.exception_handler(RequestValidationError)
+async def invalid_request(request, exc):
+    return JSONResponse(status_code=422, content={"detail": [
+        {key: error[key] for key in ("loc", "msg", "type")} for error in exc.errors()
+    ]})
 
 
 @app.get("/health")
-async def health_check():
-    """
-    Health check endpoint to verify that the service is running.
-    """
-    return {"status": "ok"}
+def health():
+    return {"status": "ok", "service": "generator", "languages": ["en", "de", "tr"]}
+
+
+async def generate_for(payload, request, client, translator):
+    record = await get_record_from_vault(
+        payload.record_id, client, request.state.correlation_id,
+        request.headers.get("Authorization"),
+    )
+    draft = generate_mcs(record)
+    # A model translates all requested languages: an English source is not assumed.
+    return await translator(draft, record, payload.language, request.state.correlation_id)
+
+
+@app.post("/generate")
+async def generate(payload: GenerateRequest, request: Request,
+                   client: httpx.AsyncClient = Depends(get_vault_client),
+                   translator=Depends(get_translator)):
+    return await generate_for(payload, request, client, translator)
+
+
+async def legacy(record, language, request, client, translator):
+    try:
+        payload = GenerateRequest(record_id=record.get("id"), language=language)
+    except (ValueError, AttributeError):
+        raise HTTPException(422, "A valid record.id is required") from None
+    return await generate_for(payload, request, client, translator)
+
+
+@app.post("/generator/mcs/eng", deprecated=True)
+@app.post("/generator/mcs", deprecated=True)
+async def legacy_en(record: dict, request: Request,
+                    client=Depends(get_vault_client), translator=Depends(get_translator)):
+    return await legacy(record, "en", request, client, translator)
+
+
+@app.post("/generator/mcs/german", deprecated=True)
+async def legacy_de(record: dict, request: Request,
+                    client=Depends(get_vault_client), translator=Depends(get_translator)):
+    return await legacy(record, "de", request, client, translator)
+
+
+@app.post("/generator/mcs/turkish", deprecated=True)
+async def legacy_tr(record: dict, request: Request,
+                    client=Depends(get_vault_client), translator=Depends(get_translator)):
+    return await legacy(record, "tr", request, client, translator)
+
+
+@app.post("/generator/mcs/query", deprecated=True)
+async def query_generate(query: str, request: Request, language: Language = "en",
+                         client=Depends(get_vault_client), translator=Depends(get_translator)):
+    if not query.strip():
+        raise HTTPException(422, "Query must contain text")
+    record_id = await call_librarian_for_matching(query, request_headers(), client)
+    return await generate_for(GenerateRequest(record_id=record_id, language=language),
+                              request, client, translator)
 

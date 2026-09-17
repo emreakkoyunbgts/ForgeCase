@@ -2,6 +2,7 @@ import os
 from typing import Literal
 
 import requests
+from common.services import request_headers, install_http_middleware
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -56,11 +57,9 @@ def vault_headers():
     token = os.getenv("CASEFORGE_TOKEN")
 
     if not token:
-        return {}
+        return request_headers()
 
-    return {
-        "Authorization": f"Bearer {token}",
-    }
+    return request_headers()
 
 
 def fetch_vault_page(offset: int):
@@ -82,6 +81,7 @@ def fetch_vault_page(offset: int):
                 },
                 headers=vault_headers(),
                 timeout=VAULT_TIMEOUT_SECONDS,
+                allow_redirects=False,
             )
 
             response.raise_for_status()
@@ -104,7 +104,7 @@ def fetch_vault_page(offset: int):
 
             # A 4xx is not likely to succeed simply by retrying.
             raise HTTPException(
-                status_code=502,
+                status_code=exc.response.status_code if exc.response is not None and exc.response.status_code in {401,403,404} else 502,
                 detail={
                     "error": "vault_error",
                     "offset": offset,
@@ -161,7 +161,7 @@ def fetch_vault_page(offset: int):
         return data
 
     raise HTTPException(
-        status_code=503,
+        status_code=504 if isinstance(last_error, requests.Timeout) else 503,
         detail={
             "error": "vault_page_failed",
             "offset": offset,
@@ -241,6 +241,7 @@ def create_app() -> FastAPI:
         title="CaseForge Librarian",
         version="0.1.0",
     )
+    install_http_middleware(app)
 
     @app.get("/health")
     def health():
