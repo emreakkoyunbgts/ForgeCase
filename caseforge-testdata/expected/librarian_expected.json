@@ -1,0 +1,17 @@
+{
+  "rfp_01_realtime_payments.txt": {
+    "expected_top_match": "eng-01",
+    "also_relevant": [
+      "eng-04",
+      "eng-10"
+    ],
+    "why": "GCC + core banking + Kafka + real-time payments + batch window"
+  },
+  "rfp_02_regulatory_dora.txt": {
+    "expected_top_match": "eng-07",
+    "also_relevant": [
+      "eng-02"
+    ],
+    "why": "DORA + regulatory reporting + German bank"
+  }
+}

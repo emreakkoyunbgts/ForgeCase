@@ -1,0 +1,22 @@
+{
+  "engagement_id": "eng-01",
+  "title": "Real-time payments for a Tier-1 GCC retail bank",
+  "sections": {
+    "context": "A Tier-1 GCC retail bank operating at national scale engaged BGTS to modernise its core banking platform.",
+    "challenge": "The legacy core could not support real-time payments, and end-of-day batch windows were overrunning into business hours.",
+    "approach": "BGTS ran a phased shadow migration, processing in parallel on the legacy and new platforms until cutover.",
+    "technology": "Java, Spring Boot, Kafka and PostgreSQL.",
+    "outcomes": "Payment latency reduced 45%. The batch window shortened from 6 hours to 90 minutes. There was zero unplanned downtime during cutover."
+  },
+  "citations": [
+    {
+      "claim": "payment latency reduced 45%",
+      "source_ref": "closeout.pdf#page=5"
+    },
+    {
+      "claim": "batch window shortened from 6 hours to 90 minutes",
+      "source_ref": "closeout.pdf#page=5"
+    }
+  ],
+  "client_named": false
+}

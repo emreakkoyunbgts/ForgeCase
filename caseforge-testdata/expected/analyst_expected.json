@@ -1,0 +1,83 @@
+{
+  "total_engagements": 12,
+  "by_domain": {
+    "core banking": 3,
+    "regulatory reporting": 2,
+    "document intelligence": 2,
+    "cloud & observability": 2,
+    "data platform": 3
+  },
+  "by_region": {
+    "GCC": 2,
+    "DE": 2,
+    "UK": 3,
+    "TR": 3,
+    "NL": 2
+  },
+  "engagements_with_no_outcome": [
+    "eng-12"
+  ],
+  "coverage_gaps_domain_x_region": [
+    {
+      "domain": "cloud & observability",
+      "region": "DE"
+    },
+    {
+      "domain": "cloud & observability",
+      "region": "GCC"
+    },
+    {
+      "domain": "cloud & observability",
+      "region": "UK"
+    },
+    {
+      "domain": "core banking",
+      "region": "DE"
+    },
+    {
+      "domain": "core banking",
+      "region": "UK"
+    },
+    {
+      "domain": "data platform",
+      "region": "DE"
+    },
+    {
+      "domain": "data platform",
+      "region": "NL"
+    },
+    {
+      "domain": "data platform",
+      "region": "TR"
+    },
+    {
+      "domain": "document intelligence",
+      "region": "DE"
+    },
+    {
+      "domain": "document intelligence",
+      "region": "GCC"
+    },
+    {
+      "domain": "document intelligence",
+      "region": "NL"
+    },
+    {
+      "domain": "regulatory reporting",
+      "region": "GCC"
+    },
+    {
+      "domain": "regulatory reporting",
+      "region": "NL"
+    },
+    {
+      "domain": "regulatory reporting",
+      "region": "TR"
+    },
+    {
+      "domain": "regulatory reporting",
+      "region": "UK"
+    }
+  ],
+  "note": "These are the answers. Elif's Analyst should reproduce them independently."
+}
