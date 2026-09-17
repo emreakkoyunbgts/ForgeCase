@@ -64,7 +64,8 @@ def main():
             address=urlsplit(ALL_SERVICES[name])
             if address.hostname not in {'localhost','127.0.0.1'} or address.path not in {'','/'}:
                 parser.error('The local launcher requires loopback service URLs without path prefixes')
-            command=[sys.executable,'-m','uvicorn',app,'--host','127.0.0.1','--port',str(address.port)]
+            command=[sys.executable,'-m','uvicorn',app,'--host','127.0.0.1','--port',str(address.port),
+                     '--log-config',str(ROOT/'scripts'/'http_logging.json')]
             if factory:command.append('--factory')
             start(name,command)
         if args.with_ui:

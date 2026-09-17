@@ -98,6 +98,18 @@ def response_json(response):
         raise ServiceError("Dependency returned invalid JSON", 502) from None
 
 
+def install_request_validation_handler(app):
+    """Keep FastAPI's validation envelope without reflecting submitted content."""
+    from fastapi.exceptions import RequestValidationError
+    from fastapi.responses import JSONResponse
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request, exc):
+        errors = [{key: error[key] for key in ("loc", "msg", "type")}
+                  for error in exc.errors()]
+        return JSONResponse(status_code=422, content={"detail": errors})
+
+
 def install_http_middleware(app):
     """Trace outcomes and expose request context to synchronous handlers."""
     from fastapi.responses import JSONResponse

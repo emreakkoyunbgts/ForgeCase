@@ -7,7 +7,7 @@ from urllib.parse import quote
 import requests
 from fastapi import FastAPI, HTTPException, Query, Response, UploadFile
 
-from common.services import install_http_middleware, request_headers
+from common.services import install_http_middleware, install_request_validation_handler, request_headers
 from reader.extraction import extract_document
 from reader.reader import ExtractionError
 
@@ -70,6 +70,7 @@ def create_app():
     app = FastAPI(title="CaseForge Reader", version=READER_VERSION,
                   description="Extracts labelled text-layer closeout PDFs. Scans and unstructured PDFs return 422.")
     install_http_middleware(app)
+    install_request_validation_handler(app)
 
     @app.get("/health")
     def health():

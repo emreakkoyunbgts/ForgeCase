@@ -2,7 +2,7 @@ import os
 from typing import Literal
 
 import requests
-from common.services import request_headers, install_http_middleware
+from common.services import request_headers, install_http_middleware, install_request_validation_handler
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -108,7 +108,19 @@ def fetch_vault_page(offset: int):
                 detail={
                     "error": "vault_error",
                     "offset": offset,
-                    "message": str(exc),
+                    "message": "Vault returned an unsuccessful response.",
+                },
+            ) from None
+
+        # Redirects do not raise HTTPError; never accept their JSON payload as
+        # records or follow them with the caller's authorization headers.
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "error": "vault_error",
+                    "offset": offset,
+                    "message": "Vault returned an unsuccessful response.",
                 },
             )
 
@@ -165,7 +177,8 @@ def fetch_vault_page(offset: int):
         detail={
             "error": "vault_page_failed",
             "offset": offset,
-            "message": str(last_error),
+            "message": "Vault request timed out." if isinstance(last_error, requests.Timeout)
+            else "Vault is unavailable.",
         },
     )
 
@@ -242,6 +255,7 @@ def create_app() -> FastAPI:
         version="0.1.0",
     )
     install_http_middleware(app)
+    install_request_validation_handler(app)
 
     @app.get("/health")
     def health():

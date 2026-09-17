@@ -37,9 +37,10 @@ The process environment takes precedence over `.env`.
 | `GENERATOR_TRANSLATION_MODEL` | Generation/translation model, default `gpt-5.5` |
 | `VERIFIER_SEMANTIC_MODEL` | Independent verifier model, default `gpt-5.5` |
 | `CASEFORGE_TOKEN` | Optional service credential forwarded server-side by both UIs |
-| `CASEFORGE_VAULT_DB` | Vault-owned SQLite file |
+| `CASEFORGE_VAULT_DB` | Vault-owned SQLite file; `.env.example` selects `out/vault.db`, while an unset variable falls back to `vault/engagements.db` |
 | `CASEFORGE_ARTIFACT_DIR` | Publisher-owned artifact directory |
 | `LIBRARIAN_MODEL` | Cached embedding model, default `sentence-transformers/all-MiniLM-L6-v2` |
+| `LIBRARIAN_SEARCH_CACHE_TTL_SECONDS` | Search-result cache lifetime in seconds, default `60`; a changed Vault corpus invalidates cached results before reuse |
 | `VAULT_URL`, `GENERATOR_URL`, `LIBRARIAN_URL`, `READER_URL`, `VERIFIER_URL`, `PUBLISHER_URL`, `ANALYST_URL` | Service base URLs |
 
 Never put secrets in `VITE_*` variables or commit `.env`. Provision Librarian's
@@ -54,9 +55,17 @@ Provisioning downloads weights to the model cache. Requests do not download
 missing weights. Generation by known record ID does not depend on Librarian.
 `--isolated` creates temporary Vault/artifact stores and removes them at shutdown.
 Omit it to use configured persistent storage. An isolated Vault starts empty:
-upload a supported PDF first. Logs are under `out/logs/`. Ctrl+C stops the
+upload a supported PDF first. Logs are under `out/logs/`; the launcher passes
+`scripts/http_logging.json` to each API so request outcomes include correlation
+IDs at INFO level. Credentials and submitted documents are not added to these
+request log lines. Ctrl+C stops the
 processes owned by this launcher. Save acceptance evidence outside its temporary
 store.
+
+Choose the persistent Vault path explicitly when reusing an existing installation;
+changing `CASEFORGE_VAULT_DB` selects a different database and does not migrate data.
+The isolated launcher and contract runner both override this setting with private
+temporary paths. The configured and fallback locations above remain unchanged.
 
 | API | Port | Main routes |
 |---|---|---|
@@ -76,13 +85,13 @@ Liveness alone does not establish dependency or model availability.
 To run individual services, use separate terminals:
 
 ```powershell
-python -m uvicorn vault.vault:create_app --factory --host 127.0.0.1 --port 8000
-python -m uvicorn generator.GeneratorController:app --host 127.0.0.1 --port 8001
-python -m uvicorn librarian.service:app --host 127.0.0.1 --port 8002
-python -m uvicorn reader.api:create_app --factory --host 127.0.0.1 --port 8003
-python -m uvicorn verifier.VerifierController:app --host 127.0.0.1 --port 8004
-python -m uvicorn publisher.service:app --host 127.0.0.1 --port 8005
-python -m uvicorn analyst.api:app --host 127.0.0.1 --port 8007
+python -m uvicorn vault.vault:create_app --factory --host 127.0.0.1 --port 8000 --log-config scripts/http_logging.json
+python -m uvicorn generator.GeneratorController:app --host 127.0.0.1 --port 8001 --log-config scripts/http_logging.json
+python -m uvicorn librarian.service:app --host 127.0.0.1 --port 8002 --log-config scripts/http_logging.json
+python -m uvicorn reader.api:create_app --factory --host 127.0.0.1 --port 8003 --log-config scripts/http_logging.json
+python -m uvicorn verifier.VerifierController:app --host 127.0.0.1 --port 8004 --log-config scripts/http_logging.json
+python -m uvicorn publisher.service:app --host 127.0.0.1 --port 8005 --log-config scripts/http_logging.json
+python -m uvicorn analyst.api:app --host 127.0.0.1 --port 8007 --log-config scripts/http_logging.json
 ```
 
 ## Reader documents and storage
@@ -279,7 +288,11 @@ python -m streamlit run analyst/app.py --server.port 8502
 | Unsupported Reader document | `422` |
 | Publisher final gate BLOCK | `422` |
 
-Errors retain FastAPI's `detail` envelope. Reader's successful extraction with
+Errors retain FastAPI's `detail` envelope. Request-validation errors on Vault,
+Reader, Librarian, Generator, Verifier and Publisher retain their detail list with
+`loc`, `msg` and `type`, omitting submitted `input` and validation context. Domain
+errors retain their existing string or object details. Analyst currently has no
+typed request body or query parameters. Reader's successful extraction with
 unconfirmed storage uses its storage headers as described above. Find related
 log entries by correlation ID. Fix the failing service or input before retrying
 the user action; do not enable a seed/corpus fallback to hide a failure.
@@ -297,6 +310,13 @@ npm --prefix front-end run lint
 Synthetic providers are injected only in tests; writes use temporary stores.
 These checks demonstrate contracts and controlled failures, not real model
 accuracy or a live multi-process mesh.
+
+The CF-120 cutover gate runs the complete contract inventory (`contract/cases.json`) against
+seven real API processes, a synthetic model provider and a recording boundary relay:
+`python scripts/contract_mesh.py --output out/acceptance/contract.json`. It exits `0` only when
+every inventoried case passes; acceptance additionally requires `acceptance_ready: true`, which
+needs a clean working tree. It is not model acceptance. See
+[CF-120 contract suite](CF-120-contract-suite.md).
 
 Run the separate production-process smoke test with `python -m tests.process_smoke`.
 It starts seven real APIs with private temporary stores, uses a provisioned

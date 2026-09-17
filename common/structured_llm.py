@@ -46,5 +46,9 @@ async def request_structured(system, payload, schema, *, model_env, correlation_
         raise HTTPException(502, "Language model returned an unsuccessful response") from None
     except OpenAIError:
         raise HTTPException(502, "Language model returned an invalid assessment") from None
-    except (ValidationError, ValueError):
+    # A provider that answers 200 with a non-JSON body (a proxy error page, say)
+    # makes the SDK hand back a str, and parsing it raises AttributeError.
+    # Without these, that escapes as a bare 500 and breaks the documented
+    # 'malformed dependency response is 502' contract.
+    except (ValidationError, ValueError, AttributeError, TypeError):
         raise HTTPException(502, "Language model returned an invalid assessment") from None

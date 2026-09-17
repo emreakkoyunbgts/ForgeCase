@@ -1,0 +1,29 @@
+# CF-120 sözleşme bulguları — durum
+
+Kimlikler [CF-120 planı](CF-120-plan.md) §7 ve Revizyon D ile aynıdır; Jira numarası değildir.
+"Düzeltildi" yalnız bu çalışma ağacında düzeltme ve regresyon testi bulunduğu anlamına gelir.
+Bu kayıt commit, PR, release veya son aday üzerinde tamamlanmış kabul koşusu iddiası değildir.
+İlgili servis sahibinin olağan kod incelemesi ayrı teslim adımıdır.
+
+| ID | Bulgu | Durum | Kanıt / regresyon | Sahip |
+|---|---|---|---|---|
+| F-01 | Vault kabul ettiği alanları GET'te düşürüyor; POST/GET ETag farkı; POST ETag ile PUT 412 | **Düzeltildi.** Kabul edilen JSON `engagement_payloads` tablosunda aynen saklanıyor. Göç eklemeli ve tek transaction; eski satırlar son snapshot'tan geri yükleniyor, silinmiş kayıtlar geri gelmiyor. Bilinmeyen ama sonlu JSON değerleri kabul edilip korunuyor; bu mevcut kabul davranışını veri kaybı olmadan sürdürür | `tests/test_cf120_vault.py`, `contract/test_boundaries.py::test_vault_roundtrip_optional_fields_etags_history_and_delete` | Kaan; olağan kod incelemesi |
+| F-02 | `technologies:[{...}]` → 500 text/plain; sayısal alanlar sessizce string'e dönüyordu | **Düzeltildi.** Bilinen alan tipleri, id ve NaN/Infinity kalıcılaştırmadan önce doğrulanıyor → JSON 422, yazma yok | `tests/test_cf120_vault.py`, `contract/test_boundaries.py` (10 tip × POST/PUT) | Kaan |
+| F-03 | Verifier yalnız iki header'ı denetliyordu; 4096 sınırı ve Idempotency-Key yoktu | **Düzeltildi.** Verifier ortak `install_http_middleware` kullanıyor | `tests/test_cf120_services.py`, `contract/test_http_contracts.py::test_trace_is_created_or_echoed_and_invalid_shared_headers_are_400` (7 servis) | Taha / Yiğit |
+| F-04 | Analyst `VAULT_URL` sonundaki `/` işaretini temizlemiyordu | **Düzeltildi** | `tests/test_cf120_services.py`, `contract/test_retrieval_analytics.py::test_analyst_trailing_slash_startup_keeps_vault_request_canonical` | Arda |
+| F-05 | Librarian/Analyst 302 + geçerli JSON'u başarı sayıyordu | **Düzeltildi.** Yalnız 200 kabul ediliyor, yönlendirme izlenmiyor | `tests/test_cf120_services.py`, `contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed` | Arda |
+| F-06 | Hata mesajlarında iç URL görünebiliyordu | **Düzeltildi.** `{error, offset?, message}` yapısı korunarak mesajlar sabitlendi | `tests/test_cf120_services.py` | Arda |
+| F-07 | Verifier health'te `service` alanı yok | **Değiştirilmedi** (genel bir zorunluluk yok). Belgelenen gövde birebir test ediliyor | `contract/test_http_contracts.py::test_health_docs_and_live_openapi_match_the_frozen_contract` | — |
+| F-08 | Vault/Reader/Librarian yanlış tipli girdide kaynak veya RFP metnini 422 yanıtında yansıtıyordu | **Düzeltildi.** Sentetik özel metinle üç servis üzerinde yeniden üretildi. Ortak doğrulama işleyicisi mevcut `detail` listesindeki `loc/msg/type` alanlarını korur; `input/ctx` çıkarılır. Generator/Verifier/Publisher mevcut temizleyicilerini korur. Analyst'in bu tür hatayı tetikleyecek tipli gövde/query girdisi yok | `tests/test_cf120_services.py::test_invalid_source_document_or_rfp_does_not_echo_private_input`; `contract/test_http_contracts.py::test_validation_errors_do_not_reflect_submitted_draft_or_source_text` altı servisi kapsar | Kaan, Arda, Taha / Yiğit |
+| F-09 | OpenAPI başarı gövdelerinin çoğu `{}` | **Açık (dokümantasyon).** Canlı `/openapi.json` sürümlü snapshot'la birebir karşılaştırılıyor; gövdeler bağımsız canlı assertion'larla doğrulanıyor. Şema zenginleştirme CF-122/123/125/127 ile eşlenmeli | `contract/test_http_contracts.py` | İlgili sahipler |
+| F-10 | Varsayılan uvicorn yapılandırması root INFO trace loglarını göstermiyor | **Düzeltildi.** Contract mesh ve desteklenen `scripts/run_mesh.py` launcher'ı `scripts/http_logging.json` geçirir; tekil servis runbook komutları da aynı yapılandırmayı kullanır | `scripts/run_mesh.py`; `contract/test_http_contracts.py::test_one_trace_reaches_every_hop_and_its_logs_without_credentials` | Taha / Yiğit |
+| F-11 | Vault DB varsayılanı ile `.env.example` farklı; Librarian cache TTL belgelenmemiş | **Belgelendi.** Runbook ayarlı `out/vault.db` ve ayarsız `vault/engagements.db` yollarını, geçici store override'larını, `LIBRARIAN_SEARCH_CACHE_TTL_SECONDS=60` varsayılanını ve corpus değişiminde cache invalidation davranışını ayırır. Kalıcı veri taşınmadı | `docs/CF-105-runbook.md`, `scripts/contract_mesh.py::prepare_env` | Kaan, Arda |
+| F-12 | `/generate` Librarian bağlamı kullanmıyor (CF-88 olumlu yol) | **Açık.** Suite mevcut kanonik tek-kaynak davranışını ve deprecated query adapter'ını test ediyor; CF-88 tamamlandı iddiası yok | `contract/test_outages.py::test_librarian_outage_has_route_specific_behavior` | Taha / Yiğit |
+| F-13 | Provider 200 + düz metin → SDK `AttributeError` → çıplak 500 | **Düzeltildi.** `common/structured_llm.py` → 502 | `tests/test_cf120_provider.py`, `contract/test_gate.py::test_provider_failure_cannot_publish[unparsable-502]` | Taha / Yiğit |
+| F-14 | `call_service`, bağımlılığın kendi 503/504'ü için doğru status'u ama "Dependency returned an invalid response" metnini döndürüyor | **Açık, kozmetik.** Status sözleşmesi doğru ve test ediliyor; metin ayrı küçük öneri | `common/services.py::call_service`, `contract/test_outages.py::test_vault_outage_fails_closed_and_recovers` | Taha / Yiğit |
+| F-15 | Reader `/health` iç `vault_url` değerini kimlik doğrulamasız gösteriyor | **Açık, öneri.** Belgelenmiş gövde olarak test ediliyor; dış ağa açılacaksa kaldırılmalı | `contract/test_http_contracts.py` | Kaan |
+
+Hiçbir bulgu `xfail`, skip veya "hata böyle davranıyor" assertion'ı ile gizlenmedi. Açık
+maddeler ya mevcut belgelenmiş sözleşmeyle çelişmiyor (F-07, F-09, F-14, F-15) ya da açıkça
+ayrı iş olarak işaretli (F-12 CF-88). F-08, F-10 ve F-11 yukarıdaki dar düzeltme ve
+belgeleme ile ele alındı; güncel tam koşunun sonucu kendi kaynak kimliğiyle raporlanır.
