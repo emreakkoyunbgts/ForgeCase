@@ -42,3 +42,11 @@ pipeline. Do not delete a persistent database to resolve a schema error: inspect
 and migrate it separately. The [CF-105 runbook](../docs/CF-105-runbook.md) documents
 setup, contracts and isolated acceptance. Historical Vault test modules are not
 part of default cutover selection; inspect them before explicit execution.
+
+## CF-86 concurrency contract
+
+- Duplicate POST returns `409`.
+- PUT/DELETE without `If-Match` returns `428`.
+- A stale `If-Match` returns `412` and the current `ETag` for a refreshed retry.
+- `If-Match: *` accepts any current version; the record must still exist.
+- `/docs` documents the `If-Match` header on PUT and DELETE.
