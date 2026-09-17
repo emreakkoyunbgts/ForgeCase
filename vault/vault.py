@@ -21,7 +21,7 @@ from pathlib import Path
 
 from common.contract import REQUIRED_FIELDS, load_record, load_corpus
 from common.errors import die
-from common.services import install_http_middleware
+from common.services import install_http_middleware, install_request_validation_handler
 
 DB_PATH = os.getenv("CASEFORGE_VAULT_DB", "vault/engagements.db")
 
@@ -71,6 +71,9 @@ def init_db():
     Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.execute("PRAGMA foreign_keys = ON")
+    had_payloads = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'engagement_payloads'"
+    ).fetchone() is not None
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS engagements (
             id              TEXT PRIMARY KEY,
@@ -115,7 +118,35 @@ def init_db():
             data          TEXT    NOT NULL,
             PRIMARY KEY (engagement_id, version)
         );
+
     """)
+    if not had_payloads:
+        # Additive migration: old snapshots already contain the original JSON.
+        # Only current rows are restored; deleted records stay deleted, and all
+        # immutable history remains untouched. Pre-versioning rows use the
+        # existing relational read path until their next successful write.
+        # Table creation and backfill commit together: an interrupted migration
+        # can safely retry, and concurrent initializers cannot see half a table.
+        with conn:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS engagement_payloads (
+                    engagement_id TEXT PRIMARY KEY
+                                  REFERENCES engagements(id) ON DELETE CASCADE,
+                    data          TEXT NOT NULL
+                )
+            """)
+            conn.execute("""
+                INSERT OR IGNORE INTO engagement_payloads (engagement_id, data)
+                SELECT current.id, snapshot.data
+                FROM engagements AS current
+                JOIN engagement_versions AS snapshot
+                  ON snapshot.engagement_id = current.id
+                 AND snapshot.version = (
+                     SELECT MAX(history.version) FROM engagement_versions AS history
+                     WHERE history.engagement_id = current.id
+                 )
+            """)
     conn.commit()
     return conn
 
@@ -153,6 +184,9 @@ def store(record, recorded_at=None):
     Save a record. Storing the same id again replaces the *current* row
     and also appends a new version snapshot (CF-63).
     """
+    _require_fields(record)
+    _validate_record(record)
+    payload = json.dumps(record, ensure_ascii=False, allow_nan=False)
     conn = init_db()
     with conn:  # one transaction: current + version, or nothing
         conn.execute("DELETE FROM engagements WHERE id = ?", (record["id"],))
@@ -184,12 +218,21 @@ def store(record, recorded_at=None):
             [(record["id"], i, name)
              for i, name in enumerate(record["technologies"])],
         )
+        conn.execute(
+            "INSERT INTO engagement_payloads (engagement_id, data) VALUES (?, ?)",
+            (record["id"], payload),
+        )
         _append_version(conn, record, recorded_at=recorded_at)
     print(f"[vault] stored {record['id']}", file=sys.stderr)
 
 
 def _row_to_record(conn, row):
-    """Rebuild the exact contract dict from the relational tables."""
+    """Return accepted JSON; retain relational reads for unversioned legacy rows."""
+    payload = conn.execute(
+        "SELECT data FROM engagement_payloads WHERE engagement_id = ?", (row["id"],)
+    ).fetchone()
+    if payload is not None:
+        return json.loads(payload[0])
     record = {
         "id": row["id"],
         "client": row["client"],
@@ -347,20 +390,30 @@ def _validate_record(record):
     turns it into a 422 that tells the caller exactly what is wrong.
     """
     from common.contract import VALID_REGIONS
+    from common.drafts import validate_record_id
     from fastapi import HTTPException
 
     problems = []
-    if record.get("region") not in VALID_REGIONS:
+    try:
+        validate_record_id(record.get("id"))
+    except ValueError:
+        problems.append("id must identify one Vault record")
+    for key in ("client", "client_type", "domain"):
+        if not isinstance(record.get(key), str) or not record[key].strip():
+            problems.append(f"{key} must be a non-empty string")
+    for key in ("challenge", "solution"):
+        if not isinstance(record.get(key), str):
+            problems.append(f"{key} must be a string")
+    if not isinstance(record.get("region"), str) or record["region"] not in VALID_REGIONS:
         problems.append(
-            f"region must be one of {', '.join(sorted(VALID_REGIONS))} "
-            f"(got {record.get('region')!r})"
+            f"region must be one of {', '.join(sorted(VALID_REGIONS))}"
         )
-    if not isinstance(record.get("client_type"), str) or not record["client_type"]:
-        problems.append("client_type must be a non-empty string")
     if not isinstance(record.get("may_be_named"), bool):
         problems.append("may_be_named must be true or false")
     if not isinstance(record.get("technologies"), list):
         problems.append("technologies must be a list")
+    elif any(not isinstance(item, str) for item in record["technologies"]):
+        problems.append("technologies must contain only strings")
     outcomes = record.get("outcomes")
     if not isinstance(outcomes, list):
         problems.append("outcomes must be a list")
@@ -369,10 +422,33 @@ def _validate_record(record):
             if not isinstance(outcome, dict):
                 problems.append(f"outcomes[{i}] must be an object")
                 continue
-            if not outcome.get("metric"):
-                problems.append(f"outcomes[{i}].metric must be non-empty")
-            if not outcome.get("source_ref"):
-                problems.append(f"outcomes[{i}].source_ref must be non-empty")
+            for key in ("metric", "source_ref"):
+                if not isinstance(outcome.get(key), str) or not outcome[key].strip():
+                    problems.append(f"outcomes[{i}].{key} must be a non-empty string")
+    for key in ("outcome_missing", "supports_qualitative_claims"):
+        if key in record and not isinstance(record[key], bool):
+            problems.append(f"{key} must be true or false")
+    for key in ("team_size", "duration_months"):
+        if key in record and (type(record[key]) is not int or not -(2**63) <= record[key] < 2**63):
+            problems.append(f"{key} must be a 64-bit integer")
+    if "completed_at" in record and not isinstance(record["completed_at"], str):
+        problems.append("completed_at must be a string")
+    # Extension fields remain accepted, including nested outcome metadata, but
+    # must be finite JSON values so storage never silently coerces their types.
+    pending = [record]
+    while pending:
+        value = pending.pop()
+        if isinstance(value, dict) and all(isinstance(key, str) for key in value):
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+        elif type(value) not in (str, int, float, bool, type(None)):
+            problems.append("record extensions must contain only JSON values")
+            break
+    try:
+        json.dumps(record, allow_nan=False)
+    except (ValueError, TypeError, RecursionError):
+        problems.append("record must contain finite, serializable JSON values")
     if problems:
         raise HTTPException(status_code=422, detail="; ".join(problems))
 
@@ -452,6 +528,7 @@ def create_app():
         version="0.7.0",
     )
     install_http_middleware(app)
+    install_request_validation_handler(app)
 
     # HTTPBearer (not a raw Header) is what makes /docs show the padlock
     # and the Authorize button. auto_error=False: we return 401 ourselves

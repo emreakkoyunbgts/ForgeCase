@@ -1,7 +1,6 @@
 """CF-100: verify drafts against authoritative Vault records over HTTP."""
 
 import logging
-import uuid
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -19,9 +18,11 @@ from verifier.service import get_record_from_vault, get_vault_client
 from verifier.verifier import verify
 from verifier.semantic import deterministic_problems, get_semantic_checker
 from common.drafts import normalize_draft
+from common.services import install_http_middleware
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="CaseForge Verifier", version="1.0.0")
+install_http_middleware(app)
 
 
 @app.exception_handler(RequestValidationError)
@@ -32,28 +33,6 @@ async def invalid_request(request: Request, exc: RequestValidationError):
         for error in exc.errors()
     ]
     return JSONResponse(status_code=422, content={"detail": errors})
-
-
-@app.middleware("http")
-async def correlation_id(request: Request, call_next):
-    invalid_headers = [
-        name for name in ("X-Correlation-ID", "Authorization")
-        if any(not 32 <= ord(char) < 127 for char in request.headers.get(name, ""))
-    ]
-    incoming_id = request.headers.get("X-Correlation-ID")
-    request.state.correlation_id = (
-        incoming_id if incoming_id and "X-Correlation-ID" not in invalid_headers
-        else str(uuid.uuid4())
-    )
-    if invalid_headers:
-        response = JSONResponse(
-            status_code=400,
-            content={"detail": "Invalid HTTP tracing or authorization header"},
-        )
-    else:
-        response = await call_next(request)
-    response.headers["X-Correlation-ID"] = request.state.correlation_id
-    return response
 
 
 async def _verify_draft(record_id, draft, request, client, checker, language="en"):

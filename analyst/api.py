@@ -16,7 +16,7 @@ install_http_middleware(app)
 VAULT_URL = os.getenv(
     "VAULT_URL",
     "http://127.0.0.1:8000",
-)
+).rstrip("/")
 
 
 def fetch_records(offset=0):
@@ -44,21 +44,32 @@ def fetch_records(offset=0):
 
     except requests.Timeout:
         raise HTTPException(504, {"error": "vault_timeout"}) from None
-    except requests.ConnectionError as exc:
+    except requests.ConnectionError:
         raise HTTPException(
             status_code=503,
             detail={
                 "error": "vault_unavailable",
-                "message": str(exc),
+                "message": "Vault is unavailable.",
             },
-        )
+        ) from None
 
     except requests.HTTPError as exc:
         raise HTTPException(
             status_code=exc.response.status_code if exc.response is not None and exc.response.status_code in {401,403,404,503,504} else 502,
             detail={
                 "error": "vault_error",
-                "message": str(exc),
+                "message": "Vault returned an unsuccessful response.",
+            },
+        ) from None
+
+    # raise_for_status() deliberately permits 3xx. A valid-looking JSON body
+    # does not make a redirect (or any other status) a successful list response.
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "vault_error",
+                "message": "Vault returned an unsuccessful response.",
             },
         )
 

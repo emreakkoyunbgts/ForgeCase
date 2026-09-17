@@ -84,7 +84,20 @@ or real-model experiments are outside that selection and are not counted as
 passing tests. Mock results do not establish model accuracy or live mesh
 acceptance.
 
-Against a new isolated production mesh with a real provider key, run:
+For the CF-120 HTTP contract gate, use the dedicated runner. It starts all seven
+real APIs with private stores and a local synthetic LLM provider; the provisioned
+Librarian model cache is required. No paid model calls are made.
+
+```powershell
+python scripts/contract_mesh.py --output out/acceptance/contract.json
+```
+
+The [CF-120 guide](docs/CF-120-contract-suite.md) describes the frozen test
+inventory, failure evidence and cleanup. A partial or skipped suite cannot pass;
+`acceptance_ready` additionally requires a clean committed checkout. Synthetic
+provider results do not establish real-model quality or release approval.
+
+For real-model acceptance against an isolated production mesh, run:
 
 ```powershell
 python scripts/live_acceptance.py --output out/acceptance/live.json

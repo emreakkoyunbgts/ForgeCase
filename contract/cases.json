@@ -1,0 +1,1446 @@
+{
+  "kind": "cf120-contract-inventory",
+  "version": 1,
+  "cases": {
+    "contract/test_boundaries.py::test_vault_roundtrip_optional_fields_etags_history_and_delete": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Accepted fields survive; POST/GET/PUT ETags agree; If-Match, history and delete behave (F-01)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-numeric-id]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-numeric-client-type]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-string-consent]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-nested-technology]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-numeric-technology]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-numeric-metric]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-invalid-citation]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-numeric-qualitative-permission]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-boolean-team-size]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[POST-numeric-completed-at]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-numeric-id]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-numeric-client-type]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-string-consent]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-nested-technology]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-numeric-technology]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-numeric-metric]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-invalid-citation]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-numeric-qualitative-permission]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-boolean-team-size]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_invalid_vault_types_return_json_422_without_writing[PUT-numeric-completed-at]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "Wrongly typed known fields are a JSON 422 and change nothing (F-02)."
+    },
+    "contract/test_boundaries.py::test_nonfinite_extension_is_rejected_before_persistence[NaN]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "NaN/Infinity JSON literals are refused before anything is stored."
+    },
+    "contract/test_boundaries.py::test_nonfinite_extension_is_rejected_before_persistence[Infinity]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "NaN/Infinity JSON literals are refused before anything is stored."
+    },
+    "contract/test_boundaries.py::test_nonfinite_extension_is_rejected_before_persistence[-Infinity]": {
+      "owner": "Kaan",
+      "requirement": "CF-84",
+      "boundary": "Client->Vault",
+      "assertion": "NaN/Infinity JSON literals are refused before anything is stored."
+    },
+    "contract/test_boundaries.py::test_vault_denies_missing_or_invalid_authentication[]": {
+      "owner": "Kaan",
+      "requirement": "CF-85",
+      "boundary": "Client->Vault",
+      "assertion": "Vault data routes require the configured bearer token."
+    },
+    "contract/test_boundaries.py::test_vault_denies_missing_or_invalid_authentication[Bearer incorrect-synthetic-token]": {
+      "owner": "Kaan",
+      "requirement": "CF-85",
+      "boundary": "Client->Vault",
+      "assertion": "Vault data routes require the configured bearer token."
+    },
+    "contract/test_boundaries.py::test_reader_extracts_document_and_replay_confirms_same_record": {
+      "owner": "Kaan",
+      "requirement": "CF-82",
+      "boundary": "Reader->Vault",
+      "assertion": "Reader stores an uploaded PDF once over HTTP; a replay confirms instead of rewriting."
+    },
+    "contract/test_boundaries.py::test_reader_missing_outcomes_are_explicit_without_storage": {
+      "owner": "Kaan",
+      "requirement": "CF-81",
+      "boundary": "Client->Reader",
+      "assertion": "Absent outcomes stay empty and flagged; store=false never calls Vault."
+    },
+    "contract/test_boundaries.py::test_reader_rejects_invalid_upload_without_calling_vault[missing-422]": {
+      "owner": "Kaan",
+      "requirement": "CF-81",
+      "boundary": "Client->Reader",
+      "assertion": "Missing, empty, corrupt, blank or oversized uploads are rejected before any Vault call."
+    },
+    "contract/test_boundaries.py::test_reader_rejects_invalid_upload_without_calling_vault[empty-422]": {
+      "owner": "Kaan",
+      "requirement": "CF-81",
+      "boundary": "Client->Reader",
+      "assertion": "Missing, empty, corrupt, blank or oversized uploads are rejected before any Vault call."
+    },
+    "contract/test_boundaries.py::test_reader_rejects_invalid_upload_without_calling_vault[corrupt-422]": {
+      "owner": "Kaan",
+      "requirement": "CF-81",
+      "boundary": "Client->Reader",
+      "assertion": "Missing, empty, corrupt, blank or oversized uploads are rejected before any Vault call."
+    },
+    "contract/test_boundaries.py::test_reader_rejects_invalid_upload_without_calling_vault[blank-422]": {
+      "owner": "Kaan",
+      "requirement": "CF-81",
+      "boundary": "Client->Reader",
+      "assertion": "Missing, empty, corrupt, blank or oversized uploads are rejected before any Vault call."
+    },
+    "contract/test_boundaries.py::test_reader_rejects_invalid_upload_without_calling_vault[oversized-413]": {
+      "owner": "Kaan",
+      "requirement": "CF-81",
+      "boundary": "Client->Reader",
+      "assertion": "Missing, empty, corrupt, blank or oversized uploads are rejected before any Vault call."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[metric_swap-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[metric_swap-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[metric_swap-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[wrong_duration-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[wrong_duration-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[wrong_duration-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[negation-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[negation-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[negation-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[date-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[date-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[date-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[unsupported-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[unsupported-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[unsupported-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[percentage_points-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[percentage_points-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[percentage_points-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[name_disclosure-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[name_disclosure-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_poison_blocks_without_artifact[name_disclosure-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "verifier-publisher-negative",
+      "assertion": "Each language/poison blocks both verification and publication without writing artifacts."
+    },
+    "contract/test_gate.py::test_invalid_gate_response_cannot_publish[pass-with-problems]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publisher-verifier-invalid-report",
+      "assertion": "Malformed/blocking/error/redirect Verifier responses cannot authorize publication or trigger a redirect hop."
+    },
+    "contract/test_gate.py::test_invalid_gate_response_cannot_publish[wrong-source]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publisher-verifier-invalid-report",
+      "assertion": "Malformed/blocking/error/redirect Verifier responses cannot authorize publication or trigger a redirect hop."
+    },
+    "contract/test_gate.py::test_invalid_gate_response_cannot_publish[unknown-verdict]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publisher-verifier-invalid-report",
+      "assertion": "Malformed/blocking/error/redirect Verifier responses cannot authorize publication or trigger a redirect hop."
+    },
+    "contract/test_gate.py::test_invalid_gate_response_cannot_publish[block]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publisher-verifier-invalid-report",
+      "assertion": "Malformed/blocking/error/redirect Verifier responses cannot authorize publication or trigger a redirect hop."
+    },
+    "contract/test_gate.py::test_invalid_gate_response_cannot_publish[missing-fields]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publisher-verifier-invalid-report",
+      "assertion": "Malformed/blocking/error/redirect Verifier responses cannot authorize publication or trigger a redirect hop."
+    },
+    "contract/test_gate.py::test_invalid_gate_response_cannot_publish[extra-field]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publisher-verifier-invalid-report",
+      "assertion": "Malformed/blocking/error/redirect Verifier responses cannot authorize publication or trigger a redirect hop."
+    },
+    "contract/test_gate.py::test_invalid_gate_response_cannot_publish[not-json]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publisher-verifier-invalid-report",
+      "assertion": "Malformed/blocking/error/redirect Verifier responses cannot authorize publication or trigger a redirect hop."
+    },
+    "contract/test_gate.py::test_invalid_gate_response_cannot_publish[redirect-with-pass-body]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publisher-verifier-invalid-report",
+      "assertion": "Malformed/blocking/error/redirect Verifier responses cannot authorize publication or trigger a redirect hop."
+    },
+    "contract/test_gate.py::test_invalid_gate_response_cannot_publish[server-error-with-pass-body]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publisher-verifier-invalid-report",
+      "assertion": "Malformed/blocking/error/redirect Verifier responses cannot authorize publication or trigger a redirect hop."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[incomplete_spans-502]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[duplicate_spans-502]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[fabricated_evidence-502]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[omitted_evidence-502]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[invalid_schema-502]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[empty_output-502]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[incomplete_status-502]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[server_error-502]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[unparsable-502]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[unauthorized-503]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[rate_limited-503]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[language_mismatch-422]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_provider_failure_cannot_publish[unsupported_verdict-422]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "provider-errors-through-publication",
+      "assertion": "Provider transport/schema/evidence failures surface controlled status without publication."
+    },
+    "contract/test_gate.py::test_translation_failure_is_controlled[incomplete_spans-502]": {
+      "owner": "Taha",
+      "requirement": "CF-68/69",
+      "boundary": "translation-guards",
+      "assertion": "Malformed translation or unavailable provider returns controlled JSON rather than a draft."
+    },
+    "contract/test_gate.py::test_translation_failure_is_controlled[duplicate_spans-502]": {
+      "owner": "Taha",
+      "requirement": "CF-68/69",
+      "boundary": "translation-guards",
+      "assertion": "Malformed translation or unavailable provider returns controlled JSON rather than a draft."
+    },
+    "contract/test_gate.py::test_translation_failure_is_controlled[empty_translation-502]": {
+      "owner": "Taha",
+      "requirement": "CF-68/69",
+      "boundary": "translation-guards",
+      "assertion": "Malformed translation or unavailable provider returns controlled JSON rather than a draft."
+    },
+    "contract/test_gate.py::test_translation_failure_is_controlled[changed_quantity-502]": {
+      "owner": "Taha",
+      "requirement": "CF-68/69",
+      "boundary": "translation-guards",
+      "assertion": "Malformed translation or unavailable provider returns controlled JSON rather than a draft."
+    },
+    "contract/test_gate.py::test_translation_failure_is_controlled[changed_marker-502]": {
+      "owner": "Taha",
+      "requirement": "CF-68/69",
+      "boundary": "translation-guards",
+      "assertion": "Malformed translation or unavailable provider returns controlled JSON rather than a draft."
+    },
+    "contract/test_gate.py::test_translation_failure_is_controlled[unparsable-502]": {
+      "owner": "Taha",
+      "requirement": "CF-68/69",
+      "boundary": "translation-guards",
+      "assertion": "Malformed translation or unavailable provider returns controlled JSON rather than a draft."
+    },
+    "contract/test_gate.py::test_translation_failure_is_controlled[unauthorized-503]": {
+      "owner": "Taha",
+      "requirement": "CF-68/69",
+      "boundary": "translation-guards",
+      "assertion": "Malformed translation or unavailable provider returns controlled JSON rather than a draft."
+    },
+    "contract/test_gate.py::test_invalid_format_layout_has_no_side_effect[docx-one-pager]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publish-request-validation",
+      "assertion": "Unsupported format/layout is rejected before dependencies or artifact writes."
+    },
+    "contract/test_gate.py::test_invalid_format_layout_has_no_side_effect[docx-single-slide]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publish-request-validation",
+      "assertion": "Unsupported format/layout is rejected before dependencies or artifact writes."
+    },
+    "contract/test_gate.py::test_invalid_format_layout_has_no_side_effect[pptx-full-case-study]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publish-request-validation",
+      "assertion": "Unsupported format/layout is rejected before dependencies or artifact writes."
+    },
+    "contract/test_gate.py::test_invalid_format_layout_has_no_side_effect[pdf-poster]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "publish-request-validation",
+      "assertion": "Unsupported format/layout is rejected before dependencies or artifact writes."
+    },
+    "contract/test_gate.py::test_private_name_in_reference_blocks_before_provider": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/100",
+      "boundary": "visible-provenance-consent",
+      "assertion": "Private client names in visible provenance block before semantic assessment and artifact writes."
+    },
+    "contract/test_gate.py::test_missing_source_is_404_without_model_or_artifact[generator-/generate]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "missing-Vault-source",
+      "assertion": "All three source consumers preserve Vault's 404 and cannot use a local source fallback."
+    },
+    "contract/test_gate.py::test_missing_source_is_404_without_model_or_artifact[verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "missing-Vault-source",
+      "assertion": "All three source consumers preserve Vault's 404 and cannot use a local source fallback."
+    },
+    "contract/test_gate.py::test_missing_source_is_404_without_model_or_artifact[publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "missing-Vault-source",
+      "assertion": "All three source consumers preserve Vault's 404 and cannot use a local source fallback."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[record-mismatch-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[record-mismatch-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[draft-language-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[draft-language-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[unknown-language-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[unknown-language-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[title-source-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[title-source-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[section-source-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[section-source-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[citation-source-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[citation-source-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[extra-draft-field-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[extra-draft-field-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[nontext-section-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[nontext-section-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[empty-draft-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[empty-draft-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[invalid-record-id-verifier-/verify]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_conflicting_or_malformed_draft_is_422_before_dependencies[invalid-record-id-publisher-/publish]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91/100",
+      "boundary": "request-identity-validation",
+      "assertion": "Source/language/shape conflicts fail before Vault, Verifier, provider or artifact activity."
+    },
+    "contract/test_gate.py::test_unknown_artifact_is_404_without_dependency_activity[not-a-uuid-download]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "artifact-lookup",
+      "assertion": "Malformed and absent artifact identifiers return 404 for both downloadable assets."
+    },
+    "contract/test_gate.py::test_unknown_artifact_is_404_without_dependency_activity[not-a-uuid-provenance]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "artifact-lookup",
+      "assertion": "Malformed and absent artifact identifiers return 404 for both downloadable assets."
+    },
+    "contract/test_gate.py::test_unknown_artifact_is_404_without_dependency_activity[00000000-0000-0000-0000-000000000000-download]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "artifact-lookup",
+      "assertion": "Malformed and absent artifact identifiers return 404 for both downloadable assets."
+    },
+    "contract/test_gate.py::test_unknown_artifact_is_404_without_dependency_activity[00000000-0000-0000-0000-000000000000-provenance]": {
+      "owner": "Serhat",
+      "requirement": "CF-91",
+      "boundary": "artifact-lookup",
+      "assertion": "Malformed and absent artifact identifiers return 404 for both downloadable assets."
+    },
+    "contract/test_gate.py::test_existing_artifact_requires_authorization[download]": {
+      "owner": "Serhat",
+      "requirement": "CF-85/91",
+      "boundary": "artifact-download-authorization",
+      "assertion": "Existing document/provenance bytes require the correct token and remain accessible after denied attempts."
+    },
+    "contract/test_gate.py::test_existing_artifact_requires_authorization[provenance]": {
+      "owner": "Serhat",
+      "requirement": "CF-85/91",
+      "boundary": "artifact-download-authorization",
+      "assertion": "Existing document/provenance bytes require the correct token and remain accessible after denied attempts."
+    },
+    "contract/test_http_contracts.py::test_health_docs_and_live_openapi_match_the_frozen_contract[vault]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->each API",
+      "assertion": "Each API answers its documented health body and serves exactly its versioned OpenAPI."
+    },
+    "contract/test_http_contracts.py::test_health_docs_and_live_openapi_match_the_frozen_contract[reader]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->each API",
+      "assertion": "Each API answers its documented health body and serves exactly its versioned OpenAPI."
+    },
+    "contract/test_http_contracts.py::test_health_docs_and_live_openapi_match_the_frozen_contract[generator]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->each API",
+      "assertion": "Each API answers its documented health body and serves exactly its versioned OpenAPI."
+    },
+    "contract/test_http_contracts.py::test_health_docs_and_live_openapi_match_the_frozen_contract[verifier]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->each API",
+      "assertion": "Each API answers its documented health body and serves exactly its versioned OpenAPI."
+    },
+    "contract/test_http_contracts.py::test_health_docs_and_live_openapi_match_the_frozen_contract[publisher]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->each API",
+      "assertion": "Each API answers its documented health body and serves exactly its versioned OpenAPI."
+    },
+    "contract/test_http_contracts.py::test_health_docs_and_live_openapi_match_the_frozen_contract[librarian]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->each API",
+      "assertion": "Each API answers its documented health body and serves exactly its versioned OpenAPI."
+    },
+    "contract/test_http_contracts.py::test_health_docs_and_live_openapi_match_the_frozen_contract[analyst]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->each API",
+      "assertion": "Each API answers its documented health body and serves exactly its versioned OpenAPI."
+    },
+    "contract/test_http_contracts.py::test_trace_is_created_or_echoed_and_invalid_shared_headers_are_400[vault]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103",
+      "boundary": "Client->each API",
+      "assertion": "Every API creates or echoes X-Correlation-ID and bounds all three shared headers at 4096."
+    },
+    "contract/test_http_contracts.py::test_trace_is_created_or_echoed_and_invalid_shared_headers_are_400[reader]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103",
+      "boundary": "Client->each API",
+      "assertion": "Every API creates or echoes X-Correlation-ID and bounds all three shared headers at 4096."
+    },
+    "contract/test_http_contracts.py::test_trace_is_created_or_echoed_and_invalid_shared_headers_are_400[generator]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103",
+      "boundary": "Client->each API",
+      "assertion": "Every API creates or echoes X-Correlation-ID and bounds all three shared headers at 4096."
+    },
+    "contract/test_http_contracts.py::test_trace_is_created_or_echoed_and_invalid_shared_headers_are_400[verifier]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103",
+      "boundary": "Client->each API",
+      "assertion": "Every API creates or echoes X-Correlation-ID and bounds all three shared headers at 4096."
+    },
+    "contract/test_http_contracts.py::test_trace_is_created_or_echoed_and_invalid_shared_headers_are_400[publisher]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103",
+      "boundary": "Client->each API",
+      "assertion": "Every API creates or echoes X-Correlation-ID and bounds all three shared headers at 4096."
+    },
+    "contract/test_http_contracts.py::test_trace_is_created_or_echoed_and_invalid_shared_headers_are_400[librarian]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103",
+      "boundary": "Client->each API",
+      "assertion": "Every API creates or echoes X-Correlation-ID and bounds all three shared headers at 4096."
+    },
+    "contract/test_http_contracts.py::test_trace_is_created_or_echoed_and_invalid_shared_headers_are_400[analyst]": {
+      "owner": "CF-120 (all service owners)",
+      "requirement": "CF-103",
+      "boundary": "Client->each API",
+      "assertion": "Every API creates or echoes X-Correlation-ID and bounds all three shared headers at 4096."
+    },
+    "contract/test_http_contracts.py::test_one_trace_reaches_every_hop_and_its_logs_without_credentials": {
+      "owner": "Taha",
+      "requirement": "CF-103",
+      "boundary": "Client->Generator/Publisher->Vault/Verifier/provider",
+      "assertion": "A caller trace crosses Vault, Verifier and provider hops and appears in each service log."
+    },
+    "contract/test_http_contracts.py::test_caller_credential_is_forwarded_and_a_wrong_one_is_denied[generator]": {
+      "owner": "Kaan",
+      "requirement": "CF-85/CF-103",
+      "boundary": "consumer->Vault (caller credential)",
+      "assertion": "Incoming authorization takes precedence over the service token and Vault denies a wrong one."
+    },
+    "contract/test_http_contracts.py::test_caller_credential_is_forwarded_and_a_wrong_one_is_denied[verifier]": {
+      "owner": "Kaan",
+      "requirement": "CF-85/CF-103",
+      "boundary": "consumer->Vault (caller credential)",
+      "assertion": "Incoming authorization takes precedence over the service token and Vault denies a wrong one."
+    },
+    "contract/test_http_contracts.py::test_caller_credential_is_forwarded_and_a_wrong_one_is_denied[librarian]": {
+      "owner": "Kaan",
+      "requirement": "CF-85/CF-103",
+      "boundary": "consumer->Vault (caller credential)",
+      "assertion": "Incoming authorization takes precedence over the service token and Vault denies a wrong one."
+    },
+    "contract/test_http_contracts.py::test_caller_credential_is_forwarded_and_a_wrong_one_is_denied[analyst]": {
+      "owner": "Kaan",
+      "requirement": "CF-85/CF-103",
+      "boundary": "consumer->Vault (caller credential)",
+      "assertion": "Incoming authorization takes precedence over the service token and Vault denies a wrong one."
+    },
+    "contract/test_http_contracts.py::test_wrong_credential_never_stores_or_publishes": {
+      "owner": "Kaan",
+      "requirement": "CF-82/CF-85",
+      "boundary": "Reader->Vault, Client->Publisher",
+      "assertion": "Reader reports a denied write as unstored; Publisher rejects before any dependency call."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[generator-302-with-valid-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[generator-200-not-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[generator-200-wrong-shape]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[verifier-302-with-valid-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[verifier-200-not-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[verifier-200-wrong-shape]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[publisher-302-with-valid-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[publisher-200-not-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[publisher-200-wrong-shape]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[librarian-302-with-valid-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[librarian-200-not-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[librarian-200-wrong-shape]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[analyst-302-with-valid-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[analyst-200-not-json]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_redirected_or_malformed_vault_answer_is_502_and_never_followed[analyst-200-wrong-shape]": {
+      "owner": "Arda/Taha/Serhat",
+      "requirement": "CF-103/CF-104",
+      "boundary": "consumer->Vault (malformed)",
+      "assertion": "A redirect, non-JSON or wrongly shaped Vault answer is a 502, even with a plausible body."
+    },
+    "contract/test_http_contracts.py::test_deprecated_generator_adapters_use_vault_facts_not_submitted_facts[/generator/mcs-en]": {
+      "owner": "Taha",
+      "requirement": "CF-105",
+      "boundary": "legacy Generator adapters->Vault",
+      "assertion": "Legacy record-body routes keep only the id; every fact comes from Vault."
+    },
+    "contract/test_http_contracts.py::test_deprecated_generator_adapters_use_vault_facts_not_submitted_facts[/generator/mcs/eng-en]": {
+      "owner": "Taha",
+      "requirement": "CF-105",
+      "boundary": "legacy Generator adapters->Vault",
+      "assertion": "Legacy record-body routes keep only the id; every fact comes from Vault."
+    },
+    "contract/test_http_contracts.py::test_deprecated_generator_adapters_use_vault_facts_not_submitted_facts[/generator/mcs/german-de]": {
+      "owner": "Taha",
+      "requirement": "CF-105",
+      "boundary": "legacy Generator adapters->Vault",
+      "assertion": "Legacy record-body routes keep only the id; every fact comes from Vault."
+    },
+    "contract/test_http_contracts.py::test_deprecated_generator_adapters_use_vault_facts_not_submitted_facts[/generator/mcs/turkish-tr]": {
+      "owner": "Taha",
+      "requirement": "CF-105",
+      "boundary": "legacy Generator adapters->Vault",
+      "assertion": "Legacy record-body routes keep only the id; every fact comes from Vault."
+    },
+    "contract/test_http_contracts.py::test_deprecated_verifier_adapter_ignores_submitted_record_facts[en]": {
+      "owner": "Taha",
+      "requirement": "CF-100/CF-105",
+      "boundary": "legacy Verifier adapter->Vault",
+      "assertion": "/verify/{id} verifies against Vault; a forged record body cannot turn a BLOCK into PASS."
+    },
+    "contract/test_http_contracts.py::test_deprecated_verifier_adapter_ignores_submitted_record_facts[de]": {
+      "owner": "Taha",
+      "requirement": "CF-100/CF-105",
+      "boundary": "legacy Verifier adapter->Vault",
+      "assertion": "/verify/{id} verifies against Vault; a forged record body cannot turn a BLOCK into PASS."
+    },
+    "contract/test_http_contracts.py::test_deprecated_verifier_adapter_ignores_submitted_record_facts[tr]": {
+      "owner": "Taha",
+      "requirement": "CF-100/CF-105",
+      "boundary": "legacy Verifier adapter->Vault",
+      "assertion": "/verify/{id} verifies against Vault; a forged record body cannot turn a BLOCK into PASS."
+    },
+    "contract/test_http_contracts.py::test_validation_errors_do_not_reflect_submitted_draft_or_source_text[generator-/generate]": {
+      "owner": "Taha / Kaan / Arda",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->Generator/Verifier/Publisher/Vault/Reader/Librarian",
+      "assertion": "422 envelopes for content-bearing routes list loc/msg/type only, never the submitted prose."
+    },
+    "contract/test_http_contracts.py::test_validation_errors_do_not_reflect_submitted_draft_or_source_text[verifier-/verify]": {
+      "owner": "Taha / Kaan / Arda",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->Generator/Verifier/Publisher/Vault/Reader/Librarian",
+      "assertion": "422 envelopes for content-bearing routes list loc/msg/type only, never the submitted prose."
+    },
+    "contract/test_http_contracts.py::test_validation_errors_do_not_reflect_submitted_draft_or_source_text[publisher-/publish]": {
+      "owner": "Taha / Kaan / Arda",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->Generator/Verifier/Publisher/Vault/Reader/Librarian",
+      "assertion": "422 envelopes for content-bearing routes list loc/msg/type only, never the submitted prose."
+    },
+    "contract/test_http_contracts.py::test_validation_errors_do_not_reflect_submitted_draft_or_source_text[vault-/engagements]": {
+      "owner": "Taha / Kaan / Arda",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->Generator/Verifier/Publisher/Vault/Reader/Librarian",
+      "assertion": "422 envelopes for content-bearing routes list loc/msg/type only, never the submitted prose."
+    },
+    "contract/test_http_contracts.py::test_validation_errors_do_not_reflect_submitted_draft_or_source_text[reader-/extract]": {
+      "owner": "Taha / Kaan / Arda",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->Generator/Verifier/Publisher/Vault/Reader/Librarian",
+      "assertion": "422 envelopes for content-bearing routes list loc/msg/type only, never the submitted prose."
+    },
+    "contract/test_http_contracts.py::test_validation_errors_do_not_reflect_submitted_draft_or_source_text[librarian-/match]": {
+      "owner": "Taha / Kaan / Arda",
+      "requirement": "CF-103/CF-105",
+      "boundary": "Client->Generator/Verifier/Publisher/Vault/Reader/Librarian",
+      "assertion": "422 envelopes for content-bearing routes list loc/msg/type only, never the submitted prose."
+    },
+    "contract/test_http_contracts.py::test_retrieval_parameter_bounds_are_422_without_vault_calls[empty-query]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Client->Librarian",
+      "assertion": "Invalid search/match parameters are rejected before Vault is read."
+    },
+    "contract/test_http_contracts.py::test_retrieval_parameter_bounds_are_422_without_vault_calls[top-over-20]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Client->Librarian",
+      "assertion": "Invalid search/match parameters are rejected before Vault is read."
+    },
+    "contract/test_http_contracts.py::test_retrieval_parameter_bounds_are_422_without_vault_calls[unknown-strategy]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Client->Librarian",
+      "assertion": "Invalid search/match parameters are rejected before Vault is read."
+    },
+    "contract/test_http_contracts.py::test_retrieval_parameter_bounds_are_422_without_vault_calls[empty-rfp]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Client->Librarian",
+      "assertion": "Invalid search/match parameters are rejected before Vault is read."
+    },
+    "contract/test_http_contracts.py::test_retrieval_parameter_bounds_are_422_without_vault_calls[top-k-zero]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Client->Librarian",
+      "assertion": "Invalid search/match parameters are rejected before Vault is read."
+    },
+    "contract/test_http_contracts.py::test_retrieval_parameter_bounds_are_422_without_vault_calls[score-over-1]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Client->Librarian",
+      "assertion": "Invalid search/match parameters are rejected before Vault is read."
+    },
+    "contract/test_outages.py::test_vault_outage_fails_closed_and_recovers": {
+      "owner": "ALL",
+      "requirement": "CF-105/120",
+      "boundary": "vault-outage",
+      "assertion": "A real Vault outage fails dependent consumers, reports Reader storage failure, and recovers intact."
+    },
+    "contract/test_outages.py::test_verifier_outage_does_not_block_generation_but_blocks_publication": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-91/105",
+      "boundary": "verifier-outage",
+      "assertion": "Stopping Verifier leaves generation available and prevents publication until recovery."
+    },
+    "contract/test_outages.py::test_librarian_outage_has_route_specific_behavior": {
+      "owner": "Taha / Arda",
+      "requirement": "CF-115/117",
+      "boundary": "librarian-outage",
+      "assertion": "Stopping Librarian fails the query adapter while canonical single-source generation remains available."
+    },
+    "contract/test_outages.py::test_real_provider_deadline_returns_504_without_late_artifact[generator-translation]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91",
+      "boundary": "production-provider-timeout",
+      "assertion": "The real provider deadline returns 504 and a late response cannot create an artifact."
+    },
+    "contract/test_outages.py::test_real_provider_deadline_returns_504_without_late_artifact[publisher-assessment]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91",
+      "boundary": "production-provider-timeout",
+      "assertion": "The real provider deadline returns 504 and a late response cannot create an artifact."
+    },
+    "contract/test_outages.py::test_slow_vault_is_504[generator]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89",
+      "boundary": "vault-timeout",
+      "assertion": "A slow Vault triggers the production timeout without writing artifacts."
+    },
+    "contract/test_outages.py::test_slow_vault_is_504[verifier]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89",
+      "boundary": "vault-timeout",
+      "assertion": "A slow Vault triggers the production timeout without writing artifacts."
+    },
+    "contract/test_outages.py::test_slow_vault_is_504[publisher]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89",
+      "boundary": "vault-timeout",
+      "assertion": "A slow Vault triggers the production timeout without writing artifacts."
+    },
+    "contract/test_outages.py::test_slow_vault_is_504[librarian]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89",
+      "boundary": "vault-timeout",
+      "assertion": "A slow Vault triggers the production timeout without writing artifacts."
+    },
+    "contract/test_outages.py::test_slow_vault_is_504[analyst]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89",
+      "boundary": "vault-timeout",
+      "assertion": "A slow Vault triggers the production timeout without writing artifacts."
+    },
+    "contract/test_outages.py::test_stopped_provider_cannot_generate_verify_or_publish": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-89/91",
+      "boundary": "provider-outage",
+      "assertion": "A real provider outage returns bounded 503 for every consumer and creates no artifact."
+    },
+    "contract/test_outages.py::test_provider_auth_and_rate_failures_never_return_draft_or_pass[unauthorized-generator-translation-/generate]": {
+      "owner": "Taha",
+      "requirement": "CF-89/100",
+      "boundary": "provider-auth-rate-limit",
+      "assertion": "Provider 401/429 become controlled 503 in both translation and direct verification."
+    },
+    "contract/test_outages.py::test_provider_auth_and_rate_failures_never_return_draft_or_pass[unauthorized-verifier-assessment-/verify]": {
+      "owner": "Taha",
+      "requirement": "CF-89/100",
+      "boundary": "provider-auth-rate-limit",
+      "assertion": "Provider 401/429 become controlled 503 in both translation and direct verification."
+    },
+    "contract/test_outages.py::test_provider_auth_and_rate_failures_never_return_draft_or_pass[rate_limited-generator-translation-/generate]": {
+      "owner": "Taha",
+      "requirement": "CF-89/100",
+      "boundary": "provider-auth-rate-limit",
+      "assertion": "Provider 401/429 become controlled 503 in both translation and direct verification."
+    },
+    "contract/test_outages.py::test_provider_auth_and_rate_failures_never_return_draft_or_pass[rate_limited-verifier-assessment-/verify]": {
+      "owner": "Taha",
+      "requirement": "CF-89/100",
+      "boundary": "provider-auth-rate-limit",
+      "assertion": "Provider 401/429 become controlled 503 in both translation and direct verification."
+    },
+    "contract/test_outages.py::test_reader_never_reports_conflicting_or_uncertain_storage_as_stored": {
+      "owner": "Kaan",
+      "requirement": "CF-82/105",
+      "boundary": "reader-storage-confirmation",
+      "assertion": "Reader returns extracted facts but never reports conflicting or unconfirmed storage as successful."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-01-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-01-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-01-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-02-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-02-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-02-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-03-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-03-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-03-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-04-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-04-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-04-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-05-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-05-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-05-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-06-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-06-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-06-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-07-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-07-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-07-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-08-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-08-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-08-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-09-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-09-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-09-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-10-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-10-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-10-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-11-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-11-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-11-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-12-en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-12-de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_clean_pipeline[eng-cf105-12-tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104/120",
+      "boundary": "full-pipeline",
+      "assertion": "Each source/language publishes grounded text and matching provenance through the real gate."
+    },
+    "contract/test_pipeline.py::test_workflow_approval_is_bound_to_content[en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104",
+      "boundary": "Workflow HTTP client",
+      "assertion": "Workflow caches one approved publication and invalidates approval after content/source/language edits."
+    },
+    "contract/test_pipeline.py::test_workflow_approval_is_bound_to_content[de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104",
+      "boundary": "Workflow HTTP client",
+      "assertion": "Workflow caches one approved publication and invalidates approval after content/source/language edits."
+    },
+    "contract/test_pipeline.py::test_workflow_approval_is_bound_to_content[tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-104",
+      "boundary": "Workflow HTTP client",
+      "assertion": "Workflow caches one approved publication and invalidates approval after content/source/language edits."
+    },
+    "contract/test_pipeline.py::test_named_consent_publishes[en]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-68/69",
+      "boundary": "consent-positive-publish",
+      "assertion": "Every language publishes the explicitly permitted name, then blocks the same draft after revocation."
+    },
+    "contract/test_pipeline.py::test_named_consent_publishes[de]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-68/69",
+      "boundary": "consent-positive-publish",
+      "assertion": "Every language publishes the explicitly permitted name, then blocks the same draft after revocation."
+    },
+    "contract/test_pipeline.py::test_named_consent_publishes[tr]": {
+      "owner": "Taha / Serhat",
+      "requirement": "CF-68/69",
+      "boundary": "consent-positive-publish",
+      "assertion": "Every language publishes the explicitly permitted name, then blocks the same draft after revocation."
+    },
+    "contract/test_retrieval_analytics.py::test_search_uses_real_nonempty_embeddings[dense]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Librarian->Vault",
+      "assertion": "/search ranks real stored records with finite scores and deterministic repeat results."
+    },
+    "contract/test_retrieval_analytics.py::test_search_uses_real_nonempty_embeddings[hybrid]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Librarian->Vault",
+      "assertion": "/search ranks real stored records with finite scores and deterministic repeat results."
+    },
+    "contract/test_retrieval_analytics.py::test_match_reports_finite_evidence_and_consistent_coverage[dense]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Librarian->Vault",
+      "assertion": "/match evidences each requirement with a real record and a consistent coverage summary."
+    },
+    "contract/test_retrieval_analytics.py::test_match_reports_finite_evidence_and_consistent_coverage[hybrid]": {
+      "owner": "Arda",
+      "requirement": "CF-92",
+      "boundary": "Librarian->Vault",
+      "assertion": "/match evidences each requirement with a real record and a consistent coverage summary."
+    },
+    "contract/test_retrieval_analytics.py::test_analytics_matches_all_twelve_source_facts": {
+      "owner": "Arda",
+      "requirement": "CF-95",
+      "boundary": "Analyst->Vault",
+      "assertion": "/coverage and /gaps equal the counts implied by the twelve fixture sources."
+    },
+    "contract/test_retrieval_analytics.py::test_empty_real_corpus_has_no_fabricated_statistics_or_matches": {
+      "owner": "Arda",
+      "requirement": "CF-95",
+      "boundary": "Analyst/Librarian->Vault",
+      "assertion": "An empty Vault yields no statistics, matches or evidenced requirements."
+    },
+    "contract/test_retrieval_analytics.py::test_gap_counts_come_from_real_domain_region_cross_product": {
+      "owner": "Arda",
+      "requirement": "CF-95",
+      "boundary": "Analyst->Vault",
+      "assertion": "Gaps are exactly the missing domain/region pairs of an isolated corpus."
+    },
+    "contract/test_retrieval_analytics.py::test_all_101_records_cross_both_consumers_pagination_boundaries": {
+      "owner": "Arda",
+      "requirement": "CF-93",
+      "boundary": "Librarian/Analyst->Vault",
+      "assertion": "Analyst (100/page) and Librarian (50/page) read all 101 records across page boundaries."
+    },
+    "contract/test_retrieval_analytics.py::test_analyst_trailing_slash_startup_keeps_vault_request_canonical": {
+      "owner": "Arda",
+      "requirement": "CF-103",
+      "boundary": "Analyst->Vault",
+      "assertion": "A VAULT_URL ending in '/' at Analyst startup still produces canonical Vault paths (F-04)."
+    },
+    "contract/test_retrieval_analytics.py::test_incomplete_vault_page_is_not_accepted_as_complete_corpus[librarian-/search?q=Python]": {
+      "owner": "Arda",
+      "requirement": "CF-93",
+      "boundary": "Librarian/Analyst->Vault",
+      "assertion": "An empty page before the declared corpus end returns 502, never incomplete success."
+    },
+    "contract/test_retrieval_analytics.py::test_incomplete_vault_page_is_not_accepted_as_complete_corpus[analyst-/coverage]": {
+      "owner": "Arda",
+      "requirement": "CF-93",
+      "boundary": "Librarian/Analyst->Vault",
+      "assertion": "An empty page before the declared corpus end returns 502, never incomplete success."
+    }
+  }
+}
