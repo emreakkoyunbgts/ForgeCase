@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { request } from './api';
 import "./Engagements.css";
 
 function Engagements() {
@@ -13,9 +13,7 @@ function Engagements() {
     useEffect(() => {
         const getEngagements = async () => {
             try {
-                const response = await axios.get(
-                    "http://localhost:8000/engagements"
-                );
+                const response = await request('vault', '/engagements');
 
                 setEngagements(response.data.items);
             } catch (error) {
