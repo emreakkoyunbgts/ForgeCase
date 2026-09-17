@@ -55,7 +55,7 @@ class FakeResponse:
 
 
 def fake_vault_get(*args, **kwargs):
-    return FakeResponse(SAMPLE_RECORDS)
+    return FakeResponse({"items": SAMPLE_RECORDS, "total": len(SAMPLE_RECORDS), "limit": None, "offset": 0})
 
 
 def test_health():

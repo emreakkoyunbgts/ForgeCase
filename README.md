@@ -1,76 +1,97 @@
 # CaseForge
 
-An internal tool that turns a completed BGTS engagement into a polished,
-**grounded** case study — one where every claim can be traced back to the
-source document, and nothing is ever invented.
+CaseForge turns a structured engagement closeout PDF into a case study grounded
+in one Vault record. React and Streamlit provide the same English, German and
+Turkish workflow: upload or select, generate, edit, verify, approve, publish,
+and download a DOCX or PDF with provenance.
 
-Built by the 2026 intern cohort. Eight people, eight programs, one pipeline.
+The CF-105 runtime transfers records and drafts over HTTP. Reader stores
+extracted records in Vault; downstream services obtain source facts from Vault's
+API. Local seed and corpus files are not substitutes for unavailable services.
 
----
+## Get started
 
-## The rule
+Use Python 3.11 and Node.js. From the repository root:
 
-> **CaseForge never invents a fact.**
-> If it is not in the source document, it does not go in the output.
-> Where a fact is missing we say so — we never guess.
-
-Everything in this repo follows from that.
-
----
-
-## Get started (10 minutes)
-
-```bash
-# 1. clone, then create a virtual environment
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
-# 2. install
-pip install -r requirements.txt
-
-# 3. unzip the test data into this folder
-#    you should end up with:  caseforge/caseforge-testdata/
-
-# 4. check everything works
-python -m pytest -q
-
-# 5. RUN THE WHOLE PIPELINE (it already works, using stubs)
-bash scripts/run_pipeline.sh
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+npm --prefix front-end ci
 ```
 
-That last command runs all eight programs end to end and produces a PDF.
-It works **today**, before anyone has written any real code, because every
-program starts as a stub that returns seed data.
+Use an existing virtual environment when available. Copy `.env.example` to
+`.env` only if it does not already exist. Set `OPENAI_API_KEY` locally; generation
+and successful verification require the provider. Both model settings default
+to `gpt-5.5`. Never commit secrets or put them in `VITE_*` variables.
 
-**Your job is to replace your stub with a real implementation.**
+Provision the Librarian model cache, then start seven real APIs and both UIs:
 
----
+```powershell
+python scripts/provision_librarian.py
+python scripts/run_mesh.py --isolated --with-ui
+```
 
-## Who owns what
+Provisioning explicitly downloads embedding weights; requests do not.
+`--isolated` uses temporary Vault/artifact stores removed at shutdown. Omit it
+for storage configured by `CASEFORGE_VAULT_DB` and `CASEFORGE_ARTIFACT_DIR`.
+Logs are in `out/logs/`; Ctrl+C stops the launcher's child processes.
 
-| Folder | Prototype | Owner |
+Open **React: http://127.0.0.1:5173** or
+**Streamlit: http://127.0.0.1:8501**. Upload a supported PDF first when using an
+empty isolated Vault.
+
+| Service | Default port | Main API |
 |---|---|---|
-| `reader/` | Document → Engagement Record | Çağrı |
-| `vault/` | Store + REST API | Kaan |
-| `generator/` | Record → grounded case study | Taha |
-| `verifier/` | Catches invented facts — **the gate** | Ömer |
-| `publisher/` | Case study → branded PDF | Ahmet |
-| `librarian/` | RFP → best-matching engagements | Arda |
-| `analyst/` | Coverage & gap analysis | Elif |
-| `console/` | The web app over everything | Serhat |
-| `common/` | Shared code — **everybody** | (change with care) |
+| Vault | 8000 | `/engagements` |
+| Generator | 8001 | `/generate` |
+| Librarian | 8002 | `/search`, `/match` |
+| Reader | 8003 | `/extract` |
+| Verifier | 8004 | `/verify` |
+| Publisher | 8005 | `/publish`, `/artifacts/{id}/download`, `/artifacts/{id}/provenance` |
+| Analyst | 8007 | `/coverage`, `/gaps` |
 
-Find your folder. Open its `README.md`. Start there.
+Addresses come from `.env`; the local launcher requires loopback URLs without
+path prefixes. Every API exposes `/health`, `/docs` and `/openapi.json`.
 
----
+## Publication rules
 
-## Ground rules
+Reader accepts text-layer closeouts with explicit required fields and Challenge
+and Approach sections. Scans, broken PDFs and unsupported structure return
+`422`. It does not infer absent facts through OCR or a model. Naming consent
+starts false, and missing outcomes remain empty.
 
-- Never commit secrets. Copy `.env.example` to `.env` and put your key there.
-  `.env` is gitignored.
-- Never modify `caseforge-testdata/` — it is the fixed thing we all test against.
-- Never change `common/contract.py` alone. It is the shared contract; changing it
-  breaks everyone. Propose it in standup first.
-- One branch per Jira ticket. One pull request. At least one reviewer.
+Every HTTP PASS requires an independent semantic comparison with the original
+Vault record. Editing the source, language or draft invalidates UI verification
+and approval. Publisher verifies final display content again and requires a
+matching PASS with no problems before creating an artifact. Model failures and
+unknown verdicts cannot authorize publication.
 
-See the **Project Specification** for the normative rules.
+See the [CF-105 runbook](docs/CF-105-runbook.md) for supported PDF structure,
+contracts, individual service commands, CLI usage, errors and release gates.
+
+## Verification
+
+```powershell
+python -m pytest -q
+npm --prefix front-end run build
+npm --prefix front-end run lint
+```
+
+The default pytest selection is the isolated cutover suite in `pytest.ini`.
+It uses synthetic records and injected providers. Historical archive-dependent
+or real-model experiments are outside that selection and are not counted as
+passing tests. Mock results do not establish model accuracy or live mesh
+acceptance.
+
+Against a new isolated production mesh with a real provider key, run:
+
+```powershell
+python scripts/live_acceptance.py --output out/acceptance/live.json
+```
+
+It evaluates 12 synthetic sources in three languages and labelled negative
+examples. Missing credentials or failed expectations return exit code `2` with
+recorded evidence. Both UI flows, outage handling and visual document review
+remain separate gates. Create the annotated `cf-105-http-only` tag only when all
+gates pass on the same clean commit.
