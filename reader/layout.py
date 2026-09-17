@@ -366,8 +366,12 @@ def extract_fields(lines, tables, page_number):
 
     def add(label, value, bbox):
         key = _normalise(label)
-        if not key or not value or key in fields:
-            return                      # first occurrence wins
+        if not key or not value:
+            return
+        if key in fields:
+            if fields[key]['value'] != _typed(key, value):
+                fields[key].setdefault('conflicts', []).append(value)
+            return
         fields[key] = {
             "value": _typed(key, value),
             "raw": value,

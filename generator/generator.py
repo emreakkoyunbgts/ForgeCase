@@ -629,15 +629,17 @@ def generate_one_source_single_stream_case_study(record):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Record -> case study")
-    parser.add_argument("record", help="path to an engagement record")
+    from common.services import GENERATOR_URL, call_service, ServiceError
+    parser = argparse.ArgumentParser(description="Generate from a Vault record over HTTP")
+    parser.add_argument("record_id")
+    parser.add_argument("--language", choices=["en", "de", "tr"], default="en")
     args = parser.parse_args()
-
-    record = load_record(args.record)
-    case_study = generate(record)
-
-    json.dump(case_study, sys.stdout, indent=2, ensure_ascii=False)
-    print()
+    try:
+        result = call_service("POST", GENERATOR_URL + "/generate", timeout=80,
+                              json={"record_id": args.record_id, "language": args.language})
+        print(json.dumps(result.json(), ensure_ascii=False, indent=2))
+    except ServiceError as exc:
+        parser.exit(2, str(exc) + "\n")
 
 
 if __name__ == "__main__":

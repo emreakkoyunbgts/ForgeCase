@@ -1,41 +1,37 @@
-# Project Overview
+# CaseForge React interface
 
-This project consists of a modern frontend client communicating via Axios with multiple modular FastAPI microservices.
+The React/Vite interface provides upload/select → EN/DE/TR generation → editing
+→ verification → human approval → publication → document/provenance download.
+Librarian search can choose one Vault source. Changing source, language or draft
+invalidates prior PASS and approval; Publisher independently verifies the final
+content again.
 
----
+From the repository root:
 
-## Services & Ports
-
-| Service           | Technology   | Port   | Description                            |
-| :---------------- | :----------- | :----- | :------------------------------------- |
-| **Frontend**      | Vite / React | `5173` | User interface (configured with Axios) |
-| **Vault API**     | FastAPI      | `8000` | Secure storage & credentials service   |
-| **Generator API** | FastAPI      | `8001` | Content / data generation engine       |
-| **Librarian API** | FastAPI      | `8002` | Indexing & resource management         |
-| **Reader API**    | FastAPI      | `8004` | Document parsing & ingestion service   |
-| **Analyst API**   | FastAPI      | `8006` | Data processing & analytics engine     |
-
----
-
-## Getting Started
-
-### 1. Backend Microservices (FastAPI)
-
-Run each service in its respective directory or virtual environment using `uvicorn`.
-
-```bash
-# Terminal 1 - Vault API
-python -m vault.vault serve
-
-# Terminal 2 - Generator API
-uvicorn generator.GeneratorController:app --host 0.0.0.0 --port 8001 --reload
-
-# Terminal 3 - Librarian API
-uvicorn librarian.service:app --host 0.0.0.0 --port 8002 --reload
-
-# Terminal 4 - Reader API
-python -m reader.api serve
-
-# Terminal 5 - Analyst API
-uvicorn analyst.api:app --host 0.0.0.0 --port 8006 --reload
+```powershell
+npm --prefix front-end ci
+npm --prefix front-end run dev -- --host 127.0.0.1 --port 5173
 ```
+
+Open http://127.0.0.1:5173 with the seven APIs running. Alternatively,
+`python scripts/run_mesh.py --isolated --with-ui` starts all APIs and both UIs.
+
+The browser uses relative `/api/{service}/...` URLs. `vite.config.js` reads base
+URLs and optional `CASEFORGE_TOKEN` from the root environment and adds the token
+on the server side. Never put secrets in `VITE_*` variables. The proxy has an
+explicit service allowlist; API errors preserve correlation IDs for diagnosis.
+A static deployment requires an equivalent server-side proxy: copying `dist/`
+alone does not start the APIs or provide authentication forwarding.
+
+Reader uploads must report confirmed Vault storage before generation becomes
+available. Duplicate in-flight actions are prevented. Downloads fetch actual
+Publisher bytes and provenance over HTTP, not a server filesystem path.
+
+```powershell
+npm --prefix front-end run build
+npm --prefix front-end run lint
+```
+
+These checks validate build/lint behavior, not real model accuracy or completed
+browser acceptance. See the [CF-105 runbook](../docs/CF-105-runbook.md) for API
+ports, credentials, supported document structure and release gates.
