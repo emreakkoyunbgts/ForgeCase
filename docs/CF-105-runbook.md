@@ -41,6 +41,11 @@ The process environment takes precedence over `.env`.
 | `CASEFORGE_ARTIFACT_DIR` | Publisher-owned artifact directory |
 | `LIBRARIAN_MODEL` | Cached embedding model, default `sentence-transformers/all-MiniLM-L6-v2` |
 | `VAULT_URL`, `GENERATOR_URL`, `LIBRARIAN_URL`, `READER_URL`, `VERIFIER_URL`, `PUBLISHER_URL`, `ANALYST_URL` | Service base URLs |
+| `CASEFORGE_HTTP_RETRIES` | Extra attempts for a repeatable read, default `2` |
+| `CASEFORGE_HTTP_BACKOFF` | First retry delay in seconds, default `0.2`, doubling per attempt |
+| `CASEFORGE_HTTP_BACKOFF_MAX` | Ceiling for one retry delay in seconds, default `2` |
+| `CASEFORGE_BREAKER_THRESHOLD` | Consecutive failures that open a dependency circuit, default `5`, `0` disables |
+| `CASEFORGE_BREAKER_RECOVERY` | Seconds an open circuit waits before one probe, default `30` |
 
 Never put secrets in `VITE_*` variables or commit `.env`. Provision Librarian's
 embedding model once, then start the real APIs and both interfaces:
@@ -283,6 +288,26 @@ Errors retain FastAPI's `detail` envelope. Reader's successful extraction with
 unconfirmed storage uses its storage headers as described above. Find related
 log entries by correlation ID. Fix the failing service or input before retrying
 the user action; do not enable a seed/corpus fallback to hide a failure.
+
+Reads absorb a transient dependency failure before surfacing it: `call_service`
+retries a `GET`, `HEAD` or `OPTIONS` up to `CASEFORGE_HTTP_RETRIES` times with
+jittered exponential backoff on a transport error or `429`, `500`, `502`, `503`
+or `504`. A numeric `Retry-After` is honoured up to `CASEFORGE_HTTP_BACKOFF_MAX`.
+
+Stateful requests are never retried automatically. Repeating a `POST` the
+dependency may already have applied is worse than surfacing the error, so a
+write fails on its first attempt and the user decides whether to repeat it.
+Health probes pass `retries=0` for the same reason: a probe reports whether a
+service is up right now.
+
+Each dependency origin carries a circuit breaker. After
+`CASEFORGE_BREAKER_THRESHOLD` consecutive failures it opens and every call to
+that origin returns `503` without a network round trip until
+`CASEFORGE_BREAKER_RECOVERY` seconds have passed, when one probe is allowed
+through. A `4xx` closes the breaker rather than opening it: a rejection is an
+answer, so the dependency is healthy. Breakers are per process, so an open
+circuit in one service says nothing about the same dependency seen from
+another.
 
 ## Acceptance and release
 
