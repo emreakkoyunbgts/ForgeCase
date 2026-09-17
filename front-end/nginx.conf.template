@@ -1,0 +1,44 @@
+# Rendered by the nginx entrypoint: only ${NAME} placeholders whose variable is
+# set in the container environment are substituted, so nginx's own $variables
+# below pass through untouched.
+
+# The browser never holds the service token. When a request arrives without an
+# Authorization header the proxy adds the configured one, mirroring the
+# behaviour of vite.config.js in development. An empty value sends no header.
+map $http_authorization $caseforge_authorization {
+    ""      "${CASEFORGE_AUTHORIZATION}";
+    default $http_authorization;
+}
+
+server {
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header Authorization $caseforge_authorization;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Generation and publishing are slow on purpose; api.js waits up to 100s.
+    proxy_connect_timeout 10s;
+    proxy_send_timeout 110s;
+    proxy_read_timeout 110s;
+
+    # Client-side routing: an unknown path is a React route, not a missing file.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # api.js calls /api/<service><path>; strip the prefix and forward the rest.
+    location ~ ^/api/vault(/.*)$     { proxy_pass ${VAULT_URL}$1; }
+    location ~ ^/api/generator(/.*)$ { proxy_pass ${GENERATOR_URL}$1; }
+    location ~ ^/api/librarian(/.*)$ { proxy_pass ${LIBRARIAN_URL}$1; }
+    location ~ ^/api/reader(/.*)$    { proxy_pass ${READER_URL}$1; }
+    location ~ ^/api/verifier(/.*)$  { proxy_pass ${VERIFIER_URL}$1; }
+    location ~ ^/api/publisher(/.*)$ { proxy_pass ${PUBLISHER_URL}$1; }
+    location ~ ^/api/analyst(/.*)$   { proxy_pass ${ANALYST_URL}$1; }
+}

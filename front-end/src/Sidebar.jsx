@@ -8,6 +8,7 @@ export default function Sidebar() {
       <li><NavLink to="/" end>Workbench</NavLink></li>
       <li><NavLink to="/engagements">Engagements</NavLink></li>
       <li><NavLink to="/query">Find a source</NavLink></li>
+      <li><NavLink to="/analyze">Analyze</NavLink></li>
     </ul>
   </nav>;
 }

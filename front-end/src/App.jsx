@@ -3,6 +3,8 @@ import Sidebar from './Sidebar';
 import Workbench from './Workbench';
 import Engagements from './Engagements';
 import Query from './Query';
+import Analyze from './Analyze';
+import EditEngagement from './EditEngagement';
 import './App.css';
 
 export default function App() {
@@ -11,9 +13,11 @@ export default function App() {
       <Route path="/" element={<Workbench />} />
       <Route path="/upload-record" element={<Workbench />} />
       <Route path="/engagements/:id" element={<Workbench />} />
+      <Route path="/engagements/:id/edit" element={<EditEngagement />} />
       <Route path="/engagements" element={<Engagements />} />
       <Route path="/engagments" element={<Navigate to="/engagements" replace />} />
       <Route path="/query" element={<Query />} />
+      <Route path="/analyze" element={<Analyze />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </div></div>;

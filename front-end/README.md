@@ -4,7 +4,9 @@ The React/Vite interface provides upload/select → EN/DE/TR generation → edit
 → verification → human approval → publication → document/provenance download.
 Librarian search can choose one Vault source. Changing source, language or draft
 invalidates prior PASS and approval; Publisher independently verifies the final
-content again.
+content again. Two supporting screens sit beside that flow: Analyze reports
+Analyst coverage and the domain/region gaps behind it, and Edit updates a Vault
+record under its ETag so a save cannot overwrite someone else's edit.
 
 From the repository root:
 
@@ -21,7 +23,12 @@ URLs and optional `CASEFORGE_TOKEN` from the root environment and adds the token
 on the server side. Never put secrets in `VITE_*` variables. The proxy has an
 explicit service allowlist; API errors preserve correlation IDs for diagnosis.
 A static deployment requires an equivalent server-side proxy: copying `dist/`
-alone does not start the APIs or provide authentication forwarding.
+alone does not start the APIs or provide authentication forwarding. `Dockerfile`
+builds that deployment: it produces `dist/` in a Node stage, serves it from
+unprivileged nginx on port 8080, and ships `nginx.conf.template` as the
+server-side equivalent of the Vite proxy, including token forwarding. Point the
+per-service `*_URL` variables and `CASEFORGE_AUTHORIZATION` at the deployment.
+The image never runs the Vite dev server.
 
 Reader uploads must report confirmed Vault storage before generation becomes
 available. Duplicate in-flight actions are prevented. Downloads fetch actual
