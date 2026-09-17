@@ -14,6 +14,21 @@ from fastapi.testclient import TestClient
 from vault import vault
 from verifier.VerifierController import app
 from verifier.service import get_vault_client
+from verifier.semantic import get_semantic_checker
+from verifier.verifier import verify as legacy_checks
+
+
+@pytest.fixture(autouse=True)
+def offline_semantic_provider():
+    async def checker(draft, record, language, correlation_id):
+        return legacy_checks(draft, record)['problems']
+    previous = app.dependency_overrides.get(get_semantic_checker)
+    app.dependency_overrides[get_semantic_checker] = lambda: checker
+    yield
+    if previous is None:
+        app.dependency_overrides.pop(get_semantic_checker, None)
+    else:
+        app.dependency_overrides[get_semantic_checker] = previous
 
 
 RECORD_ID = "eng-contract-synthetic"

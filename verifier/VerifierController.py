@@ -17,6 +17,8 @@ from verifier.models import (
 )
 from verifier.service import get_record_from_vault, get_vault_client
 from verifier.verifier import verify
+from verifier.semantic import deterministic_problems, get_semantic_checker
+from common.drafts import normalize_draft
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="CaseForge Verifier", version="1.0.0")
@@ -54,14 +56,18 @@ async def correlation_id(request: Request, call_next):
     return response
 
 
-async def _verify_draft(record_id, draft, request, client):
+async def _verify_draft(record_id, draft, request, client, checker, language="en"):
     record = await get_record_from_vault(
         record_id,
         client,
         request.state.correlation_id,
         request.headers.get("Authorization"),
     )
-    report = verify(draft, record)
+    draft = normalize_draft(draft, record_id, language)
+    problems = deterministic_problems(draft, record, language)
+    if not problems:
+        problems.extend(await checker(draft, record, language, request.state.correlation_id))
+    report = {"engagement_id": record_id, "verdict": "BLOCK" if problems else "PASS", "problems": problems}
     logger.info(
         "Verification completed for record ID %s with verdict %s (correlation_id=%s)",
         record["id"], report["verdict"], request.state.correlation_id,
@@ -74,9 +80,10 @@ async def verify_draft(
     payload: VerifyRequest,
     request: Request,
     client: httpx.AsyncClient = Depends(get_vault_client),
+    checker=Depends(get_semantic_checker),
 ):
     """Return PASS/BLOCK and problems using the requested source from Vault."""
-    return await _verify_draft(payload.record_id, payload.draft, request, client)
+    return await _verify_draft(payload.record_id, payload.draft, request, client, checker, payload.language)
 
 
 @app.post("/verify/{record_id}", response_model=VerificationReport, deprecated=True)
@@ -85,6 +92,7 @@ async def verify_record_id(
     payload: LegacyVerifyRequest,
     request: Request,
     client: httpx.AsyncClient = Depends(get_vault_client),
+    checker=Depends(get_semantic_checker),
 ):
     """Compatibility for Console/Publisher; submitted record facts are never trusted."""
     try:
@@ -94,7 +102,12 @@ async def verify_record_id(
         raise HTTPException(status_code=422, detail=str(exc)) from None
     if payload.record.get("id") != record_id:
         raise HTTPException(status_code=422, detail="record.id must match the path record_id")
-    return await _verify_draft(record_id, payload.mcs, request, client)
+    language = payload.mcs.get("language", "en")
+    try:
+        canonical = normalize_draft(payload.mcs, record_id, language)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+    return await _verify_draft(record_id, canonical, request, client, checker, language)
 
 
 @app.get("/health")

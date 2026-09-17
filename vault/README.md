@@ -1,63 +1,44 @@
-# 2 · VAULT — Kaan
+# Vault
 
-**Store the Engagement Records. Serve them over a REST API.**
+Vault owns Engagement Record persistence and exposes it over HTTP. Reader is the
+only writer in the supported document-upload workflow. Downstream services use
+Vault endpoints instead of record or corpus files.
 
-## Run it
-```bash
-python -m vault.vault store records/eng-01.json
+```powershell
+python -m uvicorn vault.vault:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+`CASEFORGE_VAULT_DB` selects the SQLite file. For isolated development and
+acceptance, use `python scripts/run_mesh.py --isolated`; never clear an existing
+Vault as test setup.
+
+| Route | Behavior |
+|---|---|
+| `GET /engagements` | Filter/paginate; response `{items, total, limit, offset}` |
+| `GET /engagements/{id}` | Current record, or `404` |
+| `POST /engagements` | Create; `201`, or `409` when ID exists |
+| `PUT /engagements/{id}` | Replace with `If-Match` ETag |
+| `DELETE /engagements/{id}` | Delete current record with `If-Match` ETag |
+| `GET /engagements/{id}/versions` | Immutable version metadata |
+| `GET /engagements/{id}?as_of=ISO8601` | Historical snapshot at or before timestamp |
+
+Missing `If-Match` returns `428`; stale ETags return `412`. Input validation
+preserves explicit boolean naming consent, valid regions and outcome objects.
+Empty outcomes are valid. Version history remains after deleting a current row.
+
+When `CASEFORGE_TOKEN` is configured, data routes require its Bearer token.
+`/health`, `/docs` and the API schema remain available for local diagnostics.
+`X-Correlation-ID` follows the shared service middleware. The optional credential
+is configured consistently in the APIs and UI servers, never in a browser
+bundle.
+
+```powershell
+python -m vault.vault list
 python -m vault.vault get eng-01
-python -m vault.vault load-all
-python -m vault.vault serve          # API on :8000 — docs at /docs
 ```
 
-## Levels
-- **L1** — E-R model, SQLite schema. Save a record, read it back *identically*.
-- **L2** — FastAPI: `POST`, `GET /{id}`, `GET` list. Happy path + 404 tests.
-- **L4** — Full REST + ETag concurrency:
-  - `POST /engagements` → 201 create, **409** if id exists
-  - `PUT /engagements/{id}` → replace (needs `If-Match` ETag)
-  - `DELETE /engagements/{id}` → 204 (needs `If-Match`)
-  - `GET /engagements?domain=&region=&limit=&offset=` → filter + pagination
-  - Stale ETag → **412**; missing `If-Match` → **428**
-- **L5 (stretch)** — Record versioning (as-of):
-  - Every `store` / create / update appends an immutable snapshot to `engagement_versions`
-  - `GET /engagements/{id}?as_of=ISO8601` → newest snapshot with `recorded_at <= as_of`
-  - `GET /engagements/{id}/versions` → version list (`version`, `recorded_at`, `etag`)
-  - DELETE removes the current row but keeps history (as-of still works)
-- **Validation** — POST/PUT check content against the contract (valid region,
-  non-empty `client_type` / `metric` / `source_ref`, boolean `may_be_named`).
-  Bad data gets a **422** that names the problem, never an opaque 500.
-- **CF-84 (service APIs)** — `GET /health` for the mesh: reports `ok` +
-  record count when the database answers, **503** when it does not.
-- **CF-85 (auth)** — every data endpoint needs
-  `Authorization: Bearer <CASEFORGE_TOKEN>`; missing or wrong → **401** with
-  `WWW-Authenticate: Bearer`. `/health` and `/docs` stay open so the mesh can
-  still poll us. In `/docs`, use the **Authorize** padlock (top right) — paste
-  the token only, Swagger adds `Bearer` itself.
-
-## Calling Vault from another service
-
-```bash
-# leave CASEFORGE_TOKEN unset and Vault serves everyone (it warns at startup)
-$env:CASEFORGE_TOKEN = "dev-token"        # PowerShell
-python -m vault.vault serve
-```
-
-```python
-requests.get(
-    "http://127.0.0.1:8000/engagements/eng-01",
-    headers={"Authorization": f"Bearer {os.environ['CASEFORGE_TOKEN']}"},
-    timeout=5,
-)
-```
-
-The token comes from the environment — never from code, never from git.
-Auth is rolled out in stages on purpose: with `CASEFORGE_TOKEN` unset nothing
-breaks, so no prototype is blocked mid-migration. Set the variable everywhere
-and the door is locked.
-
-## Watch out
-- `eng-12` has an empty `outcomes` list — schema must handle it.
-- `eng-02` is the only record with `may_be_named: true` — do not lose that flag.
-- If you change the schema, delete `vault/engagements.db` and run `load-all` again
-  (old stub DBs cause "no column named client" errors).
+These CLI reads use HTTP. The legacy `load-all` file import is not a supported
+pipeline. Do not delete a persistent database to resolve a schema error: inspect
+and migrate it separately. The [CF-105 runbook](../docs/CF-105-runbook.md) documents
+setup, contracts and isolated acceptance. Historical Vault test modules are not
+part of default cutover selection; inspect them before explicit execution.
