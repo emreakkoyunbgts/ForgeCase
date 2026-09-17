@@ -472,9 +472,11 @@ def create_app():
             "L4: full REST, status codes, pagination, ETag concurrency. "
             "L5 (CF-63): record versioning with as-of reads. "
             "CF-85: service-to-service auth via a bearer token. "
-            "CF-86: optimistic concurrency — If-Match on PUT/DELETE."
+            "CF-86: optimistic concurrency — If-Match on PUT/DELETE. "
+            "CF-114: Vault is the only engagement store; smoke via "
+            "`python -m vault.vault smoke`."
         ),
-        version="0.8.0",
+        version="0.9.0",
     )
     install_http_middleware(app)
 
@@ -717,7 +719,35 @@ def main():
     sub.add_parser("list")
     sub.add_parser("store", help="POST a record JSON object from stdin")
     sub.add_parser("get").add_argument("id")
+    sub.add_parser("load-all", help="seed the store from the corpus fixtures")
+    sub.add_parser(
+        "smoke",
+        help="CF-114: prove the corpus is reachable only via HTTP",
+    )
+
     args = parser.parse_args()
+
+    if args.command == "load-all":
+        for record in load_corpus():
+            store(record)
+        return
+    if args.command == "smoke":
+        from fastapi.testclient import TestClient
+
+        from vault.smoke import SmokeFailed, run_smoke
+
+        try:
+            result = run_smoke(TestClient(create_app()))
+        except SmokeFailed as exc:
+            print(f"[vault] smoke FAILED: {exc}", file=sys.stderr)
+            sys.exit(1)
+        print(
+            f"[vault] smoke OK — {result['records']} records over HTTP "
+            f"({result['created']} created, "
+            f"{result['already_stored']} already stored)",
+            file=sys.stderr,
+        )
+        return
     if args.command == "serve":
         serve()
         return
