@@ -128,11 +128,21 @@ if workflow.artifact and st.session_state.get("document_bytes") is not None:
                            "provenance.json", "application/json", on_click="ignore")
 
 st.caption(f"Correlation ID: {workflow.trace}")
+st.session_state.setdefault("last_errors", {})
+st.session_state.setdefault("service_health", {})
 with st.expander("Service availability"):
     if st.button("Check services"):
         for name, base_url in ALL_SERVICES.items():
             try:
-                call_service("GET", base_url + "/health", timeout=3, headers=workflow.headers())
-                st.write(f"{name}: available")
-            except Exception:
-                st.write(f"{name}: unavailable")
+                response = call_service("GET", base_url + "/health", timeout=3, headers=workflow.headers())
+                elapsed = response.elapsed.total_seconds()
+                st.session_state.service_health[name] = ("slow" if elapsed >= 2 else "healthy", elapsed * 1000)
+            except Exception as exc:
+                st.session_state.last_errors[name] = str(exc)
+                st.session_state.service_health[name] = ("unavailable", None)
+    for name, (status, latency) in st.session_state.service_health.items():
+        st.write(f"{name}: {status}")
+        if latency is not None:
+            st.caption(f"latency: {latency:.0f} ms")
+        if name in st.session_state.last_errors:
+            st.caption(f"Last error: {st.session_state.last_errors[name][:200]}")
