@@ -23,29 +23,27 @@ from kmodes.kmodes import KModes
 st.set_page_config(page_title="Engagement Analytics", layout="wide")
 st.title("Engagement Analytics Dashboard")
 
-DEFAULT_PATH = "caseforge-testdata/records/corpus.json"
+from common.services import VAULT_URL, call_service, response_json
 
 st.sidebar.header("Data Source")
-uploaded_file = st.sidebar.file_uploader("Upload JSON file (optional)", type=["json"])
-json_path = st.sidebar.text_input("or enter file path", value=DEFAULT_PATH)
+st.sidebar.caption("Authoritative records from Vault")
+if st.sidebar.button("Refresh records"):
+    st.cache_data.clear()
 
-@st.cache_data
-def load_data(path: str, file_bytes: bytes | None):
-    if file_bytes is not None:
-        data = json.loads(file_bytes.decode("utf-8"))
-    else:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    return pd.json_normalize(data)
+@st.cache_data(ttl=30)
+def load_data():
+    data = response_json(call_service("GET", VAULT_URL + "/engagements"))
+    if not isinstance(data, dict) or not isinstance(data.get("items"), list):
+        raise ValueError("Vault returned an invalid record list")
+    return pd.json_normalize(data["items"])
 
 try:
-    file_bytes = uploaded_file.read() if uploaded_file is not None else None
-    df = load_data(json_path, file_bytes)
-except FileNotFoundError:
-    st.error(f"'{json_path}' not found. Upload a file from the left sidebar or enter a valid path.")
+    df = load_data()
+except Exception as exc:
+    st.error(f"Vault records are unavailable: {exc}")
     st.stop()
-except Exception as e:
-    st.error(f"Error occurred while reading data: {e}")
+if df.empty:
+    st.info("No engagements in Vault. Upload a closeout PDF in CaseForge.")
     st.stop()
 
 st.sidebar.success(f"{len(df)} records loaded")

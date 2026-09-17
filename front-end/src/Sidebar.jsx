@@ -1,21 +1,13 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
-function Sidebar() {
-  return (
-    <div className="sidebar">
-      <h2>Menu</h2> {/* Changed 'Navigation' to 'Menu' */}
-        <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/add-record">Add Record</Link></li>
-            <li><Link to="/upload-record">Upload Record</Link></li>
-            <li><Link to={"/engagments"}>Engagments</Link></li>
-            <li><Link to="/query">Query</Link></li>
-            <li><Link to="/blank">Blank Page</Link></li>
-        </ul>
-    </div>
-  );
+export default function Sidebar() {
+  return <nav className="sidebar" aria-label="Main navigation">
+    <h2>CaseForge</h2>
+    <ul>
+      <li><NavLink to="/" end>Workbench</NavLink></li>
+      <li><NavLink to="/engagements">Engagements</NavLink></li>
+      <li><NavLink to="/query">Find a source</NavLink></li>
+    </ul>
+  </nav>;
 }
-
-export default Sidebar;

@@ -10,6 +10,8 @@ import json
 import math
 import re
 import sys
+import os
+from functools import lru_cache
 from collections import Counter
 
 from common.contract import load_corpus
@@ -33,11 +35,16 @@ TOKEN_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+@lru_cache(maxsize=1)
 def load_embedding_model():
     """
     Load the sentence embedding model.
     """
-    return SentenceTransformer(MODEL_NAME)
+    from common.services import ServiceError
+    try:
+        return SentenceTransformer(os.environ.get('LIBRARIAN_MODEL', MODEL_NAME), local_files_only=True)
+    except (OSError, ValueError, RuntimeError):
+        raise ServiceError('Librarian embedding model is unavailable; provision the model cache before searching', 503) from None
 
 def embed_texts(model, texts):
     """
@@ -657,42 +664,17 @@ def search(
     return matches
 
 def main():
-    parser = argparse.ArgumentParser(description="RFP -> matching engagements")
-    parser.add_argument("rfp", help="path to an RFP text file")
+    from common.services import LIBRARIAN_URL, call_service, ServiceError
+    parser = argparse.ArgumentParser(description="Search Vault engagements through Librarian HTTP")
+    parser.add_argument("query", help="RFP or requirement text")
     parser.add_argument("--top", type=int, default=3)
-    parser.add_argument("--strategy", choices=["dense", "hybrid"], default="hybrid",help=(
-        "retrieval strategy: dense baseline "
-        "or dense + BM25 hybrid"
-        ),
-    )
     args = parser.parse_args()
-
-    if args.top <= 0:
-        die("--top must be greater than 0")
     try:
-        query = open(args.rfp, encoding="utf-8").read()
-    except FileNotFoundError:
-        die(f"no such file: {args.rfp}")
-    if not query.strip():
-        die(f"empty RFP file: {args.rfp}")
-
-    corpus = load_corpus()
-
-    matches = search(query, corpus, top_k=args.top, strategy=args.strategy)
-    capability_statement = build_capability_statement(matches, corpus)
-
-    output = {
-        "matches": matches,
-        "capability_statement": capability_statement,
-    }
-
-    json.dump(
-        output,
-        sys.stdout,
-        indent=2,
-        ensure_ascii=False,
-    )
-    print()
+        result = call_service("POST", LIBRARIAN_URL + "/match", timeout=30,
+                              json={"rfp_text": args.query, "top_k": args.top})
+        print(json.dumps(result.json(), ensure_ascii=False, indent=2))
+    except ServiceError as exc:
+        parser.exit(2, str(exc) + "\n")
 
 
 if __name__ == "__main__":
