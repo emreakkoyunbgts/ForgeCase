@@ -1,257 +1,33 @@
-import { useState } from "react";
-import axios from "axios";
-import "./Query.css";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { newTrace, request } from './api';
+import './Workbench.css';
 
-function Query() {
-  const [query, setQuery] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleGenerate = async () => {
-    if (!query.trim()) {
-      setError("Please enter a query.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    setResult(null);
-
+export default function Query() {
+  const [query, setQuery] = useState('');
+  const [matches, setMatches] = useState(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function search(event) {
+    event.preventDefault(); if (!query.trim() || busy) return;
+    setBusy(true); setError(''); setMatches(null);
     try {
-      const response = await axios.post(
-        "http://localhost:8001/generator/mcs/query",
-        null,
-        {
-          params: {
-            query: query.trim(),
-          },
-        }
-      );
-
-      setResult(response.data);
-    } catch (err) {
-      console.error(err);
-
-      if (err.response) {
-        setError(
-          `Backend error: ${err.response.status} - ${
-            err.response.data?.detail || "Unknown error"
-          }`
-        );
-      } else {
-        setError("Could not connect to the backend.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="query-page">
-      <div className="query-container">
-
-        {/* Header */}
-        <div className="page-header">
-          <h1>Multi-Source Content Generator</h1>
-          <p>
-            Enter a query to find the most relevant engagement and generate
-            multi-source content.
-          </p>
-        </div>
-
-        {/* Query Input */}
-        <div className="query-box">
-          <input
-            type="text"
-            placeholder="Enter your query..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleGenerate();
-              }
-            }}
-          />
-
-          <button
-            onClick={handleGenerate}
-            disabled={loading}
-          >
-            {loading ? "Generating..." : "Generate MCS"}
-          </button>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="error-box">
-            {error}
-          </div>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <div className="loading-box">
-            <div className="spinner"></div>
-            <p>Generating multi-source content...</p>
-          </div>
-        )}
-
-        {/* Result */}
-        {result && !loading && (
-          <div className="mcs-result">
-
-            {/* Engagement Header */}
-            <div className="result-header">
-              <div>
-                <span className="result-label">ENGAGEMENT</span>
-
-                <h2>
-                  {result.titles?.[0]?.title || "Generated Engagement"}
-                </h2>
-              </div>
-
-              <div className="engagement-id">
-                {result.engagement_ids?.join(", ")}
-              </div>
-            </div>
-
-            {/* Sections */}
-            <div className="sections-grid">
-
-              {/* Context */}
-              <Section
-                title="Context"
-                items={result.sections?.context}
-                field="region"
-              />
-
-              {/* Challenge */}
-              <Section
-                title="Challenge"
-                items={result.sections?.challenge}
-                field="challenge"
-              />
-
-              {/* Approach */}
-              <Section
-                title="Approach"
-                items={result.sections?.approach}
-                field="approach"
-              />
-
-              {/* Technology */}
-              <Section
-                title="Technology"
-                items={result.sections?.technology}
-                field="technologies"
-              />
-
-              {/* Outcomes */}
-              <Section
-                title="Outcomes"
-                items={result.sections?.outcomes}
-                field="outcomes"
-              />
-
-            </div>
-
-            {/* Citations */}
-            {result.citations?.length > 0 && (
-              <div className="citations-card">
-                <h3>Citations</h3>
-
-                <div className="citations-list">
-                  {result.citations.map((citation, index) => (
-                    <div
-                      className="citation-item"
-                      key={index}
-                    >
-                      <div className="citation-claim">
-                        {citation.claim}
-                      </div>
-
-                      <div className="citation-source">
-                        <span>
-                          Source: {citation.source_ref}
-                        </span>
-
-                        <span>
-                          Page: {citation.page_ref}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Metadata */}
-            <div className="metadata-card">
-              <div className="metadata-item">
-                <span>Client Named</span>
-                <strong>
-                  {result.client_named ? "Yes" : "No"}
-                </strong>
-              </div>
-
-              <div className="metadata-item">
-                <span>Engagement ID</span>
-                <strong>
-                  {result.engagement_ids?.join(", ") || "-"}
-                </strong>
-              </div>
-
-              <div className="metadata-item">
-                <span>Sources</span>
-                <strong>
-                  {result.citations?.length || 0}
-                </strong>
-              </div>
-            </div>
-
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-
-/*
- * Reusable section component
- */
-function Section({ title, items, field }) {
-  if (!items || items.length === 0) {
-    return null;
+      const { data } = await request('librarian', '/match', {
+        method: 'POST', body: { rfp_text: query, top_k: 3 }, trace: newTrace(), timeout: 30000,
+      });
+      const selected = data.requirements.map(item => item.best_match).filter(Boolean);
+      setMatches([...new Map(selected.map(item => [item.engagement_id, item])).values()]);
+    } catch (err) { setError(err.message); } finally { setBusy(false); }
   }
-
-  return (
-    <div className="section-card">
-
-      <div className="section-title">
-        <h3>{title}</h3>
-      </div>
-
-      <div className="section-content">
-        {items.map((item, index) => (
-          <div
-            className="section-item"
-            key={index}
-          >
-            <p>{item[field]}</p>
-
-            {item.page && (
-              <span className="page-reference">
-                {item.page}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-
-    </div>
-  );
+  return <main className="workbench"><h1>Find a source</h1>
+    <p>Search the Vault through Librarian, then choose one engagement for your case study.</p>
+    <form className="work-panel" onSubmit={search}><label htmlFor="rfp">Requirements</label>
+      <textarea id="rfp" rows={5} value={query} onChange={e => setQuery(e.target.value)} disabled={busy} />
+      <button disabled={busy || !query.trim()}>{busy ? 'Searching…' : 'Find engagements'}</button></form>
+    {error && <div className="message error" role="alert">{error}</div>}
+    {matches?.length === 0 && <p role="status">No matching engagement found. You can still select a known record from the Workbench.</p>}
+    {matches?.map(item => <section className="work-panel" key={item.engagement_id}>
+      <h2>{item.engagement_id}</h2><Link to={'/engagements/' + encodeURIComponent(item.engagement_id)}>Use this source</Link>
+    </section>)}
+  </main>;
 }
-
-export default Query;

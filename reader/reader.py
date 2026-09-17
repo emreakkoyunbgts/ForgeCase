@@ -15,9 +15,7 @@ import shutil
 import sys
 import time
 
-from common.contract import load_seed
 from common.errors import die, BAD_INPUT
-from common.llm import ask_for_json, GROUNDING_RULES
 
 # Below this many characters of extractable text we treat a PDF as a scan and
 # fall back to OCR. The text-layer closeouts yield 500+ characters; the two
@@ -152,25 +150,10 @@ def extract_text(pdf_path):
         f"unreadable scan")
 
 
-def extract_record(text, source_name):
-    """
-    STEP 2 — turn the text into a structured Engagement Record.
-
-    TODO(Çağrı) L2:
-      - prompt the LLM for strict JSON matching the contract
-      - EVERY outcome must carry a source_ref (which page it came from)
-      - if the document states no measurable outcome, set:
-            "outcomes": [], "outcome_missing": True
-        ...and do NOT invent one. This is the core rule of the project.
-
-    Useful:
-        record = ask_for_json(system=GROUNDING_RULES + "...", user=text)
-    """
-    # --- STUB: replace me (L2, next sprint) -------------------------------
-    print("[reader] STUB: returning seed record instead of extracting",
-          file=sys.stderr)
-    return load_seed("eng-01")
-    # ----------------------------------------------------------------------
+def extract_record(analysis, source_name):
+    """Build a record from page evidence, without fixture or model fallback."""
+    from reader.extraction import build_record
+    return build_record(analysis, source_name)
 
 
 def main():
@@ -200,19 +183,22 @@ def main():
         print()
         return
 
-    try:
-        text = extract_text(args.document)
-    except ExtractionError as e:
-        # Bad input, reported clearly. Not a crash — the program working.
-        die(str(e), BAD_INPUT)
-
     if args.text_only:
+        try:
+            text = extract_text(args.document)
+        except ExtractionError as e:
+            die(str(e), BAD_INPUT)
         sys.stdout.write(text)
         if not text.endswith("\n"):
             print()
         return
 
-    record = extract_record(text, args.document)
+    from common.services import READER_URL, call_service
+    with open(args.document, "rb") as document:
+        result = call_service("POST", f"{READER_URL}/extract", timeout=35, files={
+            "document": (os.path.basename(args.document), document, "application/pdf")
+        })
+    record = result.json()
 
     if record is None:
         die(f"could not extract a record from {args.document}", BAD_INPUT)

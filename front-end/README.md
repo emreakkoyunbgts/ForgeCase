@@ -1,16 +1,37 @@
-# React + Vite
+# CaseForge React interface
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The React/Vite interface provides upload/select → EN/DE/TR generation → editing
+→ verification → human approval → publication → document/provenance download.
+Librarian search can choose one Vault source. Changing source, language or draft
+invalidates prior PASS and approval; Publisher independently verifies the final
+content again.
 
-Currently, two official plugins are available:
+From the repository root:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```powershell
+npm --prefix front-end ci
+npm --prefix front-end run dev -- --host 127.0.0.1 --port 5173
+```
 
-## React Compiler
+Open http://127.0.0.1:5173 with the seven APIs running. Alternatively,
+`python scripts/run_mesh.py --isolated --with-ui` starts all APIs and both UIs.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The browser uses relative `/api/{service}/...` URLs. `vite.config.js` reads base
+URLs and optional `CASEFORGE_TOKEN` from the root environment and adds the token
+on the server side. Never put secrets in `VITE_*` variables. The proxy has an
+explicit service allowlist; API errors preserve correlation IDs for diagnosis.
+A static deployment requires an equivalent server-side proxy: copying `dist/`
+alone does not start the APIs or provide authentication forwarding.
 
-## Expanding the Oxlint configuration
+Reader uploads must report confirmed Vault storage before generation becomes
+available. Duplicate in-flight actions are prevented. Downloads fetch actual
+Publisher bytes and provenance over HTTP, not a server filesystem path.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```powershell
+npm --prefix front-end run build
+npm --prefix front-end run lint
+```
+
+These checks validate build/lint behavior, not real model accuracy or completed
+browser acceptance. See the [CF-105 runbook](../docs/CF-105-runbook.md) for API
+ports, credentials, supported document structure and release gates.

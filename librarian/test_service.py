@@ -193,6 +193,7 @@ def test_fetches_all_vault_pages(monkeypatch):
         params,
         headers,
         timeout,
+        allow_redirects=False,
     ):
         offset = params["offset"]
         calls.append(offset)
@@ -250,6 +251,7 @@ def test_failed_page_is_retried_not_skipped(
         params,
         headers,
         timeout,
+        allow_redirects=False,
     ):
         nonlocal page_2_attempts
 
@@ -347,6 +349,7 @@ def test_permanent_page_failure_returns_503(
         params,
         headers,
         timeout,
+        allow_redirects=False,
     ):
         offset = params["offset"]
         calls.append(offset)
@@ -418,6 +421,7 @@ def test_caseforge_token_is_sent(
         params,
         headers,
         timeout,
+        allow_redirects=False,
     ):
         captured_headers.update(headers)
 
@@ -438,9 +442,8 @@ def test_caseforge_token_is_sent(
 
     service.fetch_all_records_from_vault()
 
-    assert captured_headers == {
-        "Authorization": "Bearer test-token",
-    }
+    assert captured_headers['Authorization'] == 'Bearer test-token'
+    assert captured_headers['X-Correlation-ID']
 
 
 def test_match_uses_vault_records(
