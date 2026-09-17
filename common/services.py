@@ -62,9 +62,9 @@ def request_headers(headers=None, correlation_id=None, idempotency_key=None):
     return dict(result)
 
 
-def call_service(method, url, timeout=10, **kwargs):
+def call_service(method, url, timeout=10, correlation_id=None, **kwargs):
     """One bounded attempt. Stateful requests are never automatically retried."""
-    headers = request_headers(kwargs.pop("headers", None))
+    headers = request_headers(kwargs.pop("headers", None), correlation_id=correlation_id)
     if method.upper() in {"POST", "PUT", "PATCH", "DELETE"}:
         if "Idempotency-Key" not in CaseInsensitiveDict(headers):
             headers["Idempotency-Key"] = str(uuid.uuid4())
