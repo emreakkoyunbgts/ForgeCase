@@ -1,0 +1,290 @@
+/* =========================================
+   EDIT ENGAGEMENT PAGE
+========================================= */
+
+.edit-engagement-container {
+  width: 100%;
+  max-width: 900px;
+
+  margin: 0 auto;
+
+  padding: 10px 0 40px;
+
+  color: var(--text);
+}
+
+.edit-engagement-header h1 {
+  margin: 0 0 6px;
+
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.edit-engagement-header p {
+  margin: 0 0 24px;
+
+  color: var(--text-muted);
+}
+
+
+/* =========================================
+   FORM GRID
+========================================= */
+
+.edit-engagement-form {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+
+  padding: 24px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: var(--surface);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.edit-engagement-form .full-width {
+  grid-column: 1 / -1;
+}
+
+.edit-engagement-form label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.edit-engagement-form label span {
+  color: var(--text-light);
+
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.edit-engagement-form input,
+.edit-engagement-form select,
+.edit-engagement-form textarea {
+  padding: 10px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  background: var(--surface);
+  color: var(--text);
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.edit-engagement-form input:focus,
+.edit-engagement-form select:focus,
+.edit-engagement-form textarea:focus {
+  outline: none;
+
+  border-color: var(--accent);
+
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.edit-engagement-form input:disabled {
+  background: var(--surface-soft);
+  color: var(--text-muted);
+}
+
+.edit-engagement-form textarea {
+  resize: vertical;
+}
+
+.edit-engagement-form .checkbox-label {
+  flex-direction: row;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.edit-engagement-form .checkbox-label input {
+  width: auto;
+
+  accent-color: var(--accent);
+}
+
+
+/* =========================================
+   ERRORS
+========================================= */
+
+.edit-error {
+  grid-column: 1 / -1;
+
+  padding: 12px 16px;
+
+  border: 1px solid var(--danger-border);
+  border-radius: 8px;
+
+  background: var(--danger-bg);
+  color: var(--danger-text);
+
+  font-size: 14px;
+}
+
+
+/* =========================================
+   OUTCOMES EDITOR
+========================================= */
+
+.outcomes-editor {
+  padding-top: 8px;
+
+  border-top: 1px solid var(--border);
+}
+
+.outcomes-editor-header {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 16px;
+
+  margin-bottom: 14px;
+}
+
+.outcomes-editor-header h2 {
+  margin: 0;
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.outcome-editor {
+  display: grid;
+
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+
+  align-items: end;
+
+  gap: 12px;
+
+  margin-bottom: 12px;
+
+  padding: 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: var(--surface-soft);
+}
+
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+.edit-engagement-form button {
+  padding: 10px 16px;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.edit-engagement-form button:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+.edit-engagement-form .secondary-button {
+  background: transparent;
+  color: var(--accent);
+
+  border-color: var(--accent-border);
+}
+
+.edit-engagement-form .secondary-button:hover:not(:disabled) {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.edit-engagement-form .remove-outcome-button {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+
+  border-color: var(--danger-border);
+}
+
+.edit-engagement-form .save-button {
+  background: var(--accent);
+  color: var(--surface);
+
+  border-color: var(--accent);
+}
+
+.edit-engagement-form .save-button:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.edit-engagement-form .cancel-button {
+  background: transparent;
+  color: var(--text-muted);
+
+  border-color: var(--border);
+}
+
+.edit-engagement-form .cancel-button:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+.edit-actions {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 12px;
+
+  padding-top: 8px;
+
+  border-top: 1px solid var(--border);
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+  .edit-engagement-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .outcome-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .edit-actions {
+    flex-direction: column-reverse;
+  }
+}

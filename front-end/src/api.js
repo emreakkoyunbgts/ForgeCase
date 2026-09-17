@@ -11,13 +11,20 @@ export function describeError(detail) {
   return typeof message === 'string' ? message : JSON.stringify(message || 'Request failed');
 }
 
-export async function request(service, path, { method = 'GET', body, trace, key, timeout, binary = false } = {}) {
+// The dev/preview proxy owns the service token, so the browser never sets it.
+const PROXY_OWNED = new Set(['authorization']);
+
+export async function request(service, path, { method = 'GET', body, trace, key, timeout, binary = false, headers: conditional } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout || TIMEOUTS[service] || 15000);
   const headers = { 'X-Correlation-ID': trace || newTrace() };
   if (method !== 'GET') headers['Idempotency-Key'] = key || newTrace();
   const multipart = body instanceof FormData;
   if (body && !multipart) headers['Content-Type'] = 'application/json';
+  // Conditional headers (If-Match) ride along; tracing and auth stay ours.
+  for (const [name, value] of Object.entries(conditional || {})) {
+    if (value !== undefined && value !== null && !PROXY_OWNED.has(name.toLowerCase())) headers[name] = value;
+  }
   try {
     const response = await fetch(`/api/${service}${path}`, {
       method, headers, body: body ? (multipart ? body : JSON.stringify(body)) : undefined,
@@ -30,6 +37,10 @@ export async function request(service, path, { method = 'GET', body, trace, key,
       error.detail = payload.detail;
       error.correlationId = response.headers.get('X-Correlation-ID') || headers['X-Correlation-ID'];
       throw error;
+    }
+    // 204 is the vault's success for a delete: no body to parse.
+    if (response.status === 204 || response.headers.get('Content-Length') === '0') {
+      return { data: null, headers: response.headers };
     }
     let data;
     try { data = binary ? await response.blob() : await response.json(); }

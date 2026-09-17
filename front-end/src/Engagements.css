@@ -162,3 +162,33 @@
     padding: 18px;
   }
 }
+
+/* =========================================
+   EDIT SHORTCUT
+========================================= */
+
+.edit-engagement-link {
+  margin-top: 12px;
+
+  padding: 7px 14px;
+
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--accent);
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.edit-engagement-link:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}

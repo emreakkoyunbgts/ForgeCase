@@ -59,6 +59,17 @@ function Engagements() {
                         <strong>Challenge:</strong>{" "}
                         {engagement.challenge}
                     </p>
+
+                    <button
+                        type="button"
+                        className="edit-engagement-link"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            navigate(`/engagements/${encodeURIComponent(engagement.id)}/edit`);
+                        }}
+                    >
+                        Edit
+                    </button>
                 </div>
             ))}
         </div>

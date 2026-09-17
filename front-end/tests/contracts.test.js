@@ -96,3 +96,39 @@ test('artifact links, id, type and filename must agree before display or downloa
     { filename: 'other.docx' }, { media_type: 'text/html' },
   ]) assert.throws(() => validateArtifact({ ...artifact, ...patch }, 'pdf'), /invalid artifact/);
 });
+
+test('analyst coverage and gap payloads are validated before reaching React state', async () => {
+  const { validateCoverage, validateGaps } = await import('../src/contracts.js');
+  const coverage = {
+    total_engagements: 3, by_domain: { 'core banking': 2, cloud: 1 },
+    by_region: { GCC: 2, DE: 1 }, by_client_type: { 'GCC bank': 2, 'German bank': 1 },
+    no_outcome: ['eng-03'],
+  };
+  assert.equal(validateCoverage(coverage), coverage);
+  assert.throws(() => validateCoverage({ ...coverage, total_engagements: -1 }), /invalid coverage/);
+  assert.throws(() => validateCoverage({ ...coverage, by_domain: { cloud: 'many' } }), /invalid coverage/);
+  assert.throws(() => validateCoverage({ ...coverage, no_outcome: ['../escape'] }), /invalid coverage/);
+
+  const gaps = { total_gaps: 1, gaps: [{ domain: 'cloud', region: 'DE' }] };
+  assert.equal(validateGaps(gaps), gaps);
+  assert.throws(() => validateGaps({ total_gaps: 2, gaps: gaps.gaps }), /invalid gap analysis/);
+  assert.throws(() => validateGaps({ total_gaps: 1, gaps: [['cloud', 'DE']] }), /invalid gap analysis/);
+});
+
+test('an editable record is rejected unless every contract field has the right shape', async () => {
+  const { readETag, validateRecord } = await import('../src/contracts.js');
+  const record = {
+    id: 'eng-01', client: 'A bank', client_type: 'GCC bank', domain: 'core banking',
+    region: 'GCC', challenge: 'Slow settlement', solution: 'Event streaming',
+    may_be_named: false, technologies: ['Kafka'],
+    outcomes: [{ metric: 'latency reduced', source_ref: 'closeout.pdf#page=1' }],
+  };
+  assert.equal(validateRecord(record), record);
+  assert.throws(() => validateRecord({ ...record, may_be_named: 'false' }), /invalid engagement record/);
+  assert.throws(() => validateRecord({ ...record, technologies: 'Kafka' }), /invalid engagement record/);
+  assert.throws(() => validateRecord({ ...record, outcomes: [{ metric: 'only' }] }), /invalid engagement record/);
+
+  assert.equal(readETag(new Headers({ ETag: '"abc123"' })), '"abc123"');
+  assert.equal(readETag(new Headers()), null);
+  assert.equal(readETag(undefined), null);
+});

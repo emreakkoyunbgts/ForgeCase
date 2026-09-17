@@ -70,6 +70,47 @@ export function validateArtifact(data, format) {
   return data;
 }
 
+// Mirrors VALID_REGIONS in common/contract.py; the vault rejects anything else.
+export const REGIONS = ['UK', 'DE', 'NL', 'TR', 'GCC'];
+
+export function readETag(headers) {
+  const value = headers?.get?.('ETag');
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+export function validateRecord(data) {
+  if (!object(data) || !validRecordId(data.id) ||
+    !['client', 'client_type', 'domain', 'region', 'challenge', 'solution'].every(key => typeof data[key] === 'string') ||
+    typeof data.may_be_named !== 'boolean' ||
+    !Array.isArray(data.technologies) || !data.technologies.every(item => typeof item === 'string') ||
+    !Array.isArray(data.outcomes) || !data.outcomes.every(item => object(item) &&
+      typeof item.metric === 'string' && typeof item.source_ref === 'string')) {
+    throw new Error('Vault returned an invalid engagement record');
+  }
+  return data;
+}
+
+export function validateCoverage(data) {
+  const counts = value => object(value) &&
+    Object.values(value).every(count => Number.isInteger(count) && count >= 0);
+  if (!object(data) || !Number.isInteger(data.total_engagements) || data.total_engagements < 0 ||
+    !['by_domain', 'by_region', 'by_client_type'].every(key => counts(data[key])) ||
+    !Array.isArray(data.no_outcome) || !data.no_outcome.every(validRecordId)) {
+    throw new Error('Analyst returned an invalid coverage profile');
+  }
+  return data;
+}
+
+export function validateGaps(data) {
+  if (!object(data) || !Number.isInteger(data.total_gaps) || data.total_gaps < 0 ||
+    !Array.isArray(data.gaps) || data.gaps.length !== data.total_gaps ||
+    !data.gaps.every(item => object(item) && onlyKeys(item, ['domain', 'region']) &&
+      typeof item.domain === 'string' && typeof item.region === 'string')) {
+    throw new Error('Analyst returned an invalid gap analysis');
+  }
+  return data;
+}
+
 export function workflowSignature(recordId, language, draft) {
   return JSON.stringify({ recordId, language, draft });
 }

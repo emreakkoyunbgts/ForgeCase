@@ -85,3 +85,25 @@ test('nested service errors always become renderable text', () => {
   assert.equal(describeError([{ why: { metric: 'unsupported' } }, null]), '{"metric":"unsupported"}; "Request failed"');
   assert.equal(describeError({ why: { message: 'nested value' } }), '{"message":"nested value"}');
 });
+
+test('conditional headers reach the vault while the proxy keeps sole ownership of auth', async t => {
+  const calls = [];
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    calls.push({ url, ...options }); return Response.json({ id: 'eng-01' });
+  });
+  await request('vault', '/engagements/eng-01', {
+    method: 'PUT', body: { id: 'eng-01' }, trace: 'edit-01',
+    headers: { 'If-Match': '"abc123"', Authorization: 'Bearer stolen' },
+  });
+  assert.equal(calls[0].headers['If-Match'], '"abc123"');
+  assert.equal(calls[0].headers.Authorization, undefined);
+  assert.equal(calls[0].headers['X-Correlation-ID'], 'edit-01');
+});
+
+test('a 204 delete succeeds without a body instead of failing to parse one', async t => {
+  t.mock.method(globalThis, 'fetch', async () => new Response(null, { status: 204 }));
+  const result = await request('vault', '/engagements/eng-01', {
+    method: 'DELETE', headers: { 'If-Match': '"abc123"' },
+  });
+  assert.equal(result.data, null);
+});

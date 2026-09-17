@@ -1,0 +1,269 @@
+/* =========================================
+   ANALYZE PAGE
+========================================= */
+
+.analyze-page {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto;
+
+  padding: 10px 0 40px;
+
+  color: var(--text);
+}
+
+.analyze-header h1 {
+  margin: 0 0 6px;
+
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.analyze-header p {
+  margin: 0 0 24px;
+
+  color: var(--text-muted);
+}
+
+
+/* =========================================
+   ACTIONS
+========================================= */
+
+.analyze-actions {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+
+  margin-bottom: 24px;
+}
+
+.analyze-actions button {
+  padding: 11px 18px;
+
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+
+  background: var(--accent);
+  color: var(--surface);
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.analyze-actions button:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.analyze-actions .secondary-button {
+  background: transparent;
+
+  color: var(--accent);
+
+  border-color: var(--accent-border);
+}
+
+.analyze-actions .secondary-button:hover:not(:disabled) {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.analyze-actions button:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   RESULTS
+========================================= */
+
+.analysis-error {
+  margin-bottom: 20px;
+
+  padding: 12px 16px;
+
+  border: 1px solid var(--danger-border);
+  border-radius: 8px;
+
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.analysis-result {
+  margin-bottom: 28px;
+
+  padding: 24px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: var(--surface);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.analysis-result h2 {
+  margin: 0 0 20px;
+
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.analysis-result h3 {
+  margin: 0 0 10px;
+
+  color: var(--text-muted);
+
+  font-size: 13px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+
+/* =========================================
+   METRICS
+========================================= */
+
+.metrics-grid {
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+
+  gap: 14px;
+
+  margin-bottom: 24px;
+}
+
+.metrics-grid.one-column {
+  grid-template-columns: minmax(170px, 260px);
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  padding: 16px;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: var(--surface-soft);
+}
+
+.metric-card span {
+  color: var(--text-muted);
+
+  font-size: 13px;
+}
+
+.metric-card strong {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+
+/* =========================================
+   COUNT LISTS AND TAGS
+========================================= */
+
+.analysis-details {
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+
+  gap: 22px;
+
+  margin-bottom: 24px;
+}
+
+.tag {
+  display: inline-block;
+
+  margin: 0 6px 6px 0;
+
+  padding: 5px 11px;
+
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+
+  background: var(--accent-bg);
+  color: var(--text);
+
+  font-size: 13px;
+}
+
+.empty-text {
+  margin: 0;
+
+  color: var(--text-light);
+
+  font-size: 14px;
+}
+
+
+/* =========================================
+   GAP TABLE
+========================================= */
+
+.analysis-table-wrap {
+  overflow-x: auto;
+}
+
+.analysis-table-wrap table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+.analysis-table-wrap caption {
+  margin-bottom: 10px;
+
+  color: var(--text-muted);
+
+  font-size: 13px;
+
+  text-align: left;
+}
+
+.analysis-table-wrap th,
+.analysis-table-wrap td {
+  padding: 11px 14px;
+
+  border-bottom: 1px solid var(--border);
+
+  text-align: left;
+}
+
+.analysis-table-wrap th {
+  color: var(--text-muted);
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+  .analyze-actions button {
+    flex: 1 1 100%;
+  }
+}
