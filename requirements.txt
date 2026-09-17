@@ -42,3 +42,4 @@ streamlit>=1.39.0
 
 # everyone
 pytest>=8.0.0
+jsonschema>=4.18,<5

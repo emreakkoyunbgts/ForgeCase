@@ -52,7 +52,12 @@ empty isolated Vault.
 | Analyst | 8007 | `/coverage`, `/gaps` |
 
 Addresses come from `.env`; the local launcher requires loopback URLs without
-path prefixes. Every API exposes `/health`, `/docs` and `/openapi.json`.
+path prefixes. Every API exposes `/health`, `/docs` and `/openapi.json`, and the
+versioned contracts are in [`docs/openapi/`](docs/openapi/).
+
+To run only Generator and Verifier — the smallest setup that generates and checks a
+draft — follow the [CF-123 runbook](docs/CF-123-runbook.md). It covers their requests,
+dependencies, timeouts, error statuses and log tracing in detail.
 
 ## Publication rules
 

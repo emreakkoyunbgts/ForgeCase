@@ -29,9 +29,12 @@ fetch facts from Vault rather than trusting a submitted record body.
 
 Generation is not approval: submit the final edited draft to Verifier, obtain
 human approval, then publish through Publisher's independent final gate.
-Model calls have a 60-second limit and no SDK retries. Correlation, error mapping,
-UI/CLI setup and acceptance boundaries are in the
-[CF-105 runbook](../docs/CF-105-runbook.md).
+Model calls have a 60-second limit and no SDK retries. Per-route requests, responses,
+error statuses and headers are documented in
+[`docs/openapi/generator.json`](../docs/openapi/generator.json) and served live at
+`/docs`. Setup, dependencies, timeouts, runnable examples and troubleshooting are in
+the [CF-123 runbook](../docs/CF-123-runbook.md); UI/CLI setup and acceptance
+boundaries remain in the [CF-105 runbook](../docs/CF-105-runbook.md).
 
 Historical generator experiments may read the separate test-data archive, write
 outputs or call models. They are not selected by default pytest and do not

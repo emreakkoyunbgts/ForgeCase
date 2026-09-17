@@ -18,7 +18,9 @@ from verifier.service import get_record_from_vault, get_vault_client
 from verifier.verifier import verify
 from verifier.semantic import deterministic_problems, get_semantic_checker
 from common.drafts import normalize_draft
+from common.openapi import install_openapi
 from common.services import install_http_middleware
+from verifier.openapi import describe_verifier
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="CaseForge Verifier", version="1.0.0")
@@ -93,3 +95,7 @@ async def verify_record_id(
 async def health_check():
     """Liveness only; source availability is checked by each verification request."""
     return {"status": "ok"}
+
+
+# Documentation only, and only once every route above is registered.
+install_openapi(app, describe_verifier)
